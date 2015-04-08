@@ -36,7 +36,7 @@ add_library(FLIMreaderMex MODULE ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreade
 add_definitions(-DMATLAB_MEX_FILE)
 
 # Needed for entry point.
-set_target_properties(FLIMreader PROPERTIES LINK_FLAGS "/export:mexFunction" )
+set_target_properties(FLIMreaderMex PROPERTIES LINK_FLAGS "/export:mexFunction" )
 
 # Change the dll extension to a mex extension.
 set_target_properties(FLIMreaderMex PROPERTIES SUFFIX ".mexw64")

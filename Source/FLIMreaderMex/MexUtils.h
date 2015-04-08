@@ -94,7 +94,10 @@ std::vector<T> GetUVector(const mxArray* v)
       if (U* data = (U*)mxGetData(v))
       {
          size_t len = mxGetNumberOfElements(v);
-         std::copy_n(data, len, vec);
+         vec.resize(len);
+
+         for (size_t i = 0; i < len; i++)
+            vec[i] = static_cast<T>(data[i]);
       }
    return vec;
 

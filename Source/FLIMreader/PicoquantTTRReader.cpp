@@ -1,4 +1,4 @@
-#include "FLIMreader.h"
+#include "PicoquantTTRReader.h"
 #include <cassert>
 #include <algorithm>
 
@@ -44,7 +44,14 @@ void PicoquantTTTRReader::ReadHeader()
    READ(fs, info.repeat_wait_time);
    READ(fs, info.script_name);
 
-   fs.ignore(33 * 4 + 16 + 8); // hardward info
+   READ(fs, hw_info.ident);
+   READ(fs, hw_info.version);
+   READ(fs, hw_info.serial);
+   READ(fs, hw_info.sync_divider);
+   fs.ignore(4 * 4); // cfd settings
+   READ(fs, hw_info.resolution);
+   fs.ignore(26 * 4); // router settings
+
    fs.ignore(12); // reserved
 
    READ(fs, info.input0_countrate);
@@ -145,21 +152,47 @@ void PicoquantTTTRReader::DetermineDwellTime()
    sync_count_per_line /= n_averaged;
 }
 
+void PicoquantTTTRReader::SetTemporalResolution(int temporal_resolution_)
+{
+   temporal_resolution_ = std::min(10, temporal_resolution_);
+   temporal_resolution_ = std::max(0, temporal_resolution_);
+   temporal_resolution = temporal_resolution_;
 
-void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, int temporal_resolution, float* histogram)
+   int n_t = 1 << temporal_resolution;
+   timepoints.resize(n_t);
+
+   int downsampling_factor = 1 << (10 - temporal_resolution);
+
+   double t_0 = 0;
+   double t_step = hw_info.resolution * downsampling_factor;
+
+   for (int i = 0; i < n_t; i++)
+      timepoints[i] = t_0 + i * t_step;
+};
+
+int PicoquantTTTRReader::GetNumberOfChannels() 
+{ 
+   return info.routing_channels; 
+}
+
+int PicoquantTTTRReader::GetDataSizePerChannel()
+{
+   int n_bin = 1 << temporal_resolution;
+   return n_bin * info.n_x * info.n_y;
+}
+
+void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, float* histogram)
 {
    assert(info.measurement_mode == 3);
 
    // Determine channel mapping
-   int n_channel = channels.size();
+   size_t n_channel = channels.size();
    std::vector<int> channel_map(info.routing_channels, -1);   
    int idx = 0;
    for (auto& c : channels)
       channel_map[c] = idx++;
 
-
-   temporal_resolution = std::min(12, temporal_resolution);
-   int downsampling = 12 - temporal_resolution;
+   int downsampling = 10 - temporal_resolution;
    int n_bin = 1 << temporal_resolution;
    
    ifstream fs(filename, ifstream::in | ifstream::binary);
@@ -171,11 +204,14 @@ void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, int tempora
    bool line_valid = false;
    int sync_start = 0;
 
+   vector<uint32_t> records(info.n_records);
+   fs.read(reinterpret_cast<char*>(records.data()), info.n_records*sizeof(uint32_t));
+
+   int max_t = 0;
+
    for (int i = 0; i < info.n_records; i++)
    {
-      uint32_t evt;
-      READ(fs, evt);
-      PicoquantT3Event p(evt);
+      PicoquantT3Event p(records[i]);
 
       int cur_sync = p.nsync + sync_count_accum;
 
@@ -213,9 +249,16 @@ void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, int tempora
          if (mapped_channel > -1)
          {
             int cur_px = round((cur_sync-sync_start) / sync_count_per_line * info.n_x);
+
+            if (p.dtime > max_t)
+               max_t = p.dtime;
+
             int bin = p.dtime >> downsampling;
-            histogram[bin + n_bin * (mapped_channel + n_channel * (cur_px + info.n_x * cur_line))]++;
+            if (bin < n_bin)
+               histogram[bin + n_bin * (mapped_channel + n_channel * (cur_px + info.n_x * cur_line))]++;
          }
       }
    }
+
+   max_t = max_t;
 }

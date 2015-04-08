@@ -5,14 +5,13 @@ PROJECT(FLIMreader)
 cmake_policy(SET CMP0020 NEW)
 cmake_policy(SET CMP0043 NEW)
 
-# Source Files
-#====================================
 set(SOURCE
-   FLIMreader.cpp
+   PicoquantTTRReader.cpp
 )
 
 set(HEADERS
    FLIMreader.h
+   PicoquantTTRReader.h
 )
 
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
