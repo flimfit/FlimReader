@@ -42,3 +42,7 @@ set_target_properties(FLIMreaderMex PROPERTIES LINK_FLAGS "/export:mexFunction" 
 set_target_properties(FLIMreaderMex PROPERTIES SUFFIX ".mexw64")
 
 target_link_libraries(FLIMreaderMex ${MATLAB_LIBRARIES})
+
+if (OUT_DIR)
+   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${OUT_DIR})
+endif (OUT_DIR)
