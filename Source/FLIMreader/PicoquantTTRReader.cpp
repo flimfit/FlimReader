@@ -164,7 +164,7 @@ void PicoquantTTTRReader::SetTemporalResolution(int temporal_resolution_)
    int downsampling_factor = 1 << (10 - temporal_resolution);
 
    double t_0 = 0;
-   double t_step = hw_info.resolution * downsampling_factor;
+   double t_step = hw_info.resolution * downsampling_factor * 1e3; // convert ns->ps
 
    for (int i = 0; i < n_t; i++)
       timepoints[i] = t_0 + i * t_step;
@@ -245,10 +245,10 @@ void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, float* hist
       }
       else if (line_valid)
       {
-         int mapped_channel = channel_map[p.channel];
+         int mapped_channel = channel_map[p.channel-1]; // channel is 1-indexed from PQ
          if (mapped_channel > -1)
          {
-            int cur_px = round((cur_sync-sync_start) / sync_count_per_line * info.n_x);
+            int cur_px = static_cast<int>(round((cur_sync-sync_start) / sync_count_per_line * info.n_x));
 
             if (p.dtime > max_t)
                max_t = p.dtime;

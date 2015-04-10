@@ -72,6 +72,14 @@ void mexFunction(int nlhs, mxArray *plhs[],
             int n_chan = readers[idx]->GetNumberOfChannels();
             plhs[0] = mxCreateDoubleScalar(n_chan);
          }
+         else if (command == "GetImageSize" && nlhs > 0)
+         {
+            plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
+            double* d = mxGetPr(plhs[0]);
+
+            d[0] = readers[idx]->GetNumX();
+            d[1] = readers[idx]->GetNumY();
+         }
          else if (command == "GetData" && nlhs > 0)
          {
             if (nrhs < 3)
@@ -90,9 +98,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
             readers[idx]->ReadData(channels, d);
-
-
-         }
+         } 
          else if (command == "Delete")
          {
             readers[idx] = nullptr;
@@ -109,6 +115,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
 void Cleanup()
 {
+   readers.clear();
 }
 
 
