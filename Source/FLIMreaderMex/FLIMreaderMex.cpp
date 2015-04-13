@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <limits>
 
 using namespace std;
 
@@ -28,11 +29,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
       {
          string filename = GetStringFromMatlab(prhs[0]);
 
-         unique_ptr<FLIMReader> reader = make_unique<PicoquantTTTRReader>(filename);
+         auto reader = unique_ptr<FLIMReader>(new PicoquantTTTRReader(filename));
 
          // Make sure we have an empty place
          if (readers.empty() || readers[readers.size()-1] != nullptr)
-            readers.push_back(nullptr);
+            readers.push_back(unique_ptr<FLIMReader>(nullptr));
 
          int i = 0;
          for (; i < readers.size(); i++)
@@ -88,12 +89,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             vector<int> channels = GetVector<int>(prhs[2]);
 
-            size_t n_t = readers[idx]->GetTimePoints().size();
-            size_t n_chan = channels.size();
-            size_t n_x = readers[idx]->GetNumX();
-            size_t n_y = readers[idx]->GetNumY();
+            mwSize n_t = readers[idx]->GetTimePoints().size();
+            mwSize n_chan = channels.size();
+            mwSize n_x = readers[idx]->GetNumX();
+            mwSize n_y = readers[idx]->GetNumY();
 
-            size_t dims[4] = { n_t, n_chan, n_x, n_y };
+            mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
             plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));

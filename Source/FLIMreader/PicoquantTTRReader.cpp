@@ -1,6 +1,8 @@
 #include "PicoquantTTRReader.h"
 #include <cassert>
 #include <algorithm>
+#include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -109,7 +111,7 @@ void PicoquantTTTRReader::ReadHeader()
    data_position = fs.tellg();
 
 
-   assert(strcmp(info.ident, "PicoHarp 300") == 0);
+   assert(std::string("PicoHarp 300").compare(info.ident) == 0);
 }
 
 void PicoquantTTTRReader::DetermineDwellTime()
