@@ -10,6 +10,9 @@ public:
    FLIMReader(const std::string& filename_)
    {
       filename = filename_;
+      n_x = 1;
+      n_y = 1;
+      temporal_resolution = 1;
    }
 
    virtual ~FLIMReader() {};
@@ -30,7 +33,7 @@ protected:
    std::vector<double> timepoints;
 
    std::string filename;
-   int temporal_resolution = 0;
+   int temporal_resolution;
    int n_x = 1;
    int n_y = 1;
 };
