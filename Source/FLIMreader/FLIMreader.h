@@ -34,6 +34,6 @@ protected:
 
    std::string filename;
    int temporal_resolution;
-   int n_x = 1;
-   int n_y = 1;
+   int n_x;
+   int n_y;
 };
