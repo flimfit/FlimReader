@@ -250,7 +250,7 @@ void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, float* hist
          int mapped_channel = channel_map[p.channel-1]; // channel is 1-indexed from PQ
          if (mapped_channel > -1)
          {
-            int cur_px = static_cast<int>(round((cur_sync-sync_start) / sync_count_per_line * info.n_x));
+            int cur_px = static_cast<int>(floor(((cur_sync-sync_start) / sync_count_per_line * info.n_x + 0.5)));
 
             if (p.dtime > max_t)
                max_t = p.dtime;
