@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-PROJECT(FLIMreaderMex)
+PROJECT(FLIMReaderMex)
 
 cmake_policy(SET CMP0020 NEW)
 cmake_policy(SET CMP0043 NEW)
@@ -14,7 +14,7 @@ set(MATLAB_LIBRARIES ${MATLAB_LIB_DIR}libmat.lib ${MATLAB_LIB_DIR}libmex.lib ${M
 
 
 include_directories(${MATLAB_INCLUDE_DIR})
-include_directories(../FLIMreader)
+include_directories(../FLIMReader)
 
 # Add platform specific flags
 #===================================================
@@ -25,24 +25,24 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${PLATFORM_FLAGS_DEBUG}")
 # Source Files
 #====================================
 set(SOURCE
-   FLIMreaderMex.cpp
+   FLIMReaderMex.cpp
 )
 
 set(HEADERS
    MexUtils.h
 )
 
-add_library(FLIMreaderMex MODULE ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreader>)
+add_library(FLIMReaderMex MODULE ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMReader>)
 add_definitions(-DMATLAB_MEX_FILE)
 
 # Needed for entry point.
-set_target_properties(FLIMreaderMex PROPERTIES LINK_FLAGS "/export:mexFunction" )
+set_target_properties(FLIMReaderMex PROPERTIES LINK_FLAGS "/export:mexFunction" )
 
 # Change the dll extension to a mex extension.
-set_target_properties(FLIMreaderMex PROPERTIES SUFFIX ".mexw64")
+set_target_properties(FLIMReaderMex PROPERTIES SUFFIX ".mexw64")
 
-target_link_libraries(FLIMreaderMex ${MATLAB_LIBRARIES})
+target_link_libraries(FLIMReaderMex ${MATLAB_LIBRARIES})
 
 if (OUT_DIR)
-   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${OUT_DIR})
+   add_custom_command(TARGET FLIMReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMReaderMex> ${OUT_DIR})
 endif (OUT_DIR)

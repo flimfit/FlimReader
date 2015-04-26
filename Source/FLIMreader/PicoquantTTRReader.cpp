@@ -6,7 +6,18 @@ using namespace std;
 
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
-void PicoquantTTTRReader::ReadHeader()
+PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
+FLIMReader(filename)
+{
+   readHeader();
+   setTemporalResolution(8);
+   determineDwellTime();
+
+   n_x = info.n_x;
+   n_y = info.n_y;
+}
+
+void PicoquantTTTRReader::readHeader()
 {
    ifstream fs(filename, ifstream::in | ifstream::binary);
 
@@ -112,7 +123,7 @@ void PicoquantTTTRReader::ReadHeader()
    assert(strcmp(info.ident, "PicoHarp 300") == 0);
 }
 
-void PicoquantTTTRReader::DetermineDwellTime()
+void PicoquantTTTRReader::determineDwellTime()
 {
    assert(info.measurement_mode == 3);
 
@@ -152,113 +163,31 @@ void PicoquantTTTRReader::DetermineDwellTime()
    sync_count_per_line /= n_averaged;
 }
 
-void PicoquantTTTRReader::SetTemporalResolution(int temporal_resolution_)
+void PicoquantTTTRReader::setTemporalResolution(int temporal_resolution)
 {
-   temporal_resolution_ = std::min(10, temporal_resolution_);
-   temporal_resolution_ = std::max(0, temporal_resolution_);
-   temporal_resolution = temporal_resolution_;
+   temporal_resolution = std::min(10, temporal_resolution);
+   temporal_resolution = std::max(0, temporal_resolution);
+   temporal_resolution_ = temporal_resolution;
 
-   int n_t = 1 << temporal_resolution;
-   timepoints.resize(n_t);
+   int n_t = 1 << temporal_resolution_;
+   timepoints_.resize(n_t);
 
-   int downsampling_factor = 1 << (10 - temporal_resolution);
+   int downsampling_factor = 1 << (10 - temporal_resolution_);
 
    double t_0 = 0;
    double t_step = hw_info.resolution * downsampling_factor;
 
    for (int i = 0; i < n_t; i++)
-      timepoints[i] = t_0 + i * t_step;
+      timepoints_[i] = t_0 + i * t_step;
 };
 
-int PicoquantTTTRReader::GetNumberOfChannels() 
+int PicoquantTTTRReader::numChannels() 
 { 
    return info.routing_channels; 
 }
 
-int PicoquantTTTRReader::GetDataSizePerChannel()
+int PicoquantTTTRReader::dataSizePerChannel()
 {
-   int n_bin = 1 << temporal_resolution;
+   int n_bin = 1 << temporal_resolution_;
    return n_bin * info.n_x * info.n_y;
-}
-
-void PicoquantTTTRReader::ReadData(const std::vector<int>& channels, float* histogram)
-{
-   assert(info.measurement_mode == 3);
-
-   // Determine channel mapping
-   size_t n_channel = channels.size();
-   std::vector<int> channel_map(info.routing_channels, -1);   
-   int idx = 0;
-   for (auto& c : channels)
-      channel_map[c] = idx++;
-
-   int downsampling = 10 - temporal_resolution;
-   int n_bin = 1 << temporal_resolution;
-   
-   ifstream fs(filename, ifstream::in | ifstream::binary);
-   fs.seekg(data_position, ios_base::cur);
-
-   long sync_count_accum = 0;
-   int cur_line = 0;
-   bool frame_started = 0;
-   bool line_valid = false;
-   int sync_start = 0;
-
-   vector<uint32_t> records(info.n_records);
-   fs.read(reinterpret_cast<char*>(records.data()), info.n_records*sizeof(uint32_t));
-
-   int max_t = 0;
-
-   for (int i = 0; i < info.n_records; i++)
-   {
-      PicoquantT3Event p(records[i]);
-
-      int cur_sync = p.nsync + sync_count_accum;
-
-      if (p.special)
-      {
-         if (p.dtime == 0)
-            sync_count_accum += 0xFFFF;
-         else
-         {
-            int marker = p.dtime;
-            
-            if (marker == 4)
-            {
-               frame_started = true;
-               cur_line = 0;
-            }
-
-            if ((marker == 1) && frame_started)
-            {
-               line_valid = true;
-               sync_start = cur_sync;
-            }
-
-            if (marker == 2)
-            {
-               line_valid = false;
-               cur_line++;
-            }
-
-         }
-      }
-      else if (line_valid)
-      {
-         int mapped_channel = channel_map[p.channel];
-         if (mapped_channel > -1)
-         {
-            int cur_px = round((cur_sync-sync_start) / sync_count_per_line * info.n_x);
-
-            if (p.dtime > max_t)
-               max_t = p.dtime;
-
-            int bin = p.dtime >> downsampling;
-            if (bin < n_bin)
-               histogram[bin + n_bin * (mapped_channel + n_channel * (cur_px + info.n_x * cur_line))]++;
-         }
-      }
-   }
-
-   max_t = max_t;
 }

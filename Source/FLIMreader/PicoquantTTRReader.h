@@ -1,9 +1,10 @@
 #pragma once
 
-#include "FLIMreader.h"
+#include "FLIMReader.h"
 
 #include <fstream>
-#include <stdint.h>
+#include <cstdint>
+#include <cassert>
 
 struct PicoquantHardwareInfo
 {
@@ -78,34 +79,118 @@ class PicoquantTTTRReader : public FLIMReader
 {
 public:
 
-   PicoquantTTTRReader(const std::string& filename) :
-      FLIMReader(filename)
-   {
-      ReadHeader();
-      SetTemporalResolution(8);
-      DetermineDwellTime();
+   PicoquantTTTRReader(const std::string& filename);
 
-      n_x = info.n_x;
-      n_y = info.n_y;
-   }
+   void readData(float* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
+   void readData(uint16_t* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
 
-   void SetTemporalResolution(int temporal_resolution);
+   void setTemporalResolution(int temporal_resolution);
 
-   void ReadHeader();
-
-   int GetNumberOfChannels();
-   std::vector<double> GetTimePoints();
+   int numChannels();
+   int dataSizePerChannel();
 
 
-   int GetDataSizePerChannel();
-   void ReadData(const std::vector<int>& channels, float* data);
 
 protected:
 
-   void DetermineDwellTime();
+   void readHeader();
+
+   template<typename T>
+   void readData_(T* data, const std::vector<int>& channels = {});
+
+   void determineDwellTime();
 
    PicoquantTTRInfo info;
    PicoquantHardwareInfo hw_info;
    long long data_position;
    double sync_count_per_line;
 };
+
+
+template<typename T>
+void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channels_)
+{
+   using namespace std;
+
+   auto channels = validateChannels(channels_);
+
+   assert(info.measurement_mode == 3);
+
+   // Determine channel mapping
+   size_t n_channel = channels.size();
+   std::vector<int> channel_map(info.routing_channels, -1);
+   int idx = 0;
+   for (auto& c : channels)
+      channel_map[c] = idx++;
+
+   int downsampling = 10 - temporal_resolution_;
+   int n_bin = 1 << temporal_resolution_;
+
+   ifstream fs(filename, ifstream::in | ifstream::binary);
+   fs.seekg(data_position, ios_base::cur);
+
+   long sync_count_accum = 0;
+   int cur_line = 0;
+   bool frame_started = 0;
+   bool line_valid = false;
+   int sync_start = 0;
+
+   vector<uint32_t> records(info.n_records);
+   fs.read(reinterpret_cast<char*>(records.data()), info.n_records*sizeof(uint32_t));
+
+   int max_t = 0;
+
+   for (int i = 0; i < info.n_records; i++)
+   {
+      PicoquantT3Event p(records[i]);
+
+      int cur_sync = p.nsync + sync_count_accum;
+
+      if (p.special)
+      {
+         if (p.dtime == 0)
+            sync_count_accum += 0xFFFF;
+         else
+         {
+            int marker = p.dtime;
+
+            if (marker == 4)
+            {
+               frame_started = true;
+               cur_line = 0;
+            }
+
+            if ((marker == 1) && frame_started)
+            {
+               line_valid = true;
+               sync_start = cur_sync;
+            }
+
+            if (marker == 2)
+            {
+               line_valid = false;
+               cur_line++;
+            }
+
+         }
+      }
+      else if (line_valid)
+      {
+         int mapped_channel = channel_map[p.channel];
+         if (mapped_channel > -1)
+         {
+            double cur_loc = (cur_sync - sync_start) / sync_count_per_line * info.n_x;
+            int cur_px = static_cast<int>(round(cur_loc));
+
+            if (p.dtime > max_t)
+               max_t = p.dtime;
+
+            int bin = p.dtime >> downsampling;
+            if (bin < n_bin)
+               histogram[bin + n_bin * (mapped_channel + n_channel * (cur_px + info.n_x * cur_line))]++;
+         }
+      }
+   }
+
+   max_t = max_t;
+}

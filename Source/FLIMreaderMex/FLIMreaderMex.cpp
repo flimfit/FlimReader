@@ -60,7 +60,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
          if (command == "GetTimePoints")
          {
-            const vector<double>& timepoints = readers[idx]->GetTimePoints();
+            const vector<double>& timepoints = readers[idx]->timepoints();
 
             plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
             double* t = mxGetPr(plhs[0]);
@@ -69,7 +69,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          }
          else if (command == "GetNumberOfChannels" && nlhs > 0)
          {
-            int n_chan = readers[idx]->GetNumberOfChannels();
+            int n_chan = readers[idx]->numChannels();
             plhs[0] = mxCreateDoubleScalar(n_chan);
          }
          else if (command == "GetData" && nlhs > 0)
@@ -80,16 +80,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             vector<int> channels = GetVector<int>(prhs[2]);
 
-            size_t n_t = readers[idx]->GetTimePoints().size();
+            size_t n_t = readers[idx]->timepoints().size();
             size_t n_chan = channels.size();
-            size_t n_x = readers[idx]->GetNumX();
-            size_t n_y = readers[idx]->GetNumY();
+            size_t n_x = readers[idx]->numX();
+            size_t n_y = readers[idx]->numY();
 
             size_t dims[4] = { n_t, n_chan, n_x, n_y };
 
             plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
-            readers[idx]->ReadData(channels, d);
+            readers[idx]->readData(d, channels);
 
 
          }

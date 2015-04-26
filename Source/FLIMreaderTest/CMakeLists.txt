@@ -1,21 +1,21 @@
 cmake_minimum_required(VERSION 3.0)
 
-PROJECT(FLIMreaderTest)
+PROJECT(FLIMReaderTest)
 
 cmake_policy(SET CMP0020 NEW)
 cmake_policy(SET CMP0043 NEW)
 
-include_directories(../FLIMreader)
+include_directories(../FLIMReader)
 
 
 # Source Files
 #====================================
 set(SOURCE
-   FLIMreaderTest.cpp
+   FLIMReaderTest.cpp
 )
 
 set(HEADERS
-   FLIMreaderTest.h
+   FLIMReaderTest.h
 )
 
-add_executable(FLIMreaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreader>)
+add_executable(FLIMReaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMReader>)

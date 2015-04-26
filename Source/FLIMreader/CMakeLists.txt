@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.0)
 
-PROJECT(FLIMreader)
+PROJECT(FLIMReader)
 
 cmake_policy(SET CMP0020 NEW)
 cmake_policy(SET CMP0043 NEW)
 
 set(SOURCE
+   FLIMReader.cpp
    PicoquantTTRReader.cpp
+   TextReader.cpp
 )
 
 set(HEADERS
-   FLIMreader.h
+   FLIMReader.h
    PicoquantTTRReader.h
+   TextReader.h
 )
 
-add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
+add_library(FLIMReader OBJECT ${SOURCE} ${HEADERS})
