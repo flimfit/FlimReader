@@ -42,7 +42,7 @@ protected:
 
    std::string filename;
    std::string extension;
-   int temporal_resolution_ = 0;
-   int n_x = 1;
-   int n_y = 1;
+   int temporal_resolution_;
+   int n_x;
+   int n_y;
 };

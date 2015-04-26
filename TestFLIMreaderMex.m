@@ -4,7 +4,7 @@ r = FLIMreaderMex(filename);
 n_chan = FLIMreaderMex(r,'GetNumberOfChannels');
 
 t = FLIMreaderMex(r,'GetTimePoints');
-data = FLIMreaderMex(r,'GetData',1);
+data = FLIMreaderMex(r,'GetData',0);
 
 FLIMreaderMex(r,'Delete');
 %%

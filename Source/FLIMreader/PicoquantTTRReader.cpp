@@ -1,6 +1,8 @@
 #include "PicoquantTTRReader.h"
 #include <cassert>
 #include <algorithm>
+#include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -120,7 +122,7 @@ void PicoquantTTTRReader::readHeader()
    data_position = fs.tellg();
 
 
-   assert(strcmp(info.ident, "PicoHarp 300") == 0);
+   assert(std::string("PicoHarp 300").compare(info.ident) == 0);
 }
 
 void PicoquantTTTRReader::determineDwellTime()
@@ -175,7 +177,7 @@ void PicoquantTTTRReader::setTemporalResolution(int temporal_resolution)
    int downsampling_factor = 1 << (10 - temporal_resolution_);
 
    double t_0 = 0;
-   double t_step = hw_info.resolution * downsampling_factor;
+   double t_step = hw_info.resolution * downsampling_factor * 1e3; // convert ns->ps
 
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;

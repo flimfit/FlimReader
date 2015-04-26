@@ -18,6 +18,10 @@ FLIMReader::FLIMReader(const std::string& filename_)
 {
    filename = filename_;
    extension = determineExtension(filename);
+
+   n_x = 1;
+   n_y = 1;
+   temporal_resolution_ = 1;
 }
 
 std::string FLIMReader::determineExtension(std::string& filename)

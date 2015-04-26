@@ -1,6 +1,7 @@
 #include <mex.h>
 #include <string>
 #include <vector>
+#include <limits>
 
 using std::string;
 

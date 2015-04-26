@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <limits>
 
 using namespace std;
 
@@ -28,11 +29,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
       {
          string filename = GetStringFromMatlab(prhs[0]);
 
-         unique_ptr<FLIMReader> reader = make_unique<PicoquantTTTRReader>(filename);
+         auto reader = unique_ptr<FLIMReader>(new PicoquantTTTRReader(filename));
 
          // Make sure we have an empty place
          if (readers.empty() || readers[readers.size()-1] != nullptr)
-            readers.push_back(nullptr);
+            readers.push_back(unique_ptr<FLIMReader>(nullptr));
 
          int i = 0;
          for (; i < readers.size(); i++)
@@ -72,6 +73,14 @@ void mexFunction(int nlhs, mxArray *plhs[],
             int n_chan = readers[idx]->numChannels();
             plhs[0] = mxCreateDoubleScalar(n_chan);
          }
+         else if (command == "GetImageSize" && nlhs > 0)
+         {
+            plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
+            double* d = mxGetPr(plhs[0]);
+
+            d[0] = readers[idx]->GetNumX();
+            d[1] = readers[idx]->GetNumY();
+         }
          else if (command == "GetData" && nlhs > 0)
          {
             if (nrhs < 3)
@@ -80,19 +89,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             vector<int> channels = GetVector<int>(prhs[2]);
 
-            size_t n_t = readers[idx]->timepoints().size();
-            size_t n_chan = channels.size();
-            size_t n_x = readers[idx]->numX();
-            size_t n_y = readers[idx]->numY();
+            mwSize n_t = readers[idx]->timepoints().size();
+            mwSize n_chan = channels.size();
+            mwSize n_x = readers[idx]->numX();
+            mwSize n_y = readers[idx]->numY();
 
-            size_t dims[4] = { n_t, n_chan, n_x, n_y };
+            mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
             plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
-
-
-         }
+         } 
          else if (command == "Delete")
          {
             readers[idx] = nullptr;
@@ -109,6 +116,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
 void Cleanup()
 {
+   readers.clear();
 }
 
 
