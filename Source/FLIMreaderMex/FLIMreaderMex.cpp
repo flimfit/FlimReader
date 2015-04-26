@@ -78,8 +78,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
             double* d = mxGetPr(plhs[0]);
 
-            d[0] = readers[idx]->GetNumX();
-            d[1] = readers[idx]->GetNumY();
+            d[0] = readers[idx]->numX();
+            d[1] = readers[idx]->numY();
          }
          else if (command == "GetData" && nlhs > 0)
          {
