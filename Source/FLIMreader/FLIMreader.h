@@ -20,13 +20,16 @@ public:
 
    virtual int numChannels() { return 1; };
    virtual void readData(float* data, const std::vector<int>& channels = {}) = 0;
+   virtual void readData(double* data, const std::vector<int>& channels = {}) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}) = 0;
 
    template<typename T>
    std::vector<T> readData(const std::vector<int>& channels = {})
    {
-      std::vector<T> data(channels.size() * t.size());
-      readData(data.data(), channels);
+      std::vector<int>& channels_ = validateChannels(channels);
+      std::vector<T> data(channels_.size() * timepoints_.size());
+      readData(data.data(), channels_);
+      return data;
    }
 
    const std::vector<double>& timepoints() { return timepoints_; };

@@ -14,6 +14,7 @@ public:
 
    int numChannels() { return (int) data.size(); };
    void readData(float* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
+   void readData(double* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
 
 protected:

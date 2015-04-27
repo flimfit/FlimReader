@@ -82,6 +82,7 @@ public:
    PicoquantTTTRReader(const std::string& filename);
 
    void readData(float* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
+   void readData(double* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
 
    void setTemporalResolution(int temporal_resolution);

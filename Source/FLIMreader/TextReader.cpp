@@ -35,7 +35,8 @@ void TextReader::readHeader()
       string header;
       getline(ss, header, delim);
 
-      is_data |= (header.size() > 0) && isdigit(header[0]);
+      is_data |= (header.size() > 0) && 
+         (isdigit(header[0]) || header[0] == '-' || header[0] == '.');
 
       if (is_data)
       {
