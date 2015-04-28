@@ -38,7 +38,7 @@ void TextReader::readData_(T* data_, const std::vector<int>& channels)
    size_t n_t = timepoints_.size();
    size_t n_chan = channels.size();
 
-   for (size_t i = 0; i < n_t; i++)
-      for (size_t c = 0; c < n_chan; c++)
-         data_[i*n_chan + c] = static_cast<T>(data[c][i]);
+   for (size_t c = 0; c < n_chan; c++)
+      for (size_t i = 0; i < n_t; i++)
+         data_[i + c*n_t] = static_cast<T>(data[channels[c]][i]);
 }
