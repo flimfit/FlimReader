@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdint>
 #include <cassert>
+#include <cmath>
 
 struct PicoquantHardwareInfo
 {
