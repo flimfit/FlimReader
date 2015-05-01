@@ -156,14 +156,18 @@ void PicoquantTTTRReader::DetermineDwellTime()
 
 void PicoquantTTTRReader::SetTemporalResolution(int temporal_resolution_)
 {
-   temporal_resolution_ = std::min(10, temporal_resolution_);
+   double time_resolution = hw_info.resolution * 1000;
+   int native_resolution = 14 - log2(time_resolution);
+   
+   
+   temporal_resolution_ = std::min(native_resolution, temporal_resolution_);
    temporal_resolution_ = std::max(0, temporal_resolution_);
    temporal_resolution = temporal_resolution_;
 
    int n_t = 1 << temporal_resolution;
    timepoints.resize(n_t);
 
-   int downsampling_factor = 1 << (10 - temporal_resolution);
+   int downsampling_factor = 1 << (native_resolution - temporal_resolution);
 
    double t_0 = 0;
    double t_step = hw_info.resolution * downsampling_factor * 1e3; // convert ns->ps
