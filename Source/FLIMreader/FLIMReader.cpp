@@ -11,7 +11,7 @@ FLIMReader* FLIMReader::createReader(std::string& filename)
    else if (extension == "pt3")
       return new PicoquantTTTRReader(filename);
 
-   throw std::exception("Unrecognised file format");
+   throw std::runtime_error("Unrecognised file format");
 }
 
 FLIMReader::FLIMReader(const std::string& filename_)

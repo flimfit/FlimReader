@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cassert>
 #include <cctype>
+#include <iostream>
 
 using namespace std;
 
@@ -23,7 +24,6 @@ void TextReader::readHeader()
 
    assert(fs.is_open());
 
-   int min_n_cols = numeric_limits<int>::max();
    bool is_data = false;
 
    int data_row = 0;
@@ -40,7 +40,7 @@ void TextReader::readHeader()
 
       if (is_data)
       {
-         timepoints_.push_back(stof(header));
+         timepoints_.push_back(stod(header));
 
          // Read in data line
          int chan = 0;
@@ -49,7 +49,16 @@ void TextReader::readHeader()
             if (data.size() <= chan)
                data.resize(chan + 1, vector<float>(data_row, 0));
 
-            data[chan].push_back(stof(field));
+            try
+            {
+               data[chan].push_back(stod(field));
+            }
+            catch(std::out_of_range)
+            {
+               data[chan].push_back(0.0);
+               std::cout << "Warning, out of range for a double:  " << field << "\n";
+            }
+            
             chan++;
          }
       }

@@ -26,7 +26,7 @@ public:
    template<typename T>
    std::vector<T> readData(const std::vector<int>& channels = {})
    {
-      std::vector<int>& channels_ = validateChannels(channels);
+      std::vector<int> channels_ = validateChannels(channels);
       std::vector<T> data(channels_.size() * timepoints_.size());
       readData(data.data(), channels_);
       return data;

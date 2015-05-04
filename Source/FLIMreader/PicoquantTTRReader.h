@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdint>
 #include <cassert>
+#include <cmath>
 
 struct PicoquantHardwareInfo
 {
@@ -192,6 +193,4 @@ void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channe
          }
       }
    }
-
-   max_t = max_t;
 }
