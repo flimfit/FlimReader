@@ -106,6 +106,7 @@ protected:
    PicoquantHardwareInfo hw_info;
    long long data_position;
    double sync_count_per_line;
+   int downsampling;
 };
 
 
@@ -125,7 +126,6 @@ void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channe
    for (auto& c : channels)
       channel_map[c] = idx++;
 
-   int downsampling = 10 - temporal_resolution_;
    int n_bin = 1 << temporal_resolution_;
 
    ifstream fs(filename, ifstream::in | ifstream::binary);
@@ -178,7 +178,7 @@ void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channe
       }
       else if (line_valid)
       {
-         int mapped_channel = channel_map[p.channel];
+         int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
          {
             double cur_loc = (cur_sync - sync_start) / sync_count_per_line * info.n_x;

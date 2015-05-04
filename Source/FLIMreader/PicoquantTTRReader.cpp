@@ -171,17 +171,18 @@ void PicoquantTTTRReader::setTemporalResolution(int temporal_resolution)
    int native_resolution = 14 - log2(time_resolution);
    
    
-   temporal_resolution_ = std::min(native_resolution, temporal_resolution_);
+   temporal_resolution_ = std::min(native_resolution, temporal_resolution);
    temporal_resolution_ = std::max(0, temporal_resolution_);
    temporal_resolution = temporal_resolution_;
 
    int n_t = 1 << temporal_resolution_;
    timepoints_.resize(n_t);
 
-   int downsampling_factor = 1 << (native_resolution - temporal_resolution);
+   downsampling = (native_resolution - temporal_resolution_);
+   int downsampling_factor = 1 << downsampling;
 
    double t_0 = 0;
-   double t_step = hw_info.resolution * downsampling_factor * 1e3; // convert ns->ps
+   double t_step = hw_info.resolution * downsampling * 1e3; // convert ns->ps
 
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
