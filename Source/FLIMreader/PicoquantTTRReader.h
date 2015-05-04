@@ -82,9 +82,9 @@ public:
 
    PicoquantTTTRReader(const std::string& filename);
 
-   void readData(float* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
-   void readData(double* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
-   void readData(uint16_t* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
+   void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
+   void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
+   void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
 
    void setTemporalResolution(int temporal_resolution);
 
@@ -98,7 +98,7 @@ protected:
    void readHeader();
 
    template<typename T>
-   void readData_(T* data, const std::vector<int>& channels = {});
+   void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
 
    void determineDwellTime();
 
@@ -111,11 +111,11 @@ protected:
 
 
 template<typename T>
-void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channels_)
+void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
    using namespace std;
 
-   auto channels = validateChannels(channels_);
+   auto channels = validateChannels(channels_, n_chan_stride);
 
    assert(info.measurement_mode == 3);
 
@@ -182,14 +182,14 @@ void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channe
          if (mapped_channel > -1)
          {
             double cur_loc = (cur_sync - sync_start) / sync_count_per_line * info.n_x;
-            int cur_px = static_cast<int>(round(cur_loc));
+            int cur_px = static_cast<int>(cur_loc);
 
             if (p.dtime > max_t)
                max_t = p.dtime;
 
             int bin = p.dtime >> downsampling;
             if (bin < n_bin)
-               histogram[bin + n_bin * (mapped_channel + n_channel * (cur_px + info.n_x * cur_line))]++;
+               histogram[bin + n_bin * (mapped_channel + n_chan_stride * (cur_px + info.n_x * cur_line))]++;
          }
       }
    }

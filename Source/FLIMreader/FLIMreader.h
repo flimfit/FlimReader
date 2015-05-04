@@ -14,19 +14,20 @@ public:
    FLIMReader(const std::string& filename_);
     
    static std::string determineExtension(std::string& filename);
-   std::vector<int> validateChannels(const std::vector<int> channels);
+   std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
    virtual ~FLIMReader() {};
 
    virtual int numChannels() { return 1; };
-   virtual void readData(float* data, const std::vector<int>& channels = {}) = 0;
-   virtual void readData(double* data, const std::vector<int>& channels = {}) = 0;
-   virtual void readData(uint16_t* data, const std::vector<int>& channels = {}) = 0;
+   virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
+   virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
+   virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
 
    template<typename T>
    std::vector<T> readData(const std::vector<int>& channels = {})
    {
-      std::vector<int> channels_ = validateChannels(channels);
+      int n_chan_stride = -1;
+      std::vector<int> channels_ = validateChannels(channels, n_chan_stride);
       std::vector<T> data(channels_.size() * timepoints_.size());
       readData(data.data(), channels_);
       return data;

@@ -32,7 +32,7 @@ std::string FLIMReader::determineExtension(std::string& filename)
    return filename.substr(last_dot);
 }
 
-std::vector<int> FLIMReader::validateChannels(std::vector<int> channels)
+std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_chan_stride)
 {
    int n_chan = numChannels();
 
@@ -51,5 +51,8 @@ std::vector<int> FLIMReader::validateChannels(std::vector<int> channels)
             validated_channels.push_back(c);
    }
 
+   if (n_chan_stride < validated_channels.size() || n_chan_stride == -1)
+      n_chan_stride = validated_channels.size();
+   
    return validated_channels;
 }

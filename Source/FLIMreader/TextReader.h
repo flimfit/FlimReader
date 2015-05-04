@@ -13,14 +13,14 @@ public:
    TextReader(const std::string& filename);
 
    int numChannels() { return (int) data.size(); };
-   void readData(float* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
-   void readData(double* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
-   void readData(uint16_t* data, const std::vector<int>& channels = {}) { readData_(data, channels); };
+   void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
+   void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
+   void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
 
 protected:
 
    template<typename T>
-   void readData_(T* data, const std::vector<int>& channels = {});
+   void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
 
    void readHeader();
 
@@ -33,8 +33,10 @@ protected:
 };
 
 template<typename T>
-void TextReader::readData_(T* data_, const std::vector<int>& channels)
+void TextReader::readData_(T* data_, const std::vector<int>& channels_, int n_chan_stride)
 {
+   auto channels = validateChannels(channels_, n_chan_stride);
+   
    size_t n_t = timepoints_.size();
    size_t n_chan = channels.size();
 
