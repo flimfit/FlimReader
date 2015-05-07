@@ -182,7 +182,7 @@ void PicoquantTTTRReader::setTemporalResolution(int temporal_resolution)
    int downsampling_factor = 1 << downsampling;
 
    double t_0 = 0;
-   double t_step = hw_info.resolution * downsampling * 1e3; // convert ns->ps
+   double t_step = hw_info.resolution * downsampling_factor * 1e3; // convert ns->ps
 
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;

@@ -120,7 +120,6 @@ void PicoquantTTTRReader::readData_(T* histogram, const std::vector<int>& channe
    assert(info.measurement_mode == 3);
 
    // Determine channel mapping
-   size_t n_channel = channels.size();
    std::vector<int> channel_map(info.routing_channels, -1);
    int idx = 0;
    for (auto& c : channels)
