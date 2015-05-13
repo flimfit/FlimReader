@@ -12,15 +12,16 @@ PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
 AbstractPicoquantReader(filename)
 {
    readHeader();
-   setTemporalResolution(8);
-   determineDwellTime();
-
+   
    routing_channels = info.routing_channels;
    measurement_mode = info.measurement_mode;
    n_records = info.n_records;
    resolution = hw_info.resolution;
    n_x = info.n_x;
    n_y = info.n_y;
+   
+   setTemporalResolution(8);
+   determineDwellTime();
 }
 
 void PicoquantTTTRReader::readHeader()

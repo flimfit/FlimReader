@@ -9,11 +9,11 @@ class FLIMReader
 {
 public:
    
-   static FLIMReader* createReader(std::string& filename);
+   static FLIMReader* createReader(const std::string& filename);
 
    FLIMReader(const std::string& filename_);
     
-   static std::string determineExtension(std::string& filename);
+   static std::string determineExtension(const std::string& filename);
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
    virtual ~FLIMReader() {};
