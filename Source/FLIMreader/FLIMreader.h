@@ -9,11 +9,11 @@ class FLIMReader
 {
 public:
    
-   static FLIMReader* createReader(std::string& filename);
+   static FLIMReader* createReader(const std::string& filename);
 
    FLIMReader(const std::string& filename_);
     
-   static std::string determineExtension(std::string& filename);
+   static std::string determineExtension(const std::string& filename);
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
    virtual ~FLIMReader() {};
@@ -34,12 +34,22 @@ public:
    }
 
    const std::vector<double>& timepoints() { return timepoints_; };
-   int numX() { return n_x; }
-   int numY() { return n_y; }
+   int numX() { return n_x / spatial_binning_; }
+   int numY() { return n_y / spatial_binning_; }
 
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
    int temporalResolution() { return temporal_resolution_; }
 
+   int dataSizePerChannel();
+
+   void setSpatialBinning(int spatial_binning)
+   {
+      if (n_x > spatial_binning && n_y > spatial_binning)
+         spatial_binning_ = spatial_binning;
+   }
+   
+   int spatialBinning() { return spatial_binning_; }
+   
 protected:
 
    std::vector<double> timepoints_;
@@ -47,6 +57,7 @@ protected:
    std::string filename;
    std::string extension;
    int temporal_resolution_;
+   int spatial_binning_ = 1;
    int n_x;
    int n_y;
 };

@@ -9,14 +9,19 @@ using namespace std;
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
 PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
-FLIMReader(filename)
+AbstractPicoquantReader(filename)
 {
    readHeader();
-   setTemporalResolution(8);
-   determineDwellTime();
-
+   
+   routing_channels = info.routing_channels;
+   measurement_mode = info.measurement_mode;
+   n_records = info.n_records;
+   resolution = hw_info.resolution;
    n_x = info.n_x;
    n_y = info.n_y;
+   
+   setTemporalResolution(8);
+   determineDwellTime();
 }
 
 void PicoquantTTTRReader::readHeader()
@@ -120,81 +125,7 @@ void PicoquantTTTRReader::readHeader()
    fs.seekg(info.spec_header_length * 4, ios_base::cur);
 
    data_position = fs.tellg();
-
-
+   
    assert(std::string("PicoHarp 300").compare(info.ident) == 0);
 }
 
-void PicoquantTTTRReader::determineDwellTime()
-{
-   assert(info.measurement_mode == 3);
-
-   ifstream fs(filename, ifstream::in | ifstream::binary);
-   fs.seekg(data_position, ios_base::cur);
-
-   long sync_count_accum = 0;
-   long sync_start_count = 0;
-   sync_count_per_line = 0;
-   int n_averaged = 0;
-   do
-   {
-      uint32_t evt;
-      READ(fs, evt);
-      PicoquantT3Event p(evt);
-
-      if (p.special)
-      {
-         if (p.dtime == 0)
-            sync_count_accum += 0xFFFF;
-         else
-         {
-            int marker = p.dtime;
-            if (marker == 1)
-            {
-               sync_start_count = sync_count_accum + p.nsync;
-            }
-            if (marker == 2 && (sync_start_count > 0))
-            {
-               sync_count_per_line += sync_count_accum + p.nsync - sync_start_count;
-               n_averaged++;
-            }
-         }
-      }
-   } while (!fs.eof() && (n_averaged < info.n_y));
-
-   sync_count_per_line /= n_averaged;
-}
-
-void PicoquantTTTRReader::setTemporalResolution(int temporal_resolution)
-{
-   double time_resolution = hw_info.resolution * 1000;
-   int native_resolution = 14 - log2(time_resolution);
-   
-   
-   temporal_resolution_ = std::min(native_resolution, temporal_resolution);
-   temporal_resolution_ = std::max(0, temporal_resolution_);
-   temporal_resolution = temporal_resolution_;
-
-   int n_t = 1 << temporal_resolution_;
-   timepoints_.resize(n_t);
-
-   downsampling = (native_resolution - temporal_resolution_);
-   int downsampling_factor = 1 << downsampling;
-
-   double t_0 = 0;
-   double t_step = hw_info.resolution * downsampling * 1e3; // convert ns->ps
-
-   for (int i = 0; i < n_t; i++)
-      timepoints_[i] = t_0 + i * t_step;
-};
-
-int PicoquantTTTRReader::numChannels() 
-{ 
-   return info.routing_channels; 
-}
-
-int PicoquantTTTRReader::dataSizePerChannel()
-{
-   int n_bin = 1 << temporal_resolution_;
-   return n_bin * info.n_x * info.n_y;
-}
