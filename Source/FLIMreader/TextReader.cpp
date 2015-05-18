@@ -22,10 +22,10 @@ void TextReader::readHeader()
 {
    ifstream fs(filename, ifstream::in);
 
-   assert(fs.is_open());
-
+   if (!fs.is_open())
+      throw std::runtime_error("Could not open file");
+   
    bool is_data = false;
-
    int data_row = 0;
 
    for (string row; getline(fs, row, row_delim);) 

@@ -49,6 +49,8 @@ public:
    }
    
    int spatialBinning() { return spatial_binning_; }
+   void setNumX(int n_x_) { n_x = n_x_; }
+   void setNumY(int n_y_) { n_y = n_y_; }
    
 protected:
 
