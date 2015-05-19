@@ -100,17 +100,10 @@ void mexFunction(int nlhs, mxArray *plhs[],
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
          }
-         else if (command == "SetSpatialBinning" && lrhs >= 3)
+         else if (command == "SetSpatialBinning" && nrhs >= 3)
          {
             int spatial_binning = mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
-         }
-         else if (command == "SetImageSize" && lrhs >= 4)
-         {
-            int n_x = mxGetScalar(prhs[2]);
-            int n_y = mxGetScalar(prhs[3]);
-            readers[idx]->setNumX(n_x);
-            readers[idx]->setNumY(n_y);
          }
          else if (command == "Delete")
          {
