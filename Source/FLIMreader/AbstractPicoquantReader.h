@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <cassert>
+#include <iostream>
 
 class PicoquantT3Event
 {
@@ -86,13 +87,13 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    
    fs.seekg(data_position, ios_base::beg);
    
-   long sync_count_accum = 0;
+   long long sync_count_accum = 0;
    int cur_line = 0;
    bool frame_started = 0;
    bool line_valid = false;
    bool auto_off = false;
    int sync_start = 0;
-   
+   int cur2 = 0;
    
    vector<uint32_t> records(n_records_true);
    fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
@@ -100,19 +101,13 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int n_x_binned = n_x / spatial_binning_;
    
    int n_frame = 0;
+   int n_invalid = 0;
    
    for (int i = 0; i < n_records_true; i++)
    {
       PicoquantT3Event p(records[i]);
       
-      int cur_sync = p.nsync + sync_count_accum;
-      
-      if (auto_off && ((cur_sync - sync_start) > sync_count_per_line))
-      {
-         auto_off = false;
-         line_valid = false;
-         cur_line++;
-      }
+      long long cur_sync = p.nsync + sync_count_accum;
       
       if (p.special)
       {
@@ -122,31 +117,41 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          {
             int marker = p.dtime;
             
+            if ((marker == 1) || (marker == 2) || (marker == 4))
+               int a = 1;
+            
             if (marker & 4)
             {
+               std::cout << "Frame marker. Cur Line: " << cur_line << " Cur M2: " << cur2 << "\n";
+
                n_frame++;
                frame_started = true;
-               cur_line = 0;
+               //line_valid = true;
+               sync_start = cur_sync;
+               cur_line = -1;
+               cur2 = 0;
+               
             }
-            
-            if (frame_started)
+            //else if (frame_started)
             {
-               if (marker & 3)
+               if (marker & 1)
                {
                   line_valid = true;
-                  sync_start = cur_sync;
-                  auto_off = true;
+                  //sync_start = cur_sync;
+                  //cur_line++;
                }
-               else if (marker & 1)
+               //if (marker == 1)
+               //{
+                  //line_valid = true;
+                  //sync_start = cur_sync;
+               //}
+               if (marker & 2)
                {
+                  cur2++;
                   line_valid = true;
                   sync_start = cur_sync;
-               }
-               else if (marker & 2)
-               {
-                  line_valid = false;
-                  double dsync = cur_sync - sync_start;
                   cur_line++;
+                  //cur_line++;
                }
             }
             
@@ -157,20 +162,26 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
          {
-            double dsync = cur_sync - sync_start;
-            double cur_loc = (cur_sync - sync_start) / sync_count_per_line * n_x_binned;
+            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - 2.2 ) * (n_x_binned);
             int cur_px = static_cast<int>(cur_loc);
             
             int bin = p.dtime >> downsampling;
-            int x = cur_px;
+            int x = cur_px; //% n_x_binned;
             int y = cur_line / spatial_binning_;
             
-            assert(x < n_x_binned);
+            //assert(x < n_x_binned);
             assert(y < n_x_binned);
             
-            if (bin < n_bin)
+            if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (cur_line % spatial_binning_ > 0))
                histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
+            else
+               n_invalid++;
          }
       }
    }
+   
+   
+   std::cout << "Num frames: " << n_frame << "\n";
+   std::cout << "Num invalid: " << n_invalid << "\n";
+   
 }

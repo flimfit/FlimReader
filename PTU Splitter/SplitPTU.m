@@ -8,7 +8,7 @@ function SplitPTU
     prompt = {'Autofocus frames: ';'Frame averaging: ';'Line averaging: '};
     default = {'20', '64', '3'};
     answer = inputdlg(prompt,'Splitting Options',1,default);
-    n_skip = str2double(answer{1});
+    n_skip = str2double(answer{1}) + 1;
     n_frame = str2double(answer{2});
     line_averaging = str2double(answer{3});
 
@@ -20,12 +20,12 @@ function SplitPTU
 
     end_tag_size = 48;
     header_data = fread(fid, header_size - end_tag_size);
+    
     fseek(fid, header_size, 'bof');
 
     idx = 0;
     n = 0;
 
-    start_pos = GetNextFrameClock(fid);
     finished = false;
 
     while (~feof(fid))
@@ -37,16 +37,17 @@ function SplitPTU
         InsertIntegerTag(ofid, 'Line_Averaging', line_averaging);
         InsertEndTag(ofid);
         
-        
+        start_pos = ftell(fid);
         for i=1:n_skip
-            start_pos = GetNextFrameClock(fid);
+            pos = GetNextFrameClock(fid);
+            disp(['Skipping (' num2str(i) ') : ' num2str(pos - start_pos)]);
+            start_pos = pos;
             n = n + 1;
-            disp(['Skipping (' num2str(i) ')']);
         end
         for i=1:n_frame
             pos = GetNextFrameClock(fid);
             n = n + 1;
-            disp(['Reading (' num2str(i) ') from : ' num2str(start_pos) ' to ' num2str(pos)]);
+            disp(['Reading (' num2str(i) ')  : ' num2str(pos - start_pos)]);
             fseek(fid, start_pos, 'bof');
             data = fread(fid, pos - start_pos);
 
@@ -58,7 +59,10 @@ function SplitPTU
             start_pos = pos;
             fwrite(ofid, data);
         end
-
+        
+        %start_pos = GetNextFrameClock(fid);
+        %fseek(fid, start_pos, 'bof');
+       
         if (finished)
             break;
         end
@@ -87,6 +91,7 @@ function SplitPTU
         fwrite(fid, [ident padding]);
         fwrite(fid, 0, 'int32');
         fwrite(fid, tyEmpty8, 'uint32');
+        fwrite(fid, 0, 'int64');        
     end
 
 
