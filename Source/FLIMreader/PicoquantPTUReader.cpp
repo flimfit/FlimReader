@@ -58,6 +58,8 @@ void PicoquantPTUReader::readHeader()
                measurement_mode = tag_head.TagValue;
             if (strcmp(tag_head.Ident, HW_InpChannels)==0)
                routing_channels = tag_head.TagValue;
+            if (strcmp(tag_head.Ident, LineAveraging)==0)
+               spatial_binning_ = tag_head.TagValue;
             break;
             
          case tyBitSet64:

@@ -77,7 +77,9 @@ void AbstractPicoquantReader::determineDwellTime()
 
 void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
 {
-   double time_resolution = resolution * 1000;
+   // Some formats give in resolution ns, some in s. Thanks Picoquant...
+   // Convert both to picoseconds
+   double time_resolution = resolution * ((resolution < 1e-9) ? 1e12 : 1e3);
    int native_resolution = 14 - log2(time_resolution);
    
    
@@ -92,7 +94,7 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
    int downsampling_factor = 1 << downsampling;
    
    double t_0 = 0;
-   double t_step = resolution * downsampling_factor * 1e3; // convert ns->ps
+   double t_step = time_resolution * downsampling_factor; // convert ns->ps
    
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
