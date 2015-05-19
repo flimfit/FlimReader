@@ -91,7 +91,6 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int cur_line = 0;
    bool frame_started = 0;
    bool line_valid = false;
-   bool auto_off = false;
    int sync_start = 0;
    int cur2 = 0;
    

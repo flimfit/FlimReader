@@ -10,8 +10,8 @@
 #define TTTRTagRes         "MeasDesc_Resolution"       // Resolution for the Dtime (T3 Only)
 #define TTTRTagGlobRes     "MeasDesc_GlobalResolution" // Global Resolution of TimeTag(T2) /NSync (T3)
 #define FileTagEnd         "Header_End"                // Always appended as last tag (BLOCKEND)
-#define HW_InpChannels     "HW_InpChannels"
-#define LineAveraging      "Line_Averaging"            // Inserted by PTU splitter
+#define HWRouter_Channels  "HWRouter_Channels"
+#define Line_Averaging     "Line_Averaging"            // Inserted by PTU splitter
 
 // TagTypes  (TTagHead.Typ)
 #define tyEmpty8      0xFFFF0008

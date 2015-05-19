@@ -56,9 +56,9 @@ void PicoquantPTUReader::readHeader()
                n_records = tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
                measurement_mode = tag_head.TagValue;
-            if (strcmp(tag_head.Ident, HW_InpChannels)==0)
+            if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
                routing_channels = tag_head.TagValue;
-            if (strcmp(tag_head.Ident, LineAveraging)==0)
+            if (strcmp(tag_head.Ident, Line_Averaging)==0)
                spatial_binning_ = tag_head.TagValue;
             break;
             
