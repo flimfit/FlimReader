@@ -22,8 +22,8 @@ void AbstractPicoquantReader::determineDwellTime()
    ifstream fs(filename, ifstream::in | ifstream::binary);
    fs.seekg(data_position, ios_base::beg);
    
-   long sync_count_accum = 0;
-   long sync_start_count = 0;
+   double sync_count_accum = 0;
+   double sync_start_count = 0;
    sync_count_per_line = 0;
    int n_averaged = 0;
    int n_frame = 0;
@@ -41,16 +41,18 @@ void AbstractPicoquantReader::determineDwellTime()
          else
          {
             int marker = p.dtime;
-            if (marker & 1)
+            if (n_frame > 0)
             {
-               if (n_frame == 1)
+               if (marker & 1)
+               {
                   n_line++;
-               sync_start_count = sync_count_accum + p.nsync;
-            }
-            if ((marker & 2) && (sync_start_count > 0))
-            {
-               sync_count_per_line += sync_count_accum + p.nsync - sync_start_count;
-               n_averaged++;
+                  sync_start_count = sync_count_accum + p.nsync;
+               }
+               if (marker & 2)
+               {
+                  sync_count_per_line += (sync_count_accum + p.nsync - sync_start_count);
+                  n_averaged++;
+               }
             }
             if (marker & 4)
             {
@@ -63,6 +65,10 @@ void AbstractPicoquantReader::determineDwellTime()
    } while (!fs.eof());
    
    sync_count_per_line /= n_averaged;
+   
+   // KLUDGE FOR JAMES DATA
+   if (sync_count_per_line < 3000)
+      sync_count_per_line = 39393.34;
    
    if (n_y == 0)
    {

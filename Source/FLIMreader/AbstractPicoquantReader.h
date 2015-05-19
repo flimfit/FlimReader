@@ -84,27 +84,35 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int n_records_true = (end_pos - data_position) / 4;
    
    
-   fs.seekg(data_position, ios_base::cur);
+   fs.seekg(data_position, ios_base::beg);
    
    long sync_count_accum = 0;
    int cur_line = 0;
    bool frame_started = 0;
    bool line_valid = false;
+   bool auto_off = false;
    int sync_start = 0;
    
    
    vector<uint32_t> records(n_records_true);
    fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
    
-   int max_t = 0;
-   
    int n_x_binned = n_x / spatial_binning_;
+   
+   int n_frame = 0;
    
    for (int i = 0; i < n_records_true; i++)
    {
       PicoquantT3Event p(records[i]);
       
       int cur_sync = p.nsync + sync_count_accum;
+      
+      if (auto_off && ((cur_sync - sync_start) > sync_count_per_line))
+      {
+         auto_off = false;
+         line_valid = false;
+         cur_line++;
+      }
       
       if (p.special)
       {
@@ -116,20 +124,30 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             
             if (marker & 4)
             {
+               n_frame++;
                frame_started = true;
                cur_line = 0;
             }
             
-            if ((marker & 1) && frame_started)
+            if (frame_started)
             {
-               line_valid = true;
-               sync_start = cur_sync;
-            }
-            
-            if (marker & 2)
-            {
-               line_valid = false;
-               cur_line++;
+               if (marker & 3)
+               {
+                  line_valid = true;
+                  sync_start = cur_sync;
+                  auto_off = true;
+               }
+               else if (marker & 1)
+               {
+                  line_valid = true;
+                  sync_start = cur_sync;
+               }
+               else if (marker & 2)
+               {
+                  line_valid = false;
+                  double dsync = cur_sync - sync_start;
+                  cur_line++;
+               }
             }
             
          }
@@ -139,15 +157,19 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
          {
+            double dsync = cur_sync - sync_start;
             double cur_loc = (cur_sync - sync_start) / sync_count_per_line * n_x_binned;
             int cur_px = static_cast<int>(cur_loc);
             
-            if (p.dtime > max_t)
-               max_t = p.dtime;
-            
             int bin = p.dtime >> downsampling;
+            int x = cur_px;
+            int y = cur_line / spatial_binning_;
+            
+            assert(x < n_x_binned);
+            assert(y < n_x_binned);
+            
             if (bin < n_bin)
-               histogram[bin + n_bin * (mapped_channel + n_chan_stride * (cur_px / spatial_binning_ + n_x_binned * cur_line / spatial_binning_))]++;
+               histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
          }
       }
    }
