@@ -34,6 +34,9 @@ function header_size = GetHeaderSize(fid)
 
     % there is no repeat.. until (or do..while) construct in matlab so we use
     % while 1 ... if (expr) break; end; end;
+    
+    metadata = struct();
+    
     while 1
         % read Tag Head
         TagIdent = fread(fid, 32, '*char'); % TagHead.Ident
@@ -43,7 +46,7 @@ function header_size = GetHeaderSize(fid)
                                             % TagHead.Value will be read in the
                                             % right type function  
         if TagIdx > -1
-          EvalName = [TagIdent '(' int2str(TagIdx + 1) ')'];
+          EvalName = [TagIdent '_' int2str(TagIdx + 1)];
         else
           EvalName = TagIdent;
         end
@@ -57,27 +60,27 @@ function header_size = GetHeaderSize(fid)
                 TagInt = fread(fid, 1, 'int64');
                 if TagInt==0
                     fprintf(1,'FALSE');
-                    eval([EvalName '=false;']);
+                    metadata.(EvalName) = false;
                 else
                     fprintf(1,'TRUE');
-                    eval([EvalName '=true;']);
+                    metadata.(EvalName) = true;
                 end            
             case tyInt8
                 TagInt = fread(fid, 1, 'int64');
                 fprintf(1,'%d', TagInt);
-                eval([EvalName '=TagInt;']);
+                metadata.(EvalName) = TagInt;
             case tyBitSet64
                 TagInt = fread(fid, 1, 'int64');
                 fprintf(1,'%X', TagInt);
-                eval([EvalName '=TagInt;']);
+                metadata.(EvalName) = TagInt;
             case tyColor8    
                 TagInt = fread(fid, 1, 'int64');
                 fprintf(1,'%X', TagInt);
-                eval([EvalName '=TagInt;']);
+                metadata.(EvalName) = TagInt;
             case tyFloat8
                 TagFloat = fread(fid, 1, 'double');
                 fprintf(1, '%e', TagFloat);
-                eval([EvalName '=TagFloat;']);
+                metadata.(EvalName) = TagFloat;
             case tyFloat8Array
                 TagInt = fread(fid, 1, 'int64');
                 fprintf(1,'<Float array with %d Entries>', TagInt / 8);
@@ -85,16 +88,16 @@ function header_size = GetHeaderSize(fid)
             case tyTDateTime
                 TagFloat = fread(fid, 1, 'double');
                 fprintf(1, '%s', datestr(datenum(1899,12,30)+TagFloat)); % display as Matlab Date String
-                eval([EvalName '=datenum(1899,12,30)+TagFloat;']); % but keep in memory as Matlab Date Number
+                metadata.(EvalName) = datenum(1899,12,30)+TagFloat;
             case tyAnsiString
                 TagInt = fread(fid, 1, 'int64');
                 TagString = fread(fid, TagInt, '*char');
                 TagString = (TagString(TagString ~= 0))';
                 fprintf(1, '%s', TagString);
                 if TagIdx > -1
-                   EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
+                   EvalName = [TagIdent '_' int2str(TagIdx + 1)];
                 end;   
-                eval([EvalName '=TagString;']);
+                metadata.(EvalName) = TagString;
             case tyWideString 
                 % Matlab does not support Widestrings at all, just read and
                 % remove the 0's (up to current (2012))
@@ -103,9 +106,9 @@ function header_size = GetHeaderSize(fid)
                 TagString = (TagString(TagString ~= 0))';
                 fprintf(1, '%s', TagString);
                 if TagIdx > -1
-                   EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
+                   EvalName = [TagIdent '_' int2str(TagIdx + 1)];
                 end;
-                eval([EvalName '=TagString;']);
+                metadata.(EvalName) = TagString;
             case tyBinaryBlob
                 TagInt = fread(fid, 1, 'int64');
                 fprintf(1,'<Binary Blob with %d Bytes>', TagInt);
@@ -121,5 +124,5 @@ function header_size = GetHeaderSize(fid)
     header_size = ftell(fid);
     
     fprintf(1, '\n');
-    
+   
 end
