@@ -29,7 +29,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
       {
          string filename = GetStringFromMatlab(prhs[0]);
 
-         auto reader = unique_ptr<FLIMReader>(new PicoquantTTTRReader(filename));
+         auto reader = unique_ptr<FLIMReader>(FLIMReader::createReader(filename));
 
          // Make sure we have an empty place
          if (readers.empty() || readers[readers.size()-1] != nullptr)
@@ -99,6 +99,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
             float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
+         }
+         else if (command == "GetSpatialBinning" && nlhs >= 1)
+         {
+            int spatial_binning = readers[idx]->spatialBinning();
+            plhs[0] = mxCreateDoubleScalar(spatial_binning);
          }
          else if (command == "SetSpatialBinning" && nrhs >= 3)
          {
