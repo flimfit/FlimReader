@@ -5,7 +5,6 @@ function pos = GetNextFrameClock(fid)
     fseek(fid, 4, 'cof'); % make sure we don't read last frame clock
     pos = ftell(fid);
     found = false;
-    num_line = 0;
     
     while (~feof(fid))
         [T3Record, count] = fread(fid, n, 'ubit32'); 
@@ -18,10 +17,8 @@ function pos = GetNextFrameClock(fid)
         if (~isempty(idx))
             found = true;
             pos = pos + idx * 4;
-            num_line = num_line + sum((chan(1:idx) == 15) & (bitand(markers(1:idx), 1) > 0));
             break;
         else
-            num_line = num_line + sum((chan == 15) & (bitand(markers, 1) > 0));
             pos = pos + count * 4;
         end
         
@@ -30,7 +27,5 @@ function pos = GetNextFrameClock(fid)
     
     if (found)
         fseek(fid, pos, 'bof');
-    end
-    
-    disp(['Num Lines ' num2str(num_line)])
+    end    
 end

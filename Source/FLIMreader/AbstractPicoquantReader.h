@@ -117,41 +117,26 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          {
             int marker = p.dtime;
             
-            if ((marker == 1) || (marker == 2) || (marker == 4))
-               int a = 1;
-            
             if (marker & 4)
             {
                std::cout << "Frame marker. Cur Line: " << cur_line << " Cur M2: " << cur2 << "\n";
 
                n_frame++;
                frame_started = true;
-               //line_valid = true;
-               sync_start = cur_sync;
                cur_line = -1;
                cur2 = 0;
-               
             }
             //else if (frame_started)
             {
                if (marker & 1)
                {
                   line_valid = true;
-                  //sync_start = cur_sync;
-                  //cur_line++;
+                  sync_start = cur_sync;
+                  cur_line++;
                }
-               //if (marker == 1)
-               //{
-                  //line_valid = true;
-                  //sync_start = cur_sync;
-               //}
                if (marker & 2)
                {
                   cur2++;
-                  line_valid = true;
-                  sync_start = cur_sync;
-                  cur_line++;
-                  //cur_line++;
                }
             }
             
@@ -166,10 +151,9 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             int cur_px = static_cast<int>(cur_loc);
             
             int bin = p.dtime >> downsampling;
-            int x = cur_px; //% n_x_binned;
+            int x = cur_px;
             int y = cur_line / spatial_binning_;
             
-            //assert(x < n_x_binned);
             assert(y < n_x_binned);
             
             if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (cur_line % spatial_binning_ > 0))
