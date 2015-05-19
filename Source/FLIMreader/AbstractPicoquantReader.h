@@ -77,6 +77,13 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int n_bin = 1 << temporal_resolution_;
    
    ifstream fs(filename, ifstream::in | ifstream::binary);
+   
+   fs.seekg(0, ios_base::end);
+   int end_pos = fs.tellg();
+
+   int n_records_true = (end_pos - data_position) / 4;
+   
+   
    fs.seekg(data_position, ios_base::cur);
    
    long sync_count_accum = 0;
@@ -85,14 +92,15 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    bool line_valid = false;
    int sync_start = 0;
    
-   vector<uint32_t> records(n_records);
-   fs.read(reinterpret_cast<char*>(records.data()), n_records*sizeof(uint32_t));
+   
+   vector<uint32_t> records(n_records_true);
+   fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
    
    int max_t = 0;
    
    int n_x_binned = n_x / spatial_binning_;
    
-   for (int i = 0; i < n_records; i++)
+   for (int i = 0; i < n_records_true; i++)
    {
       PicoquantT3Event p(records[i]);
       
