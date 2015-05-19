@@ -41,6 +41,12 @@ void AbstractPicoquantReader::determineDwellTime()
          else
          {
             int marker = p.dtime;
+            if (marker & 4)
+            {
+               n_frame++;
+               if (n_frame >= 2)
+                  break;
+            }
             if (n_frame > 0)
             {
                if (marker & 1)
@@ -53,12 +59,6 @@ void AbstractPicoquantReader::determineDwellTime()
                   sync_count_per_line += (sync_count_accum + p.nsync - sync_start_count);
                   n_averaged++;
                }
-            }
-            if (marker & 4)
-            {
-               n_frame++;
-               if (n_frame >= 2)
-                  break;
             }
          }
       }
