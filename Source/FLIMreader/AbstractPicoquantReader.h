@@ -49,6 +49,10 @@ protected:
    
    long long data_position = 0;
    double sync_count_per_line;
+   double sync_offset = 0;
+   double first_line_sync_offset = 0;
+   
+   
    int downsampling;
    
    // Required Picoquant information
@@ -118,36 +122,40 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             
             if (marker & 4)
             {
-               std::cout << "Frame marker. Cur Line: " << cur_line << " Cur M2: " << cur2 << "\n";
-
                n_frame++;
                frame_started = true;
                cur_line = -1;
                cur2 = 0;
             }
-            //else if (frame_started)
+            if (frame_started)
             {
+               if (marker & 2)
+               {
+                  line_valid = false;
+                  cur2++;
+               }
                if (marker & 1)
                {
                   line_valid = true;
                   sync_start = cur_sync;
                   cur_line++;
                }
-               if (marker & 2)
-               {
-                  cur2++;
-               }
             }
             
          }
       }
-      else if (line_valid)
+      else if (line_valid && frame_started)
       {
          int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
          {
-            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - 2.2 ) * (n_x_binned);
+            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned);
+
+            if ((cur_line % spatial_binning_) == 0)
+               cur_loc += first_line_sync_offset * n_x_binned;
+            
             int cur_px = static_cast<int>(cur_loc);
+            
             
             int bin = p.dtime >> downsampling;
             int x = cur_px;
@@ -155,7 +163,7 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             
             assert(y < n_x_binned);
             
-            if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (cur_line % spatial_binning_ > 0))
+            if ((bin < n_bin) && (x < n_x_binned) && (x >= 0))
                histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
             else
                n_invalid++;

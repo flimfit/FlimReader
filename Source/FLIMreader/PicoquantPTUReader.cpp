@@ -15,6 +15,7 @@ AbstractPicoquantReader(filename)
    
    n_x = 0;
    n_y = 0;
+   sync_offset = 2.2; // manual fudge factor
    determineDwellTime();
 }
 
