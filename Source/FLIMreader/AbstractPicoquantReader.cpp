@@ -86,7 +86,7 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
    // Some formats give in resolution ns, some in s. Thanks Picoquant...
    // Convert both to picoseconds
    double time_resolution = resolution * ((resolution < 1e-9) ? 1e12 : 1e3);
-   int native_resolution = 14 - log2(time_resolution);
+   int native_resolution = 14 - log2(std::round(time_resolution));
    
    
    temporal_resolution_ = std::min(native_resolution, temporal_resolution);
