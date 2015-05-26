@@ -28,6 +28,7 @@ void AbstractPicoquantReader::determineDwellTime()
    int n_averaged = 0;
    int n_frame = 0;
    int n_line = 0;
+   bool line_started = false;
    do
    {
       uint32_t evt;
@@ -49,26 +50,26 @@ void AbstractPicoquantReader::determineDwellTime()
             }
             if (n_frame > 0)
             {
+               if ((marker & 2) && line_started)
+               {
+                  double diff = sync_count_accum + p.nsync - sync_start_count;
+                  sync_count_per_line += (sync_count_accum + p.nsync - sync_start_count);
+                  n_averaged++;
+                  line_started = false;
+               }
                if (marker & 1)
                {
                   n_line++;
                   sync_start_count = sync_count_accum + p.nsync;
+                  line_started = true;
                }
-               if (marker & 2)
-               {
-                  sync_count_per_line += (sync_count_accum + p.nsync - sync_start_count);
-                  n_averaged++;
-               }
+               
             }
          }
       }
    } while (!fs.eof());
    
    sync_count_per_line /= n_averaged;
-   
-   // KLUDGE FOR JAMES DATA
-   if (sync_count_per_line < 3000)
-      sync_count_per_line = 39393.34;
    
    if (n_y == 0)
    {

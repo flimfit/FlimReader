@@ -51,7 +51,7 @@ protected:
    double sync_count_per_line;
    double sync_offset = 0;
    double first_line_sync_offset = 0;
-   
+   double scan_active_fraction = 1;
    
    int downsampling;
    

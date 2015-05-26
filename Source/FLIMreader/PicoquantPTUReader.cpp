@@ -15,8 +15,14 @@ AbstractPicoquantReader(filename)
    
    n_x = 0;
    n_y = 0;
+   
    sync_offset = 2.2; // manual fudge factor
+   first_line_sync_offset = -0.21;
+   
    determineDwellTime();
+   
+   // KLUDGE FOR JAMES DATA
+   sync_count_per_line = 39393.34;
 }
 
 void PicoquantPTUReader::readHeader()
