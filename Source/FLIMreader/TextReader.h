@@ -25,7 +25,7 @@ protected:
    void readHeader();
 
    char delim = ',';
-   char row_delim = '\r';
+   char row_delim = '\n';
    int n_header_row = 0;
 
    std::vector<std::vector<float>> data;
