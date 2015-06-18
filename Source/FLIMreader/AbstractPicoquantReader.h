@@ -95,7 +95,7 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int cur_line = 0;
    bool frame_started = 0;
    bool line_valid = false;
-   int sync_start = 0;
+   long long sync_start = 0;
    int cur2 = 0;
    
    vector<uint32_t> records(n_records_true);
@@ -149,24 +149,23 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
          {
-            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned);
+            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned-1);
 
             if ((cur_line % spatial_binning_) == 0)
                cur_loc += first_line_sync_offset * n_x_binned;
             
             int cur_px = static_cast<int>(cur_loc);
-            
-            
+                
             int bin = p.dtime >> downsampling;
             int x = cur_px;
             int y = cur_line / spatial_binning_;
             
             assert(y < n_x_binned);
             
-            if ((bin < n_bin) && (x < n_x_binned) && (x >= 0))
-               histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
+			if ((bin < n_bin) && (x < n_x_binned) && (x >= 0))
+				histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
             else
-               n_invalid++;
+				n_invalid++;
          }
       }
    }
@@ -174,5 +173,5 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    
    std::cout << "Num frames: " << n_frame << "\n";
    std::cout << "Num invalid: " << n_invalid << "\n";
-   
+
 }
