@@ -4,6 +4,8 @@
 #include <string>
 #include <cmath>
 #include <fstream>
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/info_parser.hpp>
 
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
@@ -12,7 +14,29 @@ using namespace std;
 AbstractPicoquantReader::AbstractPicoquantReader(const std::string& filename) :
 FLIMReader(filename)
 {
+   readSettings();
+}
+
+void AbstractPicoquantReader::readSettings()
+{
+   using namespace boost;
    
+   filesystem::path filepath(filename);
+   auto metapath = filepath.parent_path();
+   metapath /= "PicoquantLoaderSettings.info";
+   
+   // Try load in shift settings
+   if (filesystem::exists(metapath))
+   {
+      property_tree::ptree tree;
+      property_tree::read_info(metapath.string(), tree);
+      
+      time_shifts_ps.resize(4);
+      time_shifts_ps[0] = tree.get<double>("shifts.1", 0);
+      time_shifts_ps[1] = tree.get<double>("shifts.2", 0);
+      time_shifts_ps[2] = tree.get<double>("shifts.3", 0);
+      time_shifts_ps[3] = tree.get<double>("shifts.4", 0);
+   }
 }
 
 void AbstractPicoquantReader::determineDwellTime()
@@ -101,10 +125,16 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
    int downsampling_factor = 1 << downsampling;
    
    double t_0 = 0;
-   double t_step = time_resolution * downsampling_factor; // convert ns->ps
+   double t_step = time_resolution * downsampling_factor;
    
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
+   
+   t_rep_resunit = std::round(t_rep_ps / time_resolution);
+   
+   time_shifts_resunit.clear();
+   for(auto shift : time_shifts_ps)
+      time_shifts_resunit.push_back(std::round(shift / time_resolution));
 };
 
 int AbstractPicoquantReader::numChannels()

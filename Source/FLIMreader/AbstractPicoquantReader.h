@@ -42,6 +42,8 @@ public:
    
 protected:
    
+   void readSettings();
+   
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    
@@ -55,11 +57,19 @@ protected:
    
    int downsampling;
    
+   std::vector<float> time_shifts_ps;
+   
    // Required Picoquant information
    int routing_channels;
    int measurement_mode;
    int n_records;
    float resolution;
+   float t_rep_ps;
+
+private:
+   
+   int t_rep_resunit;
+   std::vector<int> time_shifts_resunit;
 };
 
 
@@ -155,8 +165,11 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
                cur_loc += first_line_sync_offset * n_x_binned;
             
             int cur_px = static_cast<int>(cur_loc);
-                
-            int bin = p.dtime >> downsampling;
+            
+            int dtime = (p.dtime + time_shifts_resunit[p.channel-1]) % t_rep_resunit;
+            dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
+            int bin = dtime >> downsampling;
+            
             int x = cur_px;
             int y = cur_line / spatial_binning_;
             

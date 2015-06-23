@@ -19,3 +19,4 @@ set(HEADERS
 )
 
 add_executable(FLIMReaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMReader>)
+target_link_libraries(FLIMReaderTest ${FLIMReader_LIBRARIES})
