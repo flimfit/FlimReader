@@ -116,6 +116,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
          }
       }
    }
+   catch (std::runtime_error e)
+   {
+      mexErrMsgIdAndTxt("FLIMreaderMex:exceptionOccurred",
+         e.what());
+   }
    catch (exception e)
    {
       mexErrMsgIdAndTxt("FLIMreaderMex:exceptionOccurred",

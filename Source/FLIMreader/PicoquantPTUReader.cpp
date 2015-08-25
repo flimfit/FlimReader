@@ -34,6 +34,9 @@ void PicoquantPTUReader::readHeader()
    if (string("PQTTTR") != magic)
       throw runtime_error("Wrong magic string, this is not a PTU file");
 
+   routing_channels = 1;
+
+   
    fs.read(version, sizeof(version));
 
    TagHead tag_head;

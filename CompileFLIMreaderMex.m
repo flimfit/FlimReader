@@ -1,7 +1,7 @@
 % Build the FLIMreader MEX file in the current working directory
 
 clear FLIMreaderMex
-cdir = mfilename('fullpath');
+cdir = mfilename('fullpath')
 cdir = strrep(cdir,'CompileFLIMreaderMex','');
 cdir = [cdir 'Source' filesep];
 
