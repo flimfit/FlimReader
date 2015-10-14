@@ -25,13 +25,14 @@ void AbstractPicoquantReader::readSettings()
    auto metapath = filepath.parent_path();
    metapath /= "PicoquantLoaderSettings.info";
    
+   time_shifts_ps.resize(4, 0.0);
+
    // Try load in shift settings
    if (filesystem::exists(metapath))
    {
       property_tree::ptree tree;
       property_tree::read_info(metapath.string(), tree);
       
-      time_shifts_ps.resize(4);
       time_shifts_ps[0] = tree.get<double>("shifts.1", 0);
       time_shifts_ps[1] = tree.get<double>("shifts.2", 0);
       time_shifts_ps[2] = tree.get<double>("shifts.3", 0);

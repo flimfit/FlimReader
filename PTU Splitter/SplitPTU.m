@@ -1,13 +1,26 @@
-function SplitPTU
+function SplitPTU(pathname,filename)
 
-    global pathname
-
-    [filename,pathname] = uigetfile('*.ptu','Choose File',pathname);
-
-
-    prompt = {'Autofocus frames: ';'Frame averaging: ';'Line averaging: '};
-    default = {'20', '64', '3'};
-    answer = inputdlg(prompt,'Splitting Options',1,default);
+    global ptu_pathname__;
+    global ptu_default__;
+    
+    ptu_pathname__ = '';
+    ptu_default__ = {'0', '20', '4'};
+    
+    if nargin == 0    
+        [filename,pathname] = uigetfile('*.ptu','Choose File',ptu_pathname__);
+        ptu_pathname__ = pathname;
+        
+        prompt = {'Autofocus frames: ';'Frame averaging: ';'Line averaging: '};
+        answer = inputdlg(prompt,'Splitting Options',1,ptu_default__);
+        ptu_default__ = answer;
+    else
+        answer = ptu_default__;
+    end
+    
+    output_prefix = strrep(filename, '.ptu', '');
+    output_dir = [pathname output_prefix filesep];    
+    mkdir(output_dir);
+    
     n_skip = str2double(answer{1}) + 1;
     n_frame = str2double(answer{2});
     line_averaging = str2double(answer{3});
@@ -30,7 +43,7 @@ function SplitPTU
 
     while (~feof(fid))
 
-        fname = ['output' filesep 'output_file_' num2str(idx) '.ptu'];
+        fname = [output_dir output_prefix '_' num2str(idx) '.ptu'];
         ofid = fopen(fname,'w');
 
         fwrite(ofid, header_data); 
@@ -71,6 +84,7 @@ function SplitPTU
         idx = idx + 1;
     end
 
+    fclose(ofid);
     fclose(fid);
 
     function InsertIntegerTag(fid, ident, value)

@@ -1,12 +1,24 @@
 % Build the FLIMreader MEX file in the current working directory
 
 clear FLIMreaderMex
+
+% install boost first
+% Windows: http://sourceforge.net/projects/boost/files/boost-binaries/1.59.0/boost_1_59_0-msvc-12.0-64.exe
+% Mac: brew install boost
+
 cdir = mfilename('fullpath')
 cdir = strrep(cdir,'CompileFLIMreaderMex','');
 cdir = [cdir 'Source' filesep];
 
-boost_dir = '/usr/local/include';
-boost_lib_dir = '"/usr/local/lib"';
+if ismac
+    boost_dir = '/usr/local/include';
+    boost_lib_dir = '/usr/local/lib';
+    lib_opt = '-mt';
+else
+    boost_dir = 'C:/local/boost_1_59_0';
+    boost_lib_dir = 'C:/local/boost_1_59_0/lib64-msvc-12.0';
+    lib_opt = '-vc120-mt-1_59';
+end
 
 mex([cdir 'FLIMreaderMex' filesep 'FLIMreaderMex.cpp'], ...
     [cdir 'FLIMReader' filesep 'AbstractPicoquantReader.cpp'], ...
@@ -18,6 +30,6 @@ mex([cdir 'FLIMreaderMex' filesep 'FLIMreaderMex.cpp'], ...
     ['-I' cdir 'FLIMreaderMex'], ...
     ['-I' boost_dir], ...
     ['-L' boost_lib_dir], ... 
-    ['-l' 'boost_filesystem-mt'],...
-    ['-l' 'boost_system-mt'],...
+    ['-l' 'boost_filesystem' lib_opt],...
+    ['-l' 'boost_system' lib_opt],...
     'CXXFLAGS="$CXXFLAGS -std=c++11"');
