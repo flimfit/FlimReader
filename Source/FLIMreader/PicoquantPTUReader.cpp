@@ -2,6 +2,7 @@
 #include "PicoquantHelper.h"
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
