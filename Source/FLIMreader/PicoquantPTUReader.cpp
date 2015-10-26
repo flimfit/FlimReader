@@ -67,7 +67,7 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
                routing_channels = tag_head.TagValue;
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
-               spatial_binning_ = tag_head.TagValue;
+               line_averaging = tag_head.TagValue;
             if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
                t_rep_ps = 1e12 / tag_head.TagValue;
             break;

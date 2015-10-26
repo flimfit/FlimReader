@@ -96,11 +96,14 @@ void AbstractPicoquantReader::determineDwellTime()
    
    sync_count_per_line /= n_averaged;
    
+   if (line_averaging > 1)
+       sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
+   
    if (n_y == 0)
    {
-      n_y = n_line;
-      if (n_x == 0)
-         n_x = n_line;
+      n_y = n_line / line_averaging;
+	  if (n_x == 0)
+         n_x = n_line / line_averaging;
    }
    else
       assert(n_y == n_line);

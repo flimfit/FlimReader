@@ -161,7 +161,7 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
          {
             double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned-1);
 
-            if ((cur_line % spatial_binning_) == 0)
+            if ((cur_line % (spatial_binning_ * line_averaging)) == 0)
                cur_loc += first_line_sync_offset * n_x_binned;
             
             int cur_px = static_cast<int>(cur_loc);
@@ -171,7 +171,7 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             int bin = dtime >> downsampling;
             
             int x = cur_px;
-            int y = cur_line / spatial_binning_;
+            int y = cur_line / (spatial_binning_ * line_averaging);
             
             assert(y < n_x_binned);
             
