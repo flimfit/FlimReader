@@ -8,6 +8,14 @@ set(MATLAB_ADDITIONAL_VERSIONS
     "R2015a=8.5"
     "R2014b=8.4")
 
+if(DEFINED ENV{MATLAB_VER})
+	if(UNIX)
+		set(Matlab_ROOT_DIR "/Applications/Matlab_R$ENV{MATLAB_VER}.app")
+	else()
+		set(Matlab_ROOT_DIR "C:/Program Files/MATLAB/R$ENV{MATLAB_VER}")
+	endif()
+endif()
+
 set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 
