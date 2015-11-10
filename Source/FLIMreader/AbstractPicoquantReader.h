@@ -55,6 +55,7 @@ protected:
    double first_line_sync_offset = 0;
    double scan_active_fraction = 1;
    
+   int line_averaging = 1;
    int downsampling;
    
    std::vector<float> time_shifts_ps;
