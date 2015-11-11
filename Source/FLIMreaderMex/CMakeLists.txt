@@ -10,11 +10,13 @@ set(MATLAB_ADDITIONAL_VERSIONS
 
 if(DEFINED ENV{MATLAB_VER})
 	if(UNIX)
-		set(Matlab_ROOT_DIR "/Applications/Matlab_R$ENV{MATLAB_VER}.app")
+		set(Matlab_ROOT_DIR "/Applications/Matlab_$ENV{MATLAB_VER}.app")
 	else()
-		set(Matlab_ROOT_DIR "C:/Program Files/MATLAB/R$ENV{MATLAB_VER}")
+		set(Matlab_ROOT_DIR "C:/Program Files/MATLAB/$ENV{MATLAB_VER}")
 	endif()
 endif()
+message("Set Matlab root: ${Matlab_ROOT_DIR}")
+
 
 set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
