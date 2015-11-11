@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 
 PROJECT(FLIMreader)
 
-set( Boost_USE_STATIC_LIBS ON )
+if(WIN32)
+   set( Boost_USE_STATIC_LIBS ON )
+endif()
+
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIR})
 
