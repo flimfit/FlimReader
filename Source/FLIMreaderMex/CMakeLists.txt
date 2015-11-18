@@ -36,5 +36,5 @@ matlab_add_mex(NAME FLIMreaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIM
 target_link_libraries(FLIMreaderMex ${FLIMreader_LIBRARIES})
 
 if(FLIMreaderMEX_OUT_DIR)
-   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${CMAKE_BINARY_DIR}/${FLIMreaderMEX_OUT_DIR})
+   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${FLIMreaderMEX_OUT_DIR})
 endif()
