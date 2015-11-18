@@ -1,4 +1,4 @@
-function SplitPTU(pathname,filename)
+function SplitPQ(pathname,filename)
 
     global ptu_pathname__;
     global ptu_default__;
@@ -7,7 +7,7 @@ function SplitPTU(pathname,filename)
     ptu_default__ = {'0', '20', '4'};
     
     if nargin == 0    
-        [filename,pathname] = uigetfile('*.ptu','Choose File',ptu_pathname__);
+        [filename,pathname] = uigetfile({'*.ptu','*.pt3'},'Choose File',ptu_pathname__);
         ptu_pathname__ = pathname;
         
         prompt = {'Autofocus frames: ';'Frame averaging: ';'Line averaging: '};
@@ -17,24 +17,24 @@ function SplitPTU(pathname,filename)
         answer = ptu_default__;
     end
     
-    output_prefix = strrep(filename, '.ptu', '');
+    [~, output_prefix, ext] = fileparts(filename);
+    
     output_dir = [pathname output_prefix filesep];    
     mkdir(output_dir);
     
-    n_skip = str2double(answer{1}) + 1;
+    n_skip = str2double(answer{1});
     n_frame = str2double(answer{2});
     line_averaging = str2double(answer{3});
 
 
     fid=fopen([pathname filename]);
 
-    header_size = GetHeaderSize(fid);
+    [header_size, end_tag_size] = GetHeaderSize(fid, ext);
     fseek(fid, 0, 'bof');
 
-    end_tag_size = 48;
     header_data = fread(fid, header_size - end_tag_size);
     
-    fseek(fid, header_size, 'bof');
+    fseek(fid, header_size-4, 'bof');
 
     idx = 0;
     n = 0;
@@ -43,12 +43,15 @@ function SplitPTU(pathname,filename)
 
     while (~feof(fid))
 
-        fname = [output_dir output_prefix '_' num2str(idx) '.ptu'];
+        fname = [output_dir output_prefix '_' num2str(idx) ext];
         ofid = fopen(fname,'w');
 
         fwrite(ofid, header_data); 
-        InsertIntegerTag(ofid, 'Line_Averaging', line_averaging);
-        InsertEndTag(ofid);
+        
+        if strcmp(ext,'.ptu')
+            InsertIntegerTag(ofid, 'Line_Averaging', line_averaging);
+            InsertEndTag(ofid);
+        end
         
         start_pos = ftell(fid);
         for i=1:n_skip
