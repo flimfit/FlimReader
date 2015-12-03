@@ -4,7 +4,7 @@ function SplitPQ(pathname,filename)
     global ptu_default__;
     
     ptu_pathname__ = '';
-    ptu_default__ = {'0', '20', '4'};
+    ptu_default__ = {'0', '20', '1'};
     
     if nargin == 0    
         [filename,pathname] = uigetfile({'*.ptu','*.pt3'},'Choose File',ptu_pathname__);
@@ -20,6 +20,7 @@ function SplitPQ(pathname,filename)
     [~, output_prefix, ext] = fileparts(filename);
     
     output_dir = [pathname output_prefix filesep];    
+    output_dir = [pathname 'SplitFiles' filesep];    
     mkdir(output_dir);
     
     n_skip = str2double(answer{1});
