@@ -33,10 +33,10 @@ void AbstractPicoquantReader::readSettings()
       property_tree::ptree tree;
       property_tree::read_info(metapath.string(), tree);
       
-      time_shifts_ps[0] = tree.get<double>("shifts.1", 0);
-      time_shifts_ps[1] = tree.get<double>("shifts.2", 0);
-      time_shifts_ps[2] = tree.get<double>("shifts.3", 0);
-      time_shifts_ps[3] = tree.get<double>("shifts.4", 0);
+      time_shifts_ps[0] = tree.get<float>("shifts.1", 0);
+      time_shifts_ps[1] = tree.get<float>("shifts.2", 0);
+      time_shifts_ps[2] = tree.get<float>("shifts.3", 0);
+      time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
    }
 }
 
@@ -115,7 +115,7 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
    // Some formats give in resolution ns, some in s. Thanks Picoquant...
    // Convert both to picoseconds
    double time_resolution = resolution * ((resolution < 1e-9) ? 1e12 : 1e3);
-   int native_resolution = 14 - log2(std::round(time_resolution));
+   int native_resolution = 14 - static_cast<int>(log2(std::round(time_resolution)));
    
    
    temporal_resolution_ = std::min(native_resolution, temporal_resolution);
@@ -134,11 +134,11 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
    
-   t_rep_resunit = std::round(t_rep_ps / time_resolution);
+   t_rep_resunit = (int) std::round(t_rep_ps / time_resolution);
    
    time_shifts_resunit.clear();
    for(auto shift : time_shifts_ps)
-      time_shifts_resunit.push_back(std::round(shift / time_resolution));
+      time_shifts_resunit.push_back((int) std::round(shift / time_resolution));
 };
 
 int AbstractPicoquantReader::numChannels()

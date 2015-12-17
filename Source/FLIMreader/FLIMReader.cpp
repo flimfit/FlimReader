@@ -55,7 +55,7 @@ std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_
    }
 
    if (n_chan_stride < validated_channels.size() || n_chan_stride == -1)
-      n_chan_stride = validated_channels.size();
+      n_chan_stride = (int) validated_channels.size();
    
    return validated_channels;
 }

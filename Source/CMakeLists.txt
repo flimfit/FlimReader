@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(FLIMreader)
 
+option(GENERATE_MEX ON)
+
 if(MSVC)
    set(PLATFORM_FLAGS_ALL "/Oi /fp:fast")
    set(PLATFORM_FLAGS_RELEASE "/Ox /Ot /Ob2")
@@ -24,4 +26,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${PLATFORM_FLAGS_DEBUG}")
 # CMakeLists.txt
 add_subdirectory(FLIMReader)
 add_subdirectory(FLIMReaderTest)
-add_subdirectory(FLIMReaderMex)
+
+if(GENERATE_MEX)
+   add_subdirectory(FLIMReaderMex)
+endif()

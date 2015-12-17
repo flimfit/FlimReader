@@ -95,9 +95,9 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    ifstream fs(filename, ifstream::in | ifstream::binary);
    
    fs.seekg(0, ios_base::end);
-   int end_pos = fs.tellg();
+   size_t end_pos = fs.tellg();
 
-   int n_records_true = (end_pos - data_position) / 4;
+   size_t n_records_true = (end_pos - data_position) / 4;
    
    
    fs.seekg(data_position, ios_base::beg);
