@@ -2,6 +2,7 @@
 #include "PicoquantHelper.h"
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -15,6 +16,10 @@ AbstractPicoquantReader(filename)
    
    n_x = 0;
    n_y = 0;
+   
+   sync_offset = 0; // 2.2; // manual fudge factor
+   first_line_sync_offset = 0; // -0.21;
+   
    determineDwellTime();
 }
 
@@ -30,6 +35,9 @@ void PicoquantPTUReader::readHeader()
    if (string("PQTTTR") != magic)
       throw runtime_error("Wrong magic string, this is not a PTU file");
 
+   routing_channels = 1;
+
+   
    fs.read(version, sizeof(version));
 
    TagHead tag_head;
@@ -56,8 +64,12 @@ void PicoquantPTUReader::readHeader()
                n_records = tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
                measurement_mode = tag_head.TagValue;
-            if (strcmp(tag_head.Ident, HW_InpChannels)==0)
+            if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
                routing_channels = tag_head.TagValue;
+            if (strcmp(tag_head.Ident, Line_Averaging)==0)
+               line_averaging = tag_head.TagValue;
+            if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
+               t_rep_ps = 1e12 / tag_head.TagValue;
             break;
             
          case tyBitSet64:

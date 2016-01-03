@@ -1,17 +1,26 @@
-filename = 'TestData\BaseName_9_1.pt3';
+
+folder = 'PTU Splitter/output/';
+files = dir([folder '*.ptu']);
+
+for i=1:1
+    
+filename = [folder files(i).name]
 
 r = FLIMreaderMex(filename);
 n_chan = FLIMreaderMex(r,'GetNumberOfChannels');
 
 t = FLIMreaderMex(r,'GetTimePoints');
-data = FLIMreaderMex(r,'GetData',0);
+data = FLIMreaderMex(r,'GetData',1);
 
 FLIMreaderMex(r,'Delete');
-%%
+data = sum(data,1);
+data = sum(data,2);
+data = squeeze(data);
+end
+
 clf
-d = reshape(data,[256,512*512]);
-plot(t,sum(d,2))
-
-%%
-
-imagesc(squeeze(sum(data,1)))
+imagesc(data')
+daspect([1 1 1 ])
+%xlim([150 250]);
+%ylim([75 160])
+colorbar

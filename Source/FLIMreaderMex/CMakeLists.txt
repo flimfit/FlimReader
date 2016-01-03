@@ -1,48 +1,40 @@
 cmake_minimum_required(VERSION 3.0)
 
-PROJECT(FLIMReaderMex)
+project(FLIMreaderMex)
 
-cmake_policy(SET CMP0020 NEW)
-cmake_policy(SET CMP0043 NEW)
+# Find MATLAB
+set(MATLAB_ADDITIONAL_VERSIONS
+    "R2015b=8.6"
+    "R2015a=8.5"
+    "R2014b=8.4")
 
-# MATLAB stuff
-#====================================
-
-if(UNIX)
-   set(MATLAB_EXTERN_DIR "/Applications/MATLAB_R2014b.app/extern/")
-   set(MATLAB_LIB_DIR ${MATLAB_EXTERN_DIR}lib/maci64/)
-   set(MATLAB_LIBRARIES ${MATLAB_LIB_DIR}fexport.map ${MATLAB_LIB_DIR}mexFunction.map ${MATLAB_LIB_DIR}mexLibrary.map)
-   set(MEX_EXT ".mexmaci64")
-else(UNIX)
-   set(MATLAB_EXTERN_DIR "C:/Program Files/MATLAB/R2014b/extern/")
-   set(MATLAB_LIB_DIR ${MATLAB_EXTERN_DIR}lib/win64/microsoft/)
-   set(MATLAB_LIBRARIES ${MATLAB_LIB_DIR}libmat.lib ${MATLAB_LIB_DIR}libmex.lib ${MATLAB_LIB_DIR}libmx.lib)
-   set(MEX_EXT ".mexw64")
-endif(UNIX)
-set(MATLAB_INCLUDE_DIR ${MATLAB_EXTERN_DIR}include)
+if(DEFINED ENV{MATLAB_VER})
+	if(UNIX)
+		set(Matlab_ROOT_DIR "/Applications/Matlab_$ENV{MATLAB_VER}.app")
+	else()
+		set(Matlab_ROOT_DIR "C:/Program Files/MATLAB/$ENV{MATLAB_VER}")
+	endif()
+endif()
+message("Set Matlab root: ${Matlab_ROOT_DIR}")
 
 
-include_directories(${MATLAB_INCLUDE_DIR})
-include_directories(../FLIMReader)
+set(MATLAB_FIND_DEBUG TRUE)
+find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 
-# Source Files
-#====================================
+include_directories(../FLIMreader)
+
 set(SOURCE
-   FLIMReaderMex.cpp
+   FLIMreaderMex.cpp
 )
 
 set(HEADERS
    MexUtils.h
 )
 
-add_library(FLIMReaderMex MODULE ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMReader>)
-add_definitions(-DMATLAB_MEX_FILE)
+matlab_add_mex(NAME FLIMreaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreader>)
 
-# Needed for entry point.
-set_target_properties(FLIMReaderMex PROPERTIES LINK_FLAGS "/export:mexFunction" )
+target_link_libraries(FLIMreaderMex ${FLIMreader_LIBRARIES})
 
-# Change the dll extension to a mex extension.
-
-if (OUT_DIR)
-   add_custom_command(TARGET FLIMReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMReaderMex> ${OUT_DIR})
-endif (OUT_DIR)
+if(FLIMreaderMEX_OUT_DIR)
+   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${FLIMreaderMEX_OUT_DIR})
+endif()

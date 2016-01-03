@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
 
-PROJECT(FLIMReader)
+PROJECT(FLIMreader)
 
-cmake_policy(SET CMP0020 NEW)
-cmake_policy(SET CMP0043 NEW)
+if(WIN32)
+   set( Boost_USE_STATIC_LIBS ON )
+endif()
+
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+include_directories(${Boost_INCLUDE_DIR})
 
 set(SOURCE
-   FLIMReader.cpp
+   FLIMreader.cpp
    AbstractPicoquantReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
@@ -14,7 +18,7 @@ set(SOURCE
 )
 
 set(HEADERS
-   FLIMReader.h
+   FLIMreader.h
    AbstractPicoquantReader.h
    PicoquantTTRReader.h
    PicoquantPTUReader.h
@@ -22,4 +26,6 @@ set(HEADERS
    TextReader.h
 )
 
-add_library(FLIMReader OBJECT ${SOURCE} ${HEADERS})
+set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)
+add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
+

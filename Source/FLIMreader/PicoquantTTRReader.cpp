@@ -12,23 +12,26 @@ PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
 AbstractPicoquantReader(filename)
 {
    readHeader();
-   setTemporalResolution(8);
-   determineDwellTime();
-
+   
    routing_channels = info.routing_channels;
    measurement_mode = info.measurement_mode;
    n_records = info.n_records;
    resolution = hw_info.resolution;
    n_x = info.n_x;
    n_y = info.n_y;
+   t_rep_ps = 1e12/info.input0_countrate; // rep time in picoseconds
+   
+   setTemporalResolution(8);
+   determineDwellTime();
 }
 
 void PicoquantTTTRReader::readHeader()
 {
    ifstream fs(filename, ifstream::in | ifstream::binary);
 
-   assert(fs.is_open());
-
+   if(!fs.is_open())
+      throw std::runtime_error("Could not open file");
+   
    READ(fs, info.ident);
    READ(fs, info.format_version);
    READ(fs, info.creator_name);

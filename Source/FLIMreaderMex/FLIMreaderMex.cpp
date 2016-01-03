@@ -96,15 +96,30 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
-            plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
-            float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
+            plhs[0] = mxCreateNumericArray(4, dims, mxUINT16_CLASS, mxREAL);
+			uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
-         } 
+         }
+         else if (command == "GetSpatialBinning" && nlhs >= 1)
+         {
+            int spatial_binning = readers[idx]->spatialBinning();
+            plhs[0] = mxCreateDoubleScalar(spatial_binning);
+         }
+         else if (command == "SetSpatialBinning" && nrhs >= 3)
+         {
+            int spatial_binning = mxGetScalar(prhs[2]);
+            readers[idx]->setSpatialBinning(spatial_binning);
+         }
          else if (command == "Delete")
          {
             readers[idx] = nullptr;
          }
       }
+   }
+   catch (std::runtime_error e)
+   {
+      mexErrMsgIdAndTxt("FLIMreaderMex:exceptionOccurred",
+         e.what());
    }
    catch (exception e)
    {

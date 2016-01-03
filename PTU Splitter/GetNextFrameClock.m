@@ -16,15 +16,16 @@ function pos = GetNextFrameClock(fid)
         
         if (~isempty(idx))
             found = true;
-            pos = pos + (idx-1) * 4;
+            pos = pos + idx * 4;
             break;
+        else
+            pos = pos + count * 4;
         end
         
-        pos = pos + count * 4;
         
     end
     
     if (found)
         fseek(fid, pos, 'bof');
-    end
+    end    
 end

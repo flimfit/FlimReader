@@ -4,7 +4,7 @@
 #include "PicoquantBINReader.h"
 #include "TextReader.h"
 
-FLIMReader* FLIMReader::createReader(std::string& filename)
+FLIMReader* FLIMReader::createReader(const std::string& filename)
 {
    std::string extension = determineExtension(filename);
 
@@ -30,7 +30,7 @@ FLIMReader::FLIMReader(const std::string& filename_)
    temporal_resolution_ = 1;
 }
 
-std::string FLIMReader::determineExtension(std::string& filename)
+std::string FLIMReader::determineExtension(const std::string& filename)
 {
    size_t last_dot, pos = 0;
    while ((pos = filename.find('.', pos + 1)) != std::string::npos)
