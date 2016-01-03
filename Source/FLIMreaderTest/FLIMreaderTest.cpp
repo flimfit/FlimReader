@@ -9,16 +9,16 @@ int main()
    
    //filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/james.pt3";
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
-   
+   filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(8);
 //   reader->setSpatialBinning(2);
    
    
    int sz = reader->dataSizePerChannel();
-   std::vector<float> d(sz*2);
+   std::vector<uint16_t> d(sz);
 
-   reader->readData(d.data(), { 0, 1 });
+   reader->readData(d.data(), { 1 });
 
 
    return 0;

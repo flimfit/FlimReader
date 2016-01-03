@@ -1,6 +1,7 @@
 #include "FLIMReader.h"
 #include "PicoquantTTRReader.h"
 #include "PicoquantPTUReader.h"
+#include "PicoquantBINReader.h"
 #include "TextReader.h"
 
 FLIMReader* FLIMReader::createReader(const std::string& filename)
@@ -13,6 +14,8 @@ FLIMReader* FLIMReader::createReader(const std::string& filename)
       return new PicoquantTTTRReader(filename);
    else if (extension == "ptu")
       return new PicoquantPTUReader(filename);
+   else if (extension == "bin" || extension == "bin2")
+      return new PicoquantBINReader(filename, extension);
 
    throw std::runtime_error("Unrecognised file format");
 }
@@ -62,6 +65,6 @@ std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_
 
 int FLIMReader::dataSizePerChannel()
 {
-   int n_bin = 1 << temporal_resolution_;
+   int n_bin = timepoints_.size();
    return n_bin * n_x * n_y / spatial_binning_ / spatial_binning_;
 }
