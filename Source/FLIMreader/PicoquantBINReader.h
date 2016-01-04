@@ -50,7 +50,7 @@ private:
       timepoints_.resize(n_timepoints);
 
       for (int i = 0; i < n_timepoints; i++)
-         timepoints_[i] = i * TimeResol;
+         timepoints_[i] = i * TimeResol * 1000;
 
    }
 
@@ -85,16 +85,16 @@ private:
       
       for (int y = 0; y < n_y; y++)
       {
-         yi = y >> spatial_binning_;
+         yi = y / spatial_binning_;
          for (int x = 0; x < n_x; x++)
          {
-            xi = x >> spatial_binning_;
+            xi = x / spatial_binning_;
             for (int c = 0; c < n_chan; c++)
             {
                int mapped_channel = channel_map[c];
                if (mapped_channel > -1)
                {
-                  int p = (yi*n_xi + xi*n_chan_stride + mapped_channel)*n_timepoints;
+                  int p = ((yi*n_xi+xi)*n_chan_stride + mapped_channel)*n_timepoints;
 
                   for (int t = 0; t < n_timepoints; t++)
                   {
