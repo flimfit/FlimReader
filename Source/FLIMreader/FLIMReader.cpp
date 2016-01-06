@@ -65,6 +65,6 @@ std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_
 
 int FLIMReader::dataSizePerChannel()
 {
-   int n_bin = timepoints_.size();
+   int n_bin = (int) timepoints_.size();
    return n_bin * n_x * n_y / spatial_binning_ / spatial_binning_;
 }

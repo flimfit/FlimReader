@@ -54,20 +54,20 @@ void PicoquantPTUReader::readHeader()
             break;
             
          case tyBool8:
-            cout << bool(tag_head.TagValue);
+            cout << (bool) tag_head.TagValue;
             break;
             
          case tyInt8:
-            cout << int(tag_head.TagValue);
+            cout << (int) tag_head.TagValue;
             // get some Values we need to analyse records
             if (strcmp(tag_head.Ident, TTTRTagNumRecords)==0) // Number of records
                n_records = tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
-               measurement_mode = tag_head.TagValue;
+               measurement_mode = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
-               routing_channels = tag_head.TagValue;
+               routing_channels = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
-               line_averaging = tag_head.TagValue;
+               line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
                t_rep_ps = 1e12 / tag_head.TagValue;
             break;

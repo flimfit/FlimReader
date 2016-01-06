@@ -63,7 +63,7 @@ protected:
    // Required Picoquant information
    int routing_channels;
    int measurement_mode;
-   int n_records;
+   long long n_records;
    float resolution;
    float t_rep_ps;
 
