@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(FLIMreader)
 
-option(GENERATE_MEX ON)
+option(GENERATE_MEX "Generate FLIMreader Mex file" ON)
 
 if(MSVC)
    set(PLATFORM_FLAGS_ALL "/Oi /fp:fast")
