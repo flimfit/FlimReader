@@ -113,6 +113,7 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
    
    int n_x_binned = n_x / spatial_binning_;
+   int n_y_binned = n_y / spatial_binning_;
    
    int n_frame = 0;
    int n_invalid = 0;
@@ -173,10 +174,8 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
             
             int x = cur_px;
             int y = cur_line / (spatial_binning_ * line_averaging);
-            
-            assert(y < n_x_binned);
-            
-			if ((bin < n_bin) && (x < n_x_binned) && (x >= 0))
+                        
+			if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
 				histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
             else
 				n_invalid++;
