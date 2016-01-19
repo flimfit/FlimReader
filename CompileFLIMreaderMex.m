@@ -1,5 +1,5 @@
+function CompileFLIMreaderMex(outdir)
 % Build the FLIMreader MEX file in the current working directory
-
 clear FLIMreaderMex
 
 % install boost first
@@ -9,6 +9,10 @@ clear FLIMreaderMex
 cdir = mfilename('fullpath')
 cdir = strrep(cdir,'CompileFLIMreaderMex','');
 cdir = [cdir 'Source' filesep];
+
+if nargin < 1
+    outdir = pwd;
+end
 
 if ismac
     boost_dir = '/usr/local/include';
@@ -20,7 +24,8 @@ else
     lib_opt = '-vc120-mt-1_59';
 end
 
-mex([cdir 'FLIMreaderMex' filesep 'FLIMreaderMex.cpp'], ...
+mex('-outdir', outdir,...
+    [cdir 'FLIMreaderMex' filesep 'FLIMreaderMex.cpp'], ...
     [cdir 'FLIMReader' filesep 'AbstractPicoquantReader.cpp'], ...
     [cdir 'FLIMReader' filesep 'PicoquantTTRReader.cpp'], ...
     [cdir 'FLIMReader' filesep 'PicoquantPTUReader.cpp'], ...
