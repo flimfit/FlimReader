@@ -9,7 +9,7 @@ using namespace std;
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
 PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
-AbstractPicoquantReader(filename)
+AbstractFifoReader(filename)
 {
    readHeader();
    

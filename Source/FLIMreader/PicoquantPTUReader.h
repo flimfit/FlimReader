@@ -1,7 +1,7 @@
 #pragma once
-#include "AbstractPicoquantReader.h"
+#include "AbstractFifoReader.h"
 
-class PicoquantPTUReader : public AbstractPicoquantReader
+class PicoquantPTUReader : public AbstractFifoReader
 {
 public:
    

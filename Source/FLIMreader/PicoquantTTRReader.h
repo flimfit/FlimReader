@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AbstractPicoquantReader.h"
+#include "AbstractFifoReader.h"
 
 #include <cstdint>
 #include <cassert>
@@ -59,7 +59,7 @@ struct PicoquantTTRInfo
 
 
 
-class PicoquantTTTRReader : public AbstractPicoquantReader
+class PicoquantTTTRReader : public AbstractFifoReader
 {
 public:
 

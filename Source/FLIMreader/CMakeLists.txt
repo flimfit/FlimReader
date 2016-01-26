@@ -11,7 +11,7 @@ include_directories(${Boost_INCLUDE_DIR})
 
 set(SOURCE
    FLIMreader.cpp
-   AbstractPicoquantReader.cpp
+   AbstractFifoReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
    TextReader.cpp
@@ -19,7 +19,7 @@ set(SOURCE
 
 set(HEADERS
    FLIMreader.h
-   AbstractPicoquantReader.h
+   AbstractFifoReader.h
    PicoquantTTRReader.h
    PicoquantPTUReader.h
    PicoquantHelper.h

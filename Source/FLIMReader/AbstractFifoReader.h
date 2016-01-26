@@ -25,12 +25,64 @@ public:
    int nsync;
 };
 
-
-class AbstractPicoquantReader : public FLIMReader
+class TcspcEvent
 {
 public:
    
-   AbstractPicoquantReader(const std::string& filename);
+   virtual bool isPhoton() = 0;
+   virtual bool isPixelMarker() = 0;
+   virtual bool isLineStartMarker() = 0;
+   virtual bool isLineEndMarker() = 0;
+   virtual bool isFrameMarker() = 0;
+};
+
+
+class AbstractEventReader
+{
+public:
+   AbstractEventReader(const std::string& filename, int data_position) :
+   data_position(data_position)
+   {
+      fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
+      setToStart();
+   }
+   
+   void setToStart()
+   {
+      fs.seekg(data_position, std::ios_base::beg);
+   }
+
+   bool hasMoreData()
+   {
+      return !fs.eof();
+   }
+
+   virtual PicoquantT3Event getEvent() = 0;
+   
+protected:
+   
+   std::ifstream fs;
+   int data_position;
+
+};
+
+class PicoquantEventReader : public AbstractEventReader
+{
+public:
+   
+   PicoquantT3Event getEvent()
+   {
+      uint32_t evt;
+      fs.read(reinterpret_cast<char *>(&evt), sizeof(evt));
+      return PicoquantT3Event(evt);   
+   }
+};
+
+class AbstractFifoReader : public FLIMReader
+{
+public:
+   
+   AbstractFifoReader(const std::string& filename);
    
    void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
@@ -67,6 +119,8 @@ protected:
    float resolution;
    float t_rep_ps;
 
+   AbstractEventReader* event_reader = nullptr;
+   
 private:
    
    int t_rep_resunit;
@@ -76,13 +130,14 @@ private:
 
 
 template<typename T>
-void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
+void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
    using namespace std;
-   
+
    auto channels = validateChannels(channels_, n_chan_stride);
    
    assert(measurement_mode == 3);
+   assert(event_reader != nullptr);
    
    // Determine channel mapping
    std::vector<int> channel_map(routing_channels, -1);
@@ -91,16 +146,15 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
       channel_map[c] = idx++;
    
    int n_bin = 1 << temporal_resolution_;
-   
+   /*
    ifstream fs(filename, ifstream::in | ifstream::binary);
    
    fs.seekg(0, ios_base::end);
    size_t end_pos = fs.tellg();
 
    size_t n_records_true = (end_pos - data_position) / 4;
-   
-   
-   fs.seekg(data_position, ios_base::beg);
+   */
+   event_reader->setToStart();
    
    long long sync_count_accum = 0;
    int cur_line = 0;
@@ -109,8 +163,8 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    long long sync_start = 0;
    int cur2 = 0;
    
-   vector<uint32_t> records(n_records_true);
-   fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
+   //vector<uint32_t> records(n_records_true);
+   //fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
    
    int n_x_binned = n_x / spatial_binning_;
    int n_y_binned = n_y / spatial_binning_;
@@ -118,9 +172,9 @@ void AbstractPicoquantReader::readData_(T* histogram, const std::vector<int>& ch
    int n_frame = 0;
    int n_invalid = 0;
    
-   for (int i = 0; i < n_records_true; i++)
+   while(event_reader->hasMoreData())
    {
-      PicoquantT3Event p(records[i]);
+      PicoquantT3Event p = event_reader->getEvent();
       
       long long cur_sync = p.nsync + sync_count_accum;
       

@@ -1,4 +1,4 @@
-#include "AbstractPicoquantReader.h"
+#include "AbstractFifoReader.h"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -11,13 +11,13 @@
 
 using namespace std;
 
-AbstractPicoquantReader::AbstractPicoquantReader(const std::string& filename) :
+AbstractFifoReader::AbstractFifoReader(const std::string& filename) :
 FLIMReader(filename)
 {
    readSettings();
 }
 
-void AbstractPicoquantReader::readSettings()
+void AbstractFifoReader::readSettings()
 {
    using namespace boost;
    
@@ -40,12 +40,12 @@ void AbstractPicoquantReader::readSettings()
    }
 }
 
-void AbstractPicoquantReader::determineDwellTime()
+void AbstractFifoReader::determineDwellTime()
 {
    assert(measurement_mode == 3);
+   assert(event_reader != nullptr);
    
-   ifstream fs(filename, ifstream::in | ifstream::binary);
-   fs.seekg(data_position, ios_base::beg);
+   event_reader->setToStart();
    
    double sync_count_accum = 0;
    double sync_start_count = 0;
@@ -56,9 +56,7 @@ void AbstractPicoquantReader::determineDwellTime()
    bool line_started = false;
    do
    {
-      uint32_t evt;
-      READ(fs, evt);
-      PicoquantT3Event p(evt);
+      PicoquantT3Event p = event_reader->getEvent();
       
       if (p.special)
       {
@@ -92,7 +90,7 @@ void AbstractPicoquantReader::determineDwellTime()
             }
          }
       }
-   } while (!fs.eof());
+   } while (event_reader->hasMoreData());
    
    sync_count_per_line /= n_averaged;
    
@@ -110,7 +108,7 @@ void AbstractPicoquantReader::determineDwellTime()
    
 }
 
-void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
+void AbstractFifoReader::setTemporalResolution(int temporal_resolution)
 {
    // Some formats give in resolution ns, some in s. Thanks Picoquant...
    // Convert both to picoseconds
@@ -141,7 +139,7 @@ void AbstractPicoquantReader::setTemporalResolution(int temporal_resolution)
       time_shifts_resunit.push_back((int) std::round(shift / time_resolution));
 };
 
-int AbstractPicoquantReader::numChannels()
+int AbstractFifoReader::numChannels()
 {
    return routing_channels;
 }
