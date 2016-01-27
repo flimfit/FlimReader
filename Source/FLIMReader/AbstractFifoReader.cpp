@@ -47,8 +47,8 @@ void AbstractFifoReader::determineDwellTime()
    
    event_reader->setToStart();
    
-   double sync_count_accum = 0;
-   double sync_start_count = 0;
+   uint64_t sync_count_accum = 0;
+   uint64_t sync_start_count = 0;
    sync_count_per_line = 0;
    int n_averaged = 0;
    int n_frame = 0;
@@ -56,39 +56,33 @@ void AbstractFifoReader::determineDwellTime()
    bool line_started = false;
    do
    {
-      PicoquantT3Event p = event_reader->getEvent();
-      
-      if (p.special)
+      TcspcEvent p = event_reader->getEvent();
+
+      sync_count_accum += p.macro_time_offset;
+      uint64_t macro_time = sync_count_accum + p.macro_time;
+
+      if (p.mark & markers.FrameMarker)
       {
-         if (p.dtime == 0)
-            sync_count_accum += 0xFFFF;
-         else
+         n_frame++;
+         if (n_frame >= 2)
+            break;
+      }
+      if (n_frame > 0)
+      {
+         if ((p.mark & markers.LineEndMarker) && line_started)
          {
-            int marker = p.dtime;
-            if (marker & 4)
-            {
-               n_frame++;
-               if (n_frame >= 2)
-                  break;
-            }
-            if (n_frame > 0)
-            {
-               if ((marker & 2) && line_started)
-               {
-                  double diff = sync_count_accum + p.nsync - sync_start_count;
-                  sync_count_per_line += (sync_count_accum + p.nsync - sync_start_count);
-                  n_averaged++;
-                  line_started = false;
-               }
-               if (marker & 1)
-               {
-                  n_line++;
-                  sync_start_count = sync_count_accum + p.nsync;
-                  line_started = true;
-               }
-               
-            }
+            uint64_t diff = macro_time - sync_start_count;
+            sync_count_per_line += (macro_time - sync_start_count);
+            n_averaged++;
+            line_started = false;
          }
+         if (p.mark & markers.LineStartMarker)
+         {
+            n_line++;
+            sync_start_count = macro_time;
+            line_started = true;
+         }
+
       }
    } while (event_reader->hasMoreData());
    

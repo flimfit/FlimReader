@@ -51,7 +51,7 @@ void TextReader::readHeader()
 
             try
             {
-               data[chan].push_back(stod(field));
+               data[chan].push_back((float) stod(field));
             }
             catch(std::out_of_range)
             {

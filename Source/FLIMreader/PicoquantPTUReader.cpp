@@ -13,7 +13,13 @@ AbstractFifoReader(filename)
 {
    readHeader();
    setTemporalResolution(8);
-   
+
+   markers.FrameMarker = 0x4;
+   markers.LineEndMarker = 0x2;
+   markers.LineStartMarker = 0x1;
+
+   event_reader = std::make_unique<PicoquantEventReader>(filename, data_position);
+
    n_x = 0;
    n_y = 0;
    
@@ -69,7 +75,7 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
                line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
-               t_rep_ps = 1e12 / tag_head.TagValue;
+               t_rep_ps = 1e12f / tag_head.TagValue;
             break;
             
          case tyBitSet64:

@@ -6,36 +6,29 @@
 #include <string>
 #include <cassert>
 #include <iostream>
+#include <memory>
 
-class PicoquantT3Event
+class Markers
 {
 public:
-   PicoquantT3Event(uint32_t evt)
-   {
-      nsync = evt & 0xFFFF; evt >>= 16;
-      dtime = evt & 0xFFF; evt >>= 12;
-      channel = evt & 0xF;
-      
-      special = (channel == 15);
-   }
-   
-   bool special;
-   int channel;
-   int dtime;
-   int nsync;
+   uint8_t PhotonMarker = 0x0;
+   uint8_t PixelMarker = 0x1;
+   uint8_t LineStartMarker = 0x2;
+   uint8_t LineEndMarker = 0x4;
+   uint8_t FrameMarker = 0x8;
+   uint8_t Invalid = 0x80;
 };
+
 
 class TcspcEvent
 {
 public:
-   
-   virtual bool isPhoton() = 0;
-   virtual bool isPixelMarker() = 0;
-   virtual bool isLineStartMarker() = 0;
-   virtual bool isLineEndMarker() = 0;
-   virtual bool isFrameMarker() = 0;
+   uint64_t macro_time = 0;
+   uint32_t micro_time = 0;
+   uint8_t channel = 0;
+   uint8_t mark = 0;
+   uint64_t macro_time_offset = 0;
 };
-
 
 class AbstractEventReader
 {
@@ -57,25 +50,12 @@ public:
       return !fs.eof();
    }
 
-   virtual PicoquantT3Event getEvent() = 0;
+   virtual TcspcEvent getEvent() = 0;
    
 protected:
    
    std::ifstream fs;
    int data_position;
-
-};
-
-class PicoquantEventReader : public AbstractEventReader
-{
-public:
-   
-   PicoquantT3Event getEvent()
-   {
-      uint32_t evt;
-      fs.read(reinterpret_cast<char *>(&evt), sizeof(evt));
-      return PicoquantT3Event(evt);   
-   }
 };
 
 class AbstractFifoReader : public FLIMReader
@@ -101,7 +81,6 @@ protected:
    
    void determineDwellTime();
    
-   long long data_position = 0;
    double sync_count_per_line;
    double sync_offset = 0;
    double first_line_sync_offset = 0;
@@ -116,10 +95,11 @@ protected:
    int routing_channels;
    int measurement_mode;
    long long n_records;
-   float resolution;
+   double resolution;
    float t_rep_ps;
 
-   AbstractEventReader* event_reader = nullptr;
+   std::unique_ptr<AbstractEventReader> event_reader = nullptr;
+   Markers markers;
    
 private:
    
@@ -172,45 +152,37 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    int n_frame = 0;
    int n_invalid = 0;
    
-   while(event_reader->hasMoreData())
+   while (event_reader->hasMoreData())
    {
-      PicoquantT3Event p = event_reader->getEvent();
-      
-      long long cur_sync = p.nsync + sync_count_accum;
-      
-      if (p.special)
+      TcspcEvent p = event_reader->getEvent();
+
+      sync_count_accum += p.macro_time_offset;
+      long long cur_sync = p.macro_time + sync_count_accum;
+
+
+      if (p.mark & markers.FrameMarker) // PQ: FRAME = 4
       {
-         if (p.dtime == 0)
-            sync_count_accum += 0xFFFF;
-         else
+         n_frame++;
+         frame_started = true;
+         cur_line = -1;
+         cur2 = 0;
+      }
+      if (frame_started)
+      {
+         if (p.mark & markers.LineEndMarker) // PQ: LINE_END = 2
          {
-            int marker = p.dtime;
-            
-            if (marker & 4)
-            {
-               n_frame++;
-               frame_started = true;
-               cur_line = -1;
-               cur2 = 0;
-            }
-            if (frame_started)
-            {
-               if (marker & 2)
-               {
-                  line_valid = false;
-                  cur2++;
-               }
-               if (marker & 1)
-               {
-                  line_valid = true;
-                  sync_start = cur_sync;
-                  cur_line++;
-               }
-            }
-            
+            line_valid = false;
+            cur2++;
+         }
+         if (p.mark & markers.LineStartMarker) // PQ: LINE_START = 1
+         {
+            line_valid = true;
+            sync_start = cur_sync;
+            cur_line++;
          }
       }
-      else if (line_valid && frame_started)
+
+      if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
       {
          int mapped_channel = channel_map[p.channel-1];
          if (mapped_channel > -1)
@@ -222,7 +194,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             
             int cur_px = static_cast<int>(cur_loc);
             
-            int dtime = (p.dtime + time_shifts_resunit[p.channel-1]) % t_rep_resunit;
+            int dtime = (p.micro_time + time_shifts_resunit[p.channel-1]) % t_rep_resunit;
             dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
             int bin = dtime >> downsampling;
             

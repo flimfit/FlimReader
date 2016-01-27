@@ -107,7 +107,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          }
          else if (command == "SetSpatialBinning" && nrhs >= 3)
          {
-            int spatial_binning = mxGetScalar(prhs[2]);
+            int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
          else if (command == "Delete")

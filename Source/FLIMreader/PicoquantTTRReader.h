@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractFifoReader.h"
+#include "PicoquantT3Event.h"
 
 #include <cstdint>
 #include <cassert>
@@ -71,5 +72,6 @@ protected:
 
    PicoquantTTRInfo info;
    PicoquantHardwareInfo hw_info;
+   int data_position;
 };
 

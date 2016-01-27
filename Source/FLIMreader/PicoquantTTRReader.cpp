@@ -19,8 +19,14 @@ AbstractFifoReader(filename)
    resolution = hw_info.resolution;
    n_x = info.n_x;
    n_y = info.n_y;
-   t_rep_ps = 1e12/info.input0_countrate; // rep time in picoseconds
+   t_rep_ps = 1e12f / info.input0_countrate; // rep time in picoseconds
    
+   markers.FrameMarker = 0x4;
+   markers.LineEndMarker = 0x2;
+   markers.LineStartMarker = 0x1;
+
+   event_reader = std::make_unique<PicoquantEventReader>(filename, data_position);
+
    setTemporalResolution(8);
    determineDwellTime();
 }

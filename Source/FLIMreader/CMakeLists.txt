@@ -24,6 +24,7 @@ set(HEADERS
    PicoquantPTUReader.h
    PicoquantHelper.h
    TextReader.h
+   PicoquantT3Event.h
 )
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)
