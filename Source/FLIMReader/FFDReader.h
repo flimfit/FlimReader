@@ -35,6 +35,7 @@ public:
    {
       decode_buffer.resize(buffer_size);
       input_buffer.resize(LZ4_COMPRESSBOUND(max_message_size));
+	  lz4StreamDecode_body = { 0 };
    }
 
    void decode()
@@ -105,7 +106,7 @@ protected:
 
    int decode_offset = 0;
    int decode_bytes = 0;
-   LZ4_streamDecode_t lz4StreamDecode_body = { 0 };
+   LZ4_streamDecode_t lz4StreamDecode_body;
    bool finished_decoding = false;
    bool use_compression = false;
 };

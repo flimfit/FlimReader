@@ -116,52 +116,7 @@ void FfdReader::readHeader()
          memcpy(&value[0], data_ptr, tag_data_length);
          std::cout << value;
       }
-      /*
-      case tyInt8:
-         cout << (int)tag_head.TagValue;
-         // get some Values we need to analyse records
-         if (strcmp(tag_head.Ident, TTTRTagNumRecords) == 0) // Number of records
-            n_records = tag_head.TagValue;
-         if (strcmp(tag_head.Ident, Measurement_Mode) == 0) // measurement mode
-            measurement_mode = (int)tag_head.TagValue;
-         if (strcmp(tag_head.Ident, HWRouter_Channels) == 0)
-            routing_channels = (int)tag_head.TagValue;
-         if (strcmp(tag_head.Ident, Line_Averaging) == 0)
-            line_averaging = (int)tag_head.TagValue;
-         if (strcmp(tag_head.Ident, "TTResult_SyncRate") == 0)
-            t_rep_ps = 1e12f / tag_head.TagValue;
-         break;
-
-      case tyBitSet64:
-         cout << tag_head.TagValue;
-         break;
-
-      case tyColor8:
-         cout << tag_head.TagValue;
-         break;
-
-      case tyFloat8:
-         cout << *(double*)&(tag_head.TagValue);
-         if (strcmp(tag_head.Ident, TTTRTagRes) == 0) // Resolution for TCSPC-Decay
-            resolution = *(double*)&(tag_head.TagValue);
-         //if (strcmp(tag_head.Ident, TTTRTagGlobRes)==0) // Global resolution for timetag
-         //   GlobRes = *(double*)&(tag_head.TagValue); // in ns
-         break;
-
-      case tyTDateTime:
-         break;
-
-      case tyAnsiString:
-      case tyFloat8Array:
-      case tyWideString:
-      case tyBinaryBlob:
-         fs.seekg((long)tag_head.TagValue, ios_base::cur);
-         break;
-
-      default:
-         throw runtime_error("Illegal Type identifier found! Broken file?");
-      }
-      */
+      
 
    } while (tag_type != TagEndHeader);
 
