@@ -27,6 +27,8 @@ public:
          }
 
       }
+
+      channel--; // 1-indexing -> 0-indexing
    }
 };
 

@@ -12,20 +12,24 @@ PicoquantPTUReader::PicoquantPTUReader(const std::string& filename) :
 AbstractFifoReader(filename)
 {
    readHeader();
+
+   // Some formats give in resolution ns, some in s. Thanks Picoquant...
+   // Convert both to picoseconds
+   time_resolution_native_ps *= ((time_resolution_native_ps < 1e-9) ? 1e12 : 1e3);
+
+   int n_bits = 14 - static_cast<int>(log2(std::round(time_resolution_native_ps)));
+   n_timebins_native = 1 << n_bits;
+
+
    setTemporalResolution(8);
+   assert(measurement_mode == 3);
 
    markers.FrameMarker = 0x4;
    markers.LineEndMarker = 0x2;
    markers.LineStartMarker = 0x1;
 
    event_reader = std::make_unique<PicoquantEventReader>(filename, data_position);
-
-   n_x = 0;
-   n_y = 0;
-   
-   sync_offset = 0; // 2.2; // manual fudge factor
-   first_line_sync_offset = 0; // -0.21;
-   
+      
    determineDwellTime();
 }
 
@@ -41,7 +45,7 @@ void PicoquantPTUReader::readHeader()
    if (string("PQTTTR") != magic)
       throw runtime_error("Wrong magic string, this is not a PTU file");
 
-   routing_channels = 1;
+   n_chan = 1;
 
    
    fs.read(version, sizeof(version));
@@ -66,12 +70,12 @@ void PicoquantPTUReader::readHeader()
          case tyInt8:
             cout << (int) tag_head.TagValue;
             // get some Values we need to analyse records
-            if (strcmp(tag_head.Ident, TTTRTagNumRecords)==0) // Number of records
-               n_records = tag_head.TagValue;
+//            if (strcmp(tag_head.Ident, TTTRTagNumRecords)==0) // Number of records
+//               n_records = tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
                measurement_mode = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
-               routing_channels = (int) tag_head.TagValue;
+               n_chan = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
                line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
@@ -89,9 +93,7 @@ void PicoquantPTUReader::readHeader()
          case tyFloat8:
             cout << *(double*)&(tag_head.TagValue);
             if (strcmp(tag_head.Ident, TTTRTagRes)==0) // Resolution for TCSPC-Decay
-               resolution = *(double*)&(tag_head.TagValue);
-            //if (strcmp(tag_head.Ident, TTTRTagGlobRes)==0) // Global resolution for timetag
-            //   GlobRes = *(double*)&(tag_head.TagValue); // in ns
+               time_resolution_native_ps = *(double*)&(tag_head.TagValue);
             break;
          
          case tyTDateTime:

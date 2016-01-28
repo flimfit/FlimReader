@@ -42,7 +42,6 @@ void AbstractFifoReader::readSettings()
 
 void AbstractFifoReader::determineDwellTime()
 {
-   assert(measurement_mode == 3);
    assert(event_reader != nullptr);
    
    event_reader->setToStart();
@@ -102,40 +101,29 @@ void AbstractFifoReader::determineDwellTime()
    
 }
 
-void AbstractFifoReader::setTemporalResolution(int temporal_resolution)
+void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 {
-   // Some formats give in resolution ns, some in s. Thanks Picoquant...
-   // Convert both to picoseconds
-   double time_resolution = resolution * ((resolution < 1e-9) ? 1e12 : 1e3);
-   int native_resolution = 14 - static_cast<int>(log2(std::round(time_resolution)));
+   int native_resolution = ceil(log2(n_timebins_native));
    
+   temporal_resolution = std::min(native_resolution, temporal_resolution__);
+   temporal_resolution = std::max(0, temporal_resolution);
    
-   temporal_resolution_ = std::min(native_resolution, temporal_resolution);
-   temporal_resolution_ = std::max(0, temporal_resolution_);
-   temporal_resolution = temporal_resolution_;
-   
-   int n_t = 1 << temporal_resolution_;
+   int n_t = 1 << temporal_resolution;
    timepoints_.resize(n_t);
    
-   downsampling = (native_resolution - temporal_resolution_);
+   downsampling = (native_resolution - temporal_resolution);
    int downsampling_factor = 1 << downsampling;
    
    double t_0 = 0;
-   double t_step = time_resolution * downsampling_factor;
+   double t_step = time_resolution_native_ps * downsampling_factor;
    
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
    
-   t_rep_resunit = (int) std::round(t_rep_ps / time_resolution);
+   t_rep_resunit = (int) std::round(t_rep_ps / time_resolution_native_ps);
    
    time_shifts_resunit.clear();
    for(auto shift : time_shifts_ps)
-      time_shifts_resunit.push_back((int) std::round(shift / time_resolution));
+      time_shifts_resunit.push_back((int) std::round(shift / time_resolution_native_ps));
 };
-
-int AbstractFifoReader::numChannels()
-{
-   return routing_channels;
-}
-
 

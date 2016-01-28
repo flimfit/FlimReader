@@ -12,7 +12,7 @@ int main()
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_PH300_Router_Multichannel.pt3";
-
+   filename = "C:/Users/CIMLab/Documents/workspace2/flim_file_075.ffd";
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(8);
 //   reader->setSpatialBinning(2);
@@ -21,7 +21,7 @@ int main()
    int sz = reader->dataSizePerChannel();
    std::vector<uint16_t> d(sz);
 
-   reader->readData(d.data(), { 1 });
+   reader->readData(d.data(), { 0 });
 
 
    return 0;

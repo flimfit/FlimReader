@@ -45,7 +45,7 @@ public:
       fs.seekg(data_position, std::ios_base::beg);
    }
 
-   bool hasMoreData()
+   virtual bool hasMoreData()
    {
       return !fs.eof();
    }
@@ -69,9 +69,7 @@ public:
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
    void setTemporalResolution(int temporal_resolution);
-   
-   int numChannels();
-   
+      
 protected:
    
    void readSettings();
@@ -92,11 +90,11 @@ protected:
    std::vector<float> time_shifts_ps;
    
    // Required Picoquant information
-   int routing_channels;
-   int measurement_mode;
-   long long n_records;
-   double resolution;
+   int measurement_mode = 0;
+   //long long n_records;
+   double time_resolution_native_ps;
    float t_rep_ps;
+   int n_timebins_native;
 
    std::unique_ptr<AbstractEventReader> event_reader = nullptr;
    Markers markers;
@@ -116,24 +114,16 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    auto channels = validateChannels(channels_, n_chan_stride);
    
-   assert(measurement_mode == 3);
    assert(event_reader != nullptr);
    
    // Determine channel mapping
-   std::vector<int> channel_map(routing_channels, -1);
+   std::vector<int> channel_map(n_chan, -1);
    int idx = 0;
    for (auto& c : channels)
       channel_map[c] = idx++;
    
-   int n_bin = 1 << temporal_resolution_;
-   /*
-   ifstream fs(filename, ifstream::in | ifstream::binary);
+   int n_bin = 1 << temporal_resolution;
    
-   fs.seekg(0, ios_base::end);
-   size_t end_pos = fs.tellg();
-
-   size_t n_records_true = (end_pos - data_position) / 4;
-   */
    event_reader->setToStart();
    
    long long sync_count_accum = 0;
@@ -142,12 +132,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    bool line_valid = false;
    long long sync_start = 0;
    int cur2 = 0;
-   
-   //vector<uint32_t> records(n_records_true);
-   //fs.read(reinterpret_cast<char*>(records.data()), n_records_true*sizeof(uint32_t));
-   
-   int n_x_binned = n_x / spatial_binning_;
-   int n_y_binned = n_y / spatial_binning_;
+      
+   int n_x_binned = n_x / spatial_binning;
+   int n_y_binned = n_y / spatial_binning;
    
    int n_frame = 0;
    int n_invalid = 0;
@@ -184,31 +171,30 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
       if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
       {
-         int mapped_channel = channel_map[p.channel-1];
+         int mapped_channel = channel_map[p.channel];
          if (mapped_channel > -1)
          {
             double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned-1);
 
-            if ((cur_line % (spatial_binning_ * line_averaging)) == 0)
+            if ((cur_line % (spatial_binning * line_averaging)) == 0)
                cur_loc += first_line_sync_offset * n_x_binned;
             
             int cur_px = static_cast<int>(cur_loc);
             
-            int dtime = (p.micro_time + time_shifts_resunit[p.channel-1]) % t_rep_resunit;
+            int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
             dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
             int bin = dtime >> downsampling;
             
             int x = cur_px;
-            int y = cur_line / (spatial_binning_ * line_averaging);
+            int y = cur_line / (spatial_binning * line_averaging);
                         
-			if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
-				histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
+			   if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
+				   histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
             else
-				n_invalid++;
+				   n_invalid++;
          }
       }
    }
-   
    
    std::cout << "Num frames: " << n_frame << "\n";
    std::cout << "Num invalid: " << n_invalid << "\n";

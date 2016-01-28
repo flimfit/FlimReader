@@ -15,6 +15,8 @@ TextReader::TextReader(const std::string& filename) :
    else if (extension == "csv")
       delim = ',';
 
+   n_x = n_y = 1;
+
    readHeader();
 }
 

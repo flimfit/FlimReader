@@ -18,7 +18,7 @@ public:
 
    virtual ~FLIMReader() {};
 
-   virtual int numChannels() { return 1; };
+   virtual int getNumChannels() { return n_chan; };
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
@@ -34,21 +34,21 @@ public:
    }
 
    const std::vector<double>& timepoints() { return timepoints_; };
-   int numX() { return n_x / spatial_binning_; }
-   int numY() { return n_y / spatial_binning_; }
+   int numX() { return n_x / spatial_binning; }
+   int numY() { return n_y / spatial_binning; }
 
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
-   int temporalResolution() { return temporal_resolution_; }
+   int getTemporalResolution() { return temporal_resolution; }
 
    int dataSizePerChannel();
 
-   void setSpatialBinning(int spatial_binning)
+   void setSpatialBinning(int spatial_binning_)
    {
-      if (n_x > spatial_binning && n_y > spatial_binning)
-         spatial_binning_ = spatial_binning;
+      if (n_x > spatial_binning_ && n_y > spatial_binning_)
+         spatial_binning = spatial_binning_;
    }
    
-   int spatialBinning() { return spatial_binning_; }
+   int getSpatialBinning() { return spatial_binning; }
    
 protected:
 
@@ -56,8 +56,9 @@ protected:
 
    std::string filename;
    std::string extension;
-   int temporal_resolution_;
-   int spatial_binning_ = 1;
-   int n_x;
-   int n_y;
+   int temporal_resolution = 1;
+   int spatial_binning = 1;
+   int n_x = 0;
+   int n_y = 0;
+   int n_chan = 0;
 };

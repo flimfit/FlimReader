@@ -14,7 +14,9 @@ set(SOURCE
    AbstractFifoReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
+   FFDReader.cpp
    TextReader.cpp
+   lz4.c
 )
 
 set(HEADERS
@@ -23,8 +25,10 @@ set(HEADERS
    PicoquantTTRReader.h
    PicoquantPTUReader.h
    PicoquantHelper.h
+   FFDReader.h
    TextReader.h
    PicoquantT3Event.h
+   lz4.h
 )
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)
