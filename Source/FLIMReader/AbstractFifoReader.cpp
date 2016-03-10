@@ -60,6 +60,9 @@ void AbstractFifoReader::determineDwellTime()
       sync_count_accum += p.macro_time_offset;
       uint64_t macro_time = sync_count_accum + p.macro_time;
 
+      if (!p.valid)
+         continue;
+
       if (p.mark & markers.FrameMarker)
       {
          n_frame++;

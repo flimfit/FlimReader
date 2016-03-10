@@ -22,7 +22,7 @@ FfdReader::FfdReader(const std::string& filename) :
    markers.LineEndMarker = 0x4;
    markers.LineStartMarker = 0x2;
 
-   event_reader = std::make_unique<FfdEventReader>(filename, data_position, use_compression, message_size);
+   event_reader = std::make_unique<FfdEventReader>(filename, version, data_position, use_compression, message_size);
 
 
    determineDwellTime();
@@ -31,7 +31,7 @@ FfdReader::FfdReader(const std::string& filename) :
 void FfdReader::readHeader()
 {
    ifstream fs(filename, ifstream::in | ifstream::binary);
-   uint32_t magic, version;
+   uint32_t magic;
 
    READ(fs, magic);
 

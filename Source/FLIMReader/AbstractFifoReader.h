@@ -28,6 +28,7 @@ public:
    uint8_t channel = 0;
    uint8_t mark = 0;
    uint64_t macro_time_offset = 0;
+   bool valid = true;
 };
 
 class AbstractEventReader
@@ -42,6 +43,7 @@ public:
    
    void setToStart()
    {
+      fs.clear();
       fs.seekg(data_position, std::ios_base::beg);
    }
 
@@ -146,52 +148,54 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       sync_count_accum += p.macro_time_offset;
       long long cur_sync = p.macro_time + sync_count_accum;
 
-
-      if (p.mark & markers.FrameMarker) // PQ: FRAME = 4
+      if (p.valid)
       {
-         n_frame++;
-         frame_started = true;
-         cur_line = -1;
-         cur2 = 0;
-      }
-      if (frame_started)
-      {
-         if (p.mark & markers.LineEndMarker) // PQ: LINE_END = 2
+         if (p.mark & markers.FrameMarker) // PQ: FRAME = 4
          {
-            line_valid = false;
-            cur2++;
+            n_frame++;
+            frame_started = true;
+            cur_line = -1;
+            cur2 = 0;
          }
-         if (p.mark & markers.LineStartMarker) // PQ: LINE_START = 1
+         if (frame_started)
          {
-            line_valid = true;
-            sync_start = cur_sync;
-            cur_line++;
+            if (p.mark & markers.LineEndMarker) // PQ: LINE_END = 2
+            {
+               line_valid = false;
+               cur2++;
+            }
+            if (p.mark & markers.LineStartMarker) // PQ: LINE_START = 1
+            {
+               line_valid = true;
+               sync_start = cur_sync;
+               cur_line++;
+            }
          }
-      }
 
-      if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
-      {
-         int mapped_channel = channel_map[p.channel];
-         if (mapped_channel > -1)
+         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
          {
-            double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset ) * (n_x_binned-1);
+            int mapped_channel = channel_map[p.channel];
+            if (mapped_channel > -1)
+            {
+               double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset) * (n_x_binned);
 
-            if ((cur_line % (spatial_binning * line_averaging)) == 0)
-               cur_loc += first_line_sync_offset * n_x_binned;
-            
-            int cur_px = static_cast<int>(cur_loc);
-            
-            int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
-            dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
-            int bin = dtime >> downsampling;
-            
-            int x = cur_px;
-            int y = cur_line / (spatial_binning * line_averaging);
-                        
-			   if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
-				   histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
-            else
-				   n_invalid++;
+               if ((cur_line % (spatial_binning * line_averaging)) == 0)
+                  cur_loc += first_line_sync_offset * n_x_binned;
+
+               int cur_px = static_cast<int>(cur_loc);
+
+               int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
+               dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
+               int bin = dtime >> downsampling;
+
+               int x = cur_px;
+               int y = cur_line / (spatial_binning * line_averaging);
+
+               if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
+                  histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
+               else
+                  n_invalid++;
+            }
          }
       }
    }

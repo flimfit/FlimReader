@@ -3,7 +3,7 @@
 #include "AbstractFifoReader.h"
 #include "lz4.h"
 
-struct ffd_evt
+struct ffd_evt_v1
 {
    uint64_t macro_time;
    uint16_t micro_time;
@@ -11,15 +11,46 @@ struct ffd_evt
    uint8_t mark;
 };
 
+
+struct ffd_evt
+{
+   uint16_t macro_time;
+   uint16_t micro_time;
+};
+
 class FfdEvent : public TcspcEvent
 {
 public:
-   FfdEvent(ffd_evt evt)
+   FfdEvent(ffd_evt_v1 evt)
    {
       micro_time = evt.micro_time;
       macro_time = evt.macro_time;
       channel = evt.channel;
       mark = evt.mark;
+   }
+   
+   FfdEvent(ffd_evt evt)
+   {
+      macro_time = evt.macro_time;
+      channel = evt.micro_time & 0xF;
+
+      if (channel == 0xF)
+      {
+         if (macro_time == 0)
+         {
+            macro_time_offset = 0xFFFF;
+            valid = false;
+         }
+         else
+         {
+            mark = evt.micro_time >> 4;
+         }
+      }
+      else
+      {
+         mark = 0;
+         micro_time = evt.micro_time >> 4;
+      }
    }
 };
 
@@ -28,8 +59,9 @@ class FfdEventReader : public AbstractEventReader
 {
 public:
 
-   FfdEventReader(const std::string& filename, int data_position, bool use_compression = false, size_t max_message_size = 16 * 1024)
+   FfdEventReader(const std::string& filename, int version, int data_position, bool use_compression = false, size_t max_message_size = 16 * 1024)
       : AbstractEventReader(filename, data_position),
+        version(version),
         use_compression(use_compression),
         max_message_size(max_message_size)
    {
@@ -69,30 +101,54 @@ public:
       if (use_compression)
          return (decode_bytes > 0) || (finished_decoding == false);
       else
-         return !fs.eof();
+         return !fs.eof() && !fs.fail();
    }
 
 
 
    TcspcEvent getEvent()
    {
+      int a = sizeof(ffd_evt);
       if (use_compression)
       {
-         int sz = sizeof(ffd_evt);
 
          if (decode_bytes == 0)
          decode();
-
-         ffd_evt* evt = reinterpret_cast<ffd_evt*>(&decode_buffer[decode_offset]);
-         decode_offset += sz;
-         decode_bytes -= sz;
-         return FfdEvent(*evt);
+        
+         if (version == 1)
+         {
+            int sz = sizeof(ffd_evt_v1);
+            ffd_evt_v1 evt = *reinterpret_cast<ffd_evt_v1*>(&decode_buffer[decode_offset]);
+            decode_offset += sz;
+            decode_bytes -= sz;
+            return FfdEvent(evt);
+         }
+         else
+         {
+            int sz = sizeof(ffd_evt);
+            ffd_evt evt = *reinterpret_cast<ffd_evt*>(&decode_buffer[decode_offset]);
+            decode_offset += sz;
+            decode_bytes -= sz;
+            return FfdEvent(evt);
+         }
       }
       else
       {
-         ffd_evt evt;
-         fs.read(reinterpret_cast<char*>(&evt), sizeof(evt));
-         return FfdEvent(evt);
+         if (version == 1)
+         {
+            ffd_evt_v1 evt;
+            fs.read(reinterpret_cast<char*>(&evt), sizeof(evt));
+            return FfdEvent(evt);
+         }
+         else
+         {
+            ffd_evt evt;
+            fs.read(reinterpret_cast<char*>(&evt), sizeof(evt));
+            return FfdEvent(evt);
+         }
+
+//         if (fs.fail())
+//            ffd_event.valid = false;  
       }
    }
 
@@ -104,8 +160,10 @@ protected:
    std::vector<char> decode_buffer;
    std::vector<char> input_buffer;
 
+   uint32_t version;
    int decode_offset = 0;
    int decode_bytes = 0;
+   uint64_t macro_time_offset = 0;
    LZ4_streamDecode_t lz4StreamDecode_body;
    bool finished_decoding = false;
    bool use_compression = false;
@@ -135,5 +193,6 @@ protected:
    int data_position = 0;
    bool use_compression = false;
    size_t message_size = 16 * 1024;
+   uint32_t version;
 
 };
