@@ -9,18 +9,33 @@ using namespace std;
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
 PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
-AbstractPicoquantReader(filename)
+AbstractFifoReader(filename)
 {
    readHeader();
    
-   routing_channels = info.routing_channels;
+   n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
-   n_records = info.n_records;
-   resolution = hw_info.resolution;
+   //n_records = info.n_records;
+   time_resolution_native_ps = hw_info.resolution;
    n_x = info.n_x;
    n_y = info.n_y;
-   t_rep_ps = 1e12/info.input0_countrate; // rep time in picoseconds
+   t_rep_ps = 1e12f / info.input0_countrate; // rep time in picoseconds
    
+   // Some formats give in resolution ns, some in s. Thanks Picoquant...
+   // Convert both to picoseconds
+   time_resolution_native_ps *= ((time_resolution_native_ps < 1e-9) ? 1e12 : 1e3);
+   
+   int n_bits = 14 - static_cast<int>(log2(std::round(time_resolution_native_ps)));
+   n_timebins_native = 1 << n_bits;
+
+   assert(measurement_mode == 3);
+
+   markers.FrameMarker = 0x4;
+   markers.LineEndMarker = 0x2;
+   markers.LineStartMarker = 0x1;
+
+   event_reader = std::make_unique<PicoquantEventReader>(filename, data_position);
+
    setTemporalResolution(8);
    determineDwellTime();
 }

@@ -72,8 +72,8 @@ private:
       std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
       fs.seekg(header_size);
 
-      int n_xi = n_x / spatial_binning_;
-      int n_yi = n_y / spatial_binning_;
+      int n_xi = n_x / spatial_binning;
+      int n_yi = n_y / spatial_binning;
 
       size_t n_el = n_xi * n_yi * n_chan_used * n_timepoints;
 
@@ -85,10 +85,10 @@ private:
       
       for (int y = 0; y < n_y; y++)
       {
-         yi = y / spatial_binning_;
+         yi = y / spatial_binning;
          for (int x = 0; x < n_x; x++)
          {
-            xi = x / spatial_binning_;
+            xi = x / spatial_binning;
             for (int c = 0; c < n_chan; c++)
             {
                int mapped_channel = channel_map[c];

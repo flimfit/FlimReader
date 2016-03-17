@@ -1,7 +1,8 @@
 #pragma once
-#include "AbstractPicoquantReader.h"
+#include "AbstractFifoReader.h"
+#include "PicoquantT3Event.h"
 
-class PicoquantPTUReader : public AbstractPicoquantReader
+class PicoquantPTUReader : public AbstractFifoReader
 {
 public:
    
@@ -10,4 +11,6 @@ public:
 protected:
    
    void readHeader();
+   int data_position = 0;
+
 };

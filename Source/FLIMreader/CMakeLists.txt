@@ -11,19 +11,24 @@ include_directories(${Boost_INCLUDE_DIR})
 
 set(SOURCE
    FLIMreader.cpp
-   AbstractPicoquantReader.cpp
+   AbstractFifoReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
+   FFDReader.cpp
    TextReader.cpp
+   lz4.c
 )
 
 set(HEADERS
    FLIMreader.h
-   AbstractPicoquantReader.h
+   AbstractFifoReader.h
    PicoquantTTRReader.h
    PicoquantPTUReader.h
    PicoquantHelper.h
+   FFDReader.h
    TextReader.h
+   PicoquantT3Event.h
+   lz4.h
 )
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "AbstractPicoquantReader.h"
+#include "AbstractFifoReader.h"
+#include "PicoquantT3Event.h"
 
 #include <cstdint>
 #include <cassert>
@@ -59,7 +60,7 @@ struct PicoquantTTRInfo
 
 
 
-class PicoquantTTTRReader : public AbstractPicoquantReader
+class PicoquantTTTRReader : public AbstractFifoReader
 {
 public:
 
@@ -71,5 +72,6 @@ protected:
 
    PicoquantTTRInfo info;
    PicoquantHardwareInfo hw_info;
+   int data_position;
 };
 

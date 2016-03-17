@@ -16,6 +16,7 @@ set(SOURCE
 
 set(HEADERS
    FLIMreaderTest.h
+   catch.hpp
 )
 
 add_executable(FLIMreaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreader>)

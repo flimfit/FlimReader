@@ -70,7 +70,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          }
          else if (command == "GetNumberOfChannels" && nlhs > 0)
          {
-            int n_chan = readers[idx]->numChannels();
+            int n_chan = readers[idx]->getNumChannels();
             plhs[0] = mxCreateDoubleScalar(n_chan);
          }
          else if (command == "GetImageSize" && nlhs > 0)
@@ -97,17 +97,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
             mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
             plhs[0] = mxCreateNumericArray(4, dims, mxUINT16_CLASS, mxREAL);
-			uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
+			   uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
          }
          else if (command == "GetSpatialBinning" && nlhs >= 1)
          {
-            int spatial_binning = readers[idx]->spatialBinning();
+            int spatial_binning = readers[idx]->getSpatialBinning();
             plhs[0] = mxCreateDoubleScalar(spatial_binning);
          }
          else if (command == "SetSpatialBinning" && nrhs >= 3)
          {
-            int spatial_binning = mxGetScalar(prhs[2]);
+            int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
          else if (command == "Delete")
