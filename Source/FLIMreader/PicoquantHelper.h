@@ -11,6 +11,9 @@
 #define TTTRTagGlobRes     "MeasDesc_GlobalResolution" // Global Resolution of TimeTag(T2) /NSync (T3)
 #define FileTagEnd         "Header_End"                // Always appended as last tag (BLOCKEND)
 #define HWRouter_Channels  "HWRouter_Channels"
+#define TTResult_SyncRate  "TTResult_SyncRate"
+#define MeasDesc_BinningFactor  "MeasDesc_BinningFactor"
+
 #define Line_Averaging     "Line_Averaging"            // Inserted by PTU splitter
 
 // TagTypes  (TTagHead.Typ)
