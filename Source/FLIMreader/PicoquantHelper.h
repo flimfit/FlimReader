@@ -63,3 +63,5 @@ time_t TDateTime_TimeT(double Convertee)
    time_t Result((long)(((Convertee) - EpochDiff) * SecsInDay));
    return Result;
 }
+
+#pragma pack(pop)

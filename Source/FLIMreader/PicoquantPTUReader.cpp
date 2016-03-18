@@ -28,7 +28,7 @@ AbstractFifoReader(filename)
    markers.LineEndMarker = 0x2;
    markers.LineStartMarker = 0x1;
 
-   event_reader = std::make_unique<PicoquantEventReader>(filename, data_position);
+   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position));
       
    determineDwellTime();
 }
