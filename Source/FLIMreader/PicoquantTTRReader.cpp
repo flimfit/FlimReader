@@ -16,17 +16,17 @@ AbstractFifoReader(filename)
    n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
    //n_records = info.n_records;
-   time_resolution_native_ps = hw_info.resolution;
+   time_resolution_native_ps = hw_info.resolution * 1e3;
    n_x = info.n_x;
    n_y = info.n_y;
    t_rep_ps = 1e12f / info.input0_countrate; // rep time in picoseconds
-   
-   // Some formats give in resolution ns, some in s. Thanks Picoquant...
-   // Convert both to picoseconds
-   time_resolution_native_ps *= ((time_resolution_native_ps < 1e-9) ? 1e12 : 1e3);
-   
-   int n_bits = 14 - static_cast<int>(log2(std::round(time_resolution_native_ps)));
+      
+   int n_bits = 14 - info.range_no;
    n_timebins_native = 1 << n_bits;
+
+   int n_timebins_useful = ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
+
+   n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
    assert(measurement_mode == 3);
 

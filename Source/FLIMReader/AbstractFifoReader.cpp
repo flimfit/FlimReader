@@ -66,8 +66,6 @@ void AbstractFifoReader::determineDwellTime()
       if (p.mark & markers.FrameMarker)
       {
          n_frame++;
-         if (n_frame >= 2)
-            break;
       }
       if (n_frame > 0)
       {
@@ -86,6 +84,8 @@ void AbstractFifoReader::determineDwellTime()
          }
 
       }
+      if (n_frame >= 2)
+         break;
    } while (event_reader->hasMoreData());
    
    sync_count_per_line /= n_averaged;

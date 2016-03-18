@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 
 using namespace std;
 
@@ -13,12 +14,11 @@ AbstractFifoReader(filename)
 {
    readHeader();
 
-   // Some formats give in resolution ns, some in s. Thanks Picoquant...
-   // Convert both to picoseconds
-   time_resolution_native_ps *= ((time_resolution_native_ps < 1e-9) ? 1e12 : 1e3);
+   n_timebins_native = 1 << 14;
+   n_timebins_native /= temporal_binning;
 
-   int n_bits = 14 - static_cast<int>(log2(std::round(time_resolution_native_ps)));
-   n_timebins_native = 1 << n_bits;
+   int n_timebins_useful = ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
+   n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
 
    setTemporalResolution(8);
@@ -78,8 +78,10 @@ void PicoquantPTUReader::readHeader()
                n_chan = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
                line_averaging = (int) tag_head.TagValue;
-            if (strcmp(tag_head.Ident, "TTResult_SyncRate")==0)
+            if (strcmp(tag_head.Ident, TTResult_SyncRate)==0)
                t_rep_ps = 1e12f / tag_head.TagValue;
+            if (strcmp(tag_head.Ident, MeasDesc_BinningFactor)==0)
+               temporal_binning = tag_head.TagValue;
             break;
             
          case tyBitSet64:
@@ -93,7 +95,7 @@ void PicoquantPTUReader::readHeader()
          case tyFloat8:
             cout << *(double*)&(tag_head.TagValue);
             if (strcmp(tag_head.Ident, TTTRTagRes)==0) // Resolution for TCSPC-Decay
-               time_resolution_native_ps = *(double*)&(tag_head.TagValue);
+               time_resolution_native_ps = *(double*)&(tag_head.TagValue) * 1e12;
             break;
          
          case tyTDateTime:
