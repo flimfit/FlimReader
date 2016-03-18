@@ -41,6 +41,7 @@
 #define rtTimeHarp260PT3 0x00010306    // (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T3), HW: $06 (TimeHarp260P)
 #define rtTimeHarp260PT2 0x00010206    // (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
 
+#pragma pack(push)
 #pragma pack(8) //structure alignment to 8 byte boundaries
 
 // A Tag entry
