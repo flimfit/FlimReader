@@ -36,7 +36,7 @@ AbstractFifoReader(filename)
 
    event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position));
 
-   setTemporalResolution(8);
+   setTemporalResolution(14);
    determineDwellTime();
 }
 

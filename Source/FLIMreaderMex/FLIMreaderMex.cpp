@@ -110,6 +110,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
             int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
+         else if (command == "GetNumTemporalBits" && nlhs >= 1)
+         {
+            int n_bits = readers[idx]->getTemporalResolution();
+            plhs[0] = mxCreateDoubleScalar(n_bits);
+         }
+         else if (command == "SetNumTemporalBits" && nrhs >= 3)
+         {
+            int n_bits = (int)mxGetScalar(prhs[2]);
+            readers[idx]->setTemporalResolution(n_bits);
+         }
+
          else if (command == "Delete")
          {
             readers[idx] = nullptr;

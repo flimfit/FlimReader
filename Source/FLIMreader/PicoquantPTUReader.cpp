@@ -22,7 +22,7 @@ AbstractFifoReader(filename)
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
 
-   setTemporalResolution(8);
+   setTemporalResolution(14);
    assert(measurement_mode == 3);
 
    markers.FrameMarker = 0x4;

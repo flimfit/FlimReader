@@ -11,10 +11,9 @@ int main()
    //filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/james.pt3";
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_PH300_Router_Multichannel.pt3";
-   filename = "C:/Users/CIMLab/Documents/workspace2/flim_file_049_001.ffd";
-   unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
-   reader->setTemporalResolution(8);
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
+    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
+   reader->setTemporalResolution(4);
 //   reader->setSpatialBinning(2);
    
    
