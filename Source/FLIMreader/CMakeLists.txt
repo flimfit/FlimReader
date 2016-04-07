@@ -24,6 +24,7 @@ set(HEADERS
    AbstractFifoReader.h
    PicoquantTTRReader.h
    PicoquantPTUReader.h
+   PicoquantBINReader.h
    PicoquantHelper.h
    FFDReader.h
    TextReader.h

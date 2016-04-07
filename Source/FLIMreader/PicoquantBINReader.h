@@ -111,5 +111,4 @@ private:
    const int header_size = 20;
    int n_timepoints = 1;
    bool has_multiple_channels = false;
-   int n_chan = 1;
 };
