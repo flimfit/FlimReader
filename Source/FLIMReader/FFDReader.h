@@ -36,9 +36,9 @@ public:
 
       if (channel == 0xF)
       {
-         if (macro_time == 0)
+         if (evt.micro_time == 0xF)
          {
-            macro_time_offset = 0xFFFF;
+            macro_time_offset = ((macro_time == 0) ? 1 : macro_time) * 0xFFFF;
             valid = false;
          }
          else
