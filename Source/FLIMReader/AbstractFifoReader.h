@@ -98,6 +98,9 @@ protected:
    float t_rep_ps;
    int n_timebins_native;
 
+   bool bi_directional = false;
+   int cur_direction = 1;
+
    std::unique_ptr<AbstractEventReader> event_reader = nullptr;
    Markers markers;
    
@@ -133,7 +136,6 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    bool frame_started = 0;
    bool line_valid = false;
    long long sync_start = 0;
-   int cur2 = 0;
       
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
@@ -155,20 +157,22 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             n_frame++;
             frame_started = true;
             cur_line = -1;
-            cur2 = 0;
+            cur_direction = 1;
          }
          if (frame_started)
          {
             if (p.mark & markers.LineEndMarker) // PQ: LINE_END = 2
             {
                line_valid = false;
-               cur2++;
             }
             if (p.mark & markers.LineStartMarker) // PQ: LINE_START = 1
             {
                line_valid = true;
                sync_start = cur_sync;
                cur_line++;
+
+               if (bi_directional) 
+                  cur_direction *= -1;
             }
          }
 
@@ -178,6 +182,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             if (mapped_channel > -1)
             {
                double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset) * (n_x_binned);
+
+               if (cur_direction == -1)
+                  cur_loc = n_x_binned - 1 - cur_loc;
 
                if ((cur_line % (spatial_binning * line_averaging)) == 0)
                   cur_loc += first_line_sync_offset * n_x_binned;

@@ -100,6 +100,8 @@ void FfdReader::readHeader()
 
          if (isTag("L4ZCompression"))
             use_compression = value;
+         if (isTag("BidirectionalScan"))
+            bi_directional = value;
 
       }
       else if (tag_type == TagDate)
