@@ -6,7 +6,6 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/info_parser.hpp>
-#include <opencv2/imgproc.hpp>
 
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
@@ -135,7 +134,6 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 
 void AbstractFifoReader::alignFrames()
 {
-
    int sb = 4;
    int fb = 4;
 
@@ -173,10 +171,9 @@ void AbstractFifoReader::alignFrames()
    cv::Mat window;
    cv::createHanningWindow(window, cv::Size(n_x_binned, n_y_binned), CV_32F);
 
-   frame_transform.clear();
-
-   for (int f = 0; f<fb; f++)
-      frame_transform.push_back(Transform());
+   transform_interpolator.clear();
+   transform_interpolator.setSize(n_x, n_y);
+   transform_interpolator.addTransform(Transform(fb*0.5));
   
    cv::Point2f centre_binned(n_x_binned / 2.0, n_y_binned / 2.0);
    cv::Point2f centre(n_x / 2.0, n_y / 2.0);
@@ -188,7 +185,7 @@ void AbstractFifoReader::alignFrames()
 
    for (int i = 1; i < frames.size(); i++)
    {
-      Transform transform;
+      Transform transform(fb*(i+0.5));
 
       if (use_rotation)
       {
@@ -199,7 +196,7 @@ void AbstractFifoReader::alignFrames()
          cv::Mat t = cv::getRotationMatrix2D(centre_binned, rotation, 1);
          cv::warpAffine(frames[i], rotatedi, t, frames[i].size());
 
-         transform.affine = cv::getRotationMatrix2D(centre, rotation, 1);
+         transform.angle = rotation;
       }
       else
       {
@@ -210,47 +207,6 @@ void AbstractFifoReader::alignFrames()
      
       transform.shift = p * sb;
 
-      for(int f=0; f<fb; f++)
-         frame_transform.push_back(transform);
+      transform_interpolator.addTransform(transform);
    }
-
 }
-/*
-{
-   vector<int> channels(n_chan);
-   for (int i = 0; i < n_chan; i++)
-      channels[i] = i;
-   
-   int sb = getSpatialBinning();
-
-   setSpatialBinning(16);
-
-   cv::Mat f1(n_x / spatial_binning, n_y / spatial_binning, CV_32F, cv::Scalar(0.0));
-   cv::Mat f2(n_x / spatial_binning, n_y / spatial_binning, CV_32F, cv::Scalar(0.0));
-   cv::Mat window, d;
-
-
-   frame_shifts.clear();
-   frame_shifts.push_back(cv::Point2d(0, 0));
-
-   readData_(f1.ptr<float>(), channels, n_chan);
-   cv::createHanningWindow(window, f1.size(), CV_32F);
-   while (event_reader->hasMoreData())
-   {
-      readData_(f2.ptr<float>(), channels, 1);
-
-      
-      auto p = cv::phaseCorrelate(f1, f2, window);
-      p *= spatial_binning;
-      frame_shifts.push_back(p);
-      
-      //cv::Mat t = f1;
-      //f2 = f1;
-      //f1 = f2;
-   }
-
-   setSpatialBinning(sb);
-   event_reader->setToStart();
-
-}    
-*/

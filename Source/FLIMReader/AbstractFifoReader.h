@@ -9,6 +9,7 @@
 #include <memory>
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 class Markers
 {
@@ -74,22 +75,102 @@ class Transform
 {
 public:
 
-   Transform()
+   Transform(double frame_)
    {
-      affine = cv::Mat::eye(2, 3, CV_64F);
+      frame = frame_;
+      angle = 0.0;
       shift.x = 0.0;
       shift.y = 0.0;
-
    }
 
-   Transform(cv::Mat affine, cv::Point2d shift) :
-      affine(affine), shift(shift)
+   Transform(double frame, double angle, cv::Point2d shift) :
+      frame(frame), angle(angle), shift(shift)
    {
    }
 
-
-   cv::Mat affine;
+   double frame;
+   double angle;
    cv::Point2d shift;
+};
+
+class TransformInterpolator
+{
+public:
+
+   TransformInterpolator()
+   {
+      frame_transform.push_back(Transform(0.0));
+   }
+
+   void setSize(int width, int height)
+   {
+      centre.x = width * 0.5;
+      centre.y = height * 0.5;
+   }
+
+   bool empty()
+   {
+      return frame_transform.size() <= 1;
+   }
+
+   void clear()
+   {
+      frame_transform.clear();
+      frame_transform.push_back(Transform(0.0));
+   }
+
+   void addTransform(Transform t)
+   {
+      assert(t.frame > frame_transform.back().frame);
+      frame_transform.push_back(t);
+   }
+
+   void getAffine(double frame, cv::Mat& affine, cv::Point2d& shift)
+   {
+      assert(frame >= 0);
+
+      if (frame == cache_frame)
+      {
+         affine = cache_affine;
+         shift = cv::Point2d(0, 0);
+      }
+      else if (frame == 0.0 || frame_transform.size() == 1)
+      {
+         affine = cv::Mat::eye(2, 3, CV_64F);
+         shift = cv::Point2d(0, 0);
+      }
+      else if (frame == frame_transform.back().frame)
+      {
+         interpolate(frame_transform.back(), frame_transform.back(), frame, affine, shift);
+      }
+      else
+      {
+         int idx = 0;
+         while (frame > frame_transform[idx].frame)
+            idx++;
+
+         interpolate(frame_transform[idx - 1], frame_transform[idx], frame, affine, shift);
+      }
+   }
+
+   void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift)
+   {
+      double f = (frame - t1.frame) / (t2.frame - t1.frame);
+
+      double angle = t2.angle * f + t1.angle * (1 - f);
+      affine = cv::getRotationMatrix2D(centre, angle, 1.0);
+
+      shift = t2.shift * f + t1.shift * (1 - f);
+   }
+
+private:
+   std::vector<Transform> frame_transform;
+
+   double cache_frame = -1;
+   cv::Mat cache_affine;
+   cv::Point2d cache_shift;
+
+   cv::Point2d centre;
 };
 
 class AbstractFifoReader : public FLIMReader
@@ -136,7 +217,7 @@ private:
    
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
-   std::vector<Transform> frame_transform;
+   TransformInterpolator transform_interpolator;
 };
 
 class Photon {
@@ -259,6 +340,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    double* p_pos = pos.ptr<double>();
    double* p_tr_pos = pos.ptr<double>();
+   
+   cv::Mat affine;
+   cv::Point2d shift;
 
    while (event_reader->hasMoreData())
    {
@@ -272,15 +356,16 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-
-         if (p.frame < frame_transform.size())
+         if (!transform_interpolator.empty())
          {
-            Transform& tr = frame_transform[p.frame];
+            double sub_frame = p.frame + static_cast<double>(p.y) / n_y;
+
+            transform_interpolator.getAffine(sub_frame, affine, shift);
 
             p_pos[0] = p.x; p_pos[1] = p.y;
-            tr_pos = tr.affine * pos;
-            p.x = p_tr_pos[0] - tr.shift.x; 
-            p.y = p_tr_pos[1] - tr.shift.y;
+            tr_pos = affine * pos;
+            p.x = p_tr_pos[0] - shift.x; 
+            p.y = p_tr_pos[1] - shift.y;
          }
 
          p.x /= spatial_binning;
@@ -297,128 +382,4 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       }
 
    }
-//   std::cout << "Num frames: " << n_frame << "\n";
-//   std::cout << "Num invalid: " << n_invalid << "\n";
 }
-
-
-/*
-template<typename T>
-void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride, bool get_single_frame_intensity)
-{
-   using namespace std;
-
-   auto channels = validateChannels(channels_, n_chan_stride);
-   
-   if (get_single_frame_intensity)
-      n_chan_stride = 1;
-
-   assert(event_reader != nullptr);
-
-   if (!get_single_frame_intensity)
-      event_reader->setToStart();
-   
-   // Determine channel mapping
-   std::vector<int> channel_map(n_chan, -1);
-   int idx = 0;
-   for (auto& c : channels)
-   {
-      channel_map[c] = idx;
-      if (!get_single_frame_intensity)
-         idx++;
-   }
-   
-   int n_bin = get_single_frame_intensity ? 1 : 1 << temporal_resolution;
-   
-   long long sync_count_accum = 0;
-   int cur_line = 0;
-   bool frame_started = 0;
-   bool line_valid = false;
-   long long sync_start = 0;
-      
-   int n_x_binned = n_x / spatial_binning;
-   int n_y_binned = n_y / spatial_binning;
-   
-   int n_frame = 0;
-   int n_invalid = 0;
-   
-   while (event_reader->hasMoreData())
-   {
-      TcspcEvent p = event_reader->getEvent();
-
-      sync_count_accum += p.macro_time_offset;
-      long long cur_sync = p.macro_time + sync_count_accum;
-
-      if (p.valid)
-      {
-         if (p.mark & markers.FrameMarker)
-         {
-            if (n_frame > 0 && get_single_frame_intensity)
-               return;
-
-            n_frame++;
-            frame_started = true;
-            cur_line = -1;
-            cur_direction = 1;
-         }
-         if (frame_started)
-         {
-            if (p.mark & markers.LineEndMarker)
-            {
-               line_valid = false;
-            }
-            if (p.mark & markers.LineStartMarker)
-            {
-               line_valid = true;
-               sync_start = cur_sync;
-               cur_line++;
-
-               if (bi_directional) 
-                  cur_direction *= -1;
-            }
-         }
-
-         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started && p.channel < n_chan)
-         {
-            int mapped_channel = channel_map[p.channel];
-            if (mapped_channel > -1)
-            {
-               double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset) * (n_x_binned);
-
-               if (cur_direction == -1)
-                  cur_loc = n_x_binned - 1 - cur_loc;
-
-               if ((cur_line % (spatial_binning * line_averaging)) == 0)
-                  cur_loc += first_line_sync_offset * n_x_binned;
-
-               int cur_px = static_cast<int>(cur_loc);
-
-               int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
-               dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
-               int bin = dtime >> downsampling;
-
-               int x = cur_px;
-               int y = cur_line / (spatial_binning * line_averaging);
-
-               int frame_idx = n_frame - 1;
-               if (frame_idx < frame_shifts.size())
-               {
-                  x -= std::round(frame_shifts[frame_idx].x / spatial_binning);
-                  y -= std::round(frame_shifts[frame_idx].y / spatial_binning);
-               }
-
-
-               if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
-                  histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
-               else
-                  n_invalid++;
-            }
-         }
-      }
-   }
-   
-   std::cout << "Num frames: " << n_frame << "\n";
-   std::cout << "Num invalid: " << n_invalid << "\n";
-
-}
-*/
