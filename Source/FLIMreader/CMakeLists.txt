@@ -2,12 +2,15 @@ cmake_minimum_required(VERSION 3.0)
 
 PROJECT(FLIMreader)
 
-if(WIN32)
-   set( Boost_USE_STATIC_LIBS ON )
+if(MSVC)
+  set( Boost_USE_STATIC_LIBS ON )
+  add_definitions(-DBOOST_ALL_NO_LIB=1)
 endif()
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIR})
+
+find_package(OpenCV REQUIRED)
 
 set(SOURCE
    FLIMreader.cpp
@@ -32,6 +35,8 @@ set(HEADERS
    lz4.h
 )
 
-set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)
+message("BOOST : ${Boost_LIBRARIES}")
+
+set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
 

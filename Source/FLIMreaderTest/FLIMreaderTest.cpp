@@ -12,9 +12,11 @@ int main()
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
-    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Invivo_LateralMotion.ffd";
+
+   unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(4);
-//   reader->setSpatialBinning(2);
+// reader->setSpatialBinning(2);
    
    
    int sz = reader->dataSizePerChannel();

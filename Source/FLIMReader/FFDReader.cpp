@@ -16,7 +16,7 @@ FfdReader::FfdReader(const std::string& filename) :
 {
    readHeader();
 
-   setTemporalResolution(8);
+   setTemporalResolution(12);
 
    markers.FrameMarker = 0x8;
    markers.LineEndMarker = 0x4;
@@ -24,8 +24,8 @@ FfdReader::FfdReader(const std::string& filename) :
 
    event_reader = std::unique_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position, use_compression, message_size));
 
-
    determineDwellTime();
+   alignFrames();
 }
 
 void FfdReader::readHeader()
@@ -101,7 +101,7 @@ void FfdReader::readHeader()
          if (isTag("L4ZCompression"))
             use_compression = value;
          if (isTag("BidirectionalScan"))
-            bi_directional = value;
+            sync.bi_directional = value;
 
       }
       else if (tag_type == TagDate)

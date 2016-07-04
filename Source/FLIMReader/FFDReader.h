@@ -147,8 +147,7 @@ public:
             return FfdEvent(evt);
          }
 
-//         if (fs.fail())
-//            ffd_event.valid = false;  
+         assert(fs.good());
       }
    }
 
