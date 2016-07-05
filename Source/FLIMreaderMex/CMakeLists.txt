@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(FLIMreaderMex)
+set(CMAKE_DEBUG_POSTFIX "")
 
 # Find MATLAB
 set(MATLAB_ADDITIONAL_VERSIONS

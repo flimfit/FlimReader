@@ -132,14 +132,14 @@ public:
       if (frame == cache_frame)
       {
          affine = cache_affine;
-         shift = cv::Point2d(0, 0);
+         shift = cache_shift;
       }
       else if (frame == 0.0 || frame_transform.size() == 1)
       {
          affine = cv::Mat::eye(2, 3, CV_64F);
          shift = cv::Point2d(0, 0);
       }
-      else if (frame == frame_transform.back().frame)
+      else if (frame >= frame_transform.back().frame)
       {
          interpolate(frame_transform.back(), frame_transform.back(), frame, affine, shift);
       }
@@ -151,6 +151,10 @@ public:
 
          interpolate(frame_transform[idx - 1], frame_transform[idx], frame, affine, shift);
       }
+
+      cache_frame = frame;
+      cache_affine = affine;
+      cache_shift = shift;
    }
 
    void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift)
@@ -183,6 +187,8 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
+   bool supportsRealignment() { return true; }
+
    void alignFrames();
 
    void setTemporalResolution(int temporal_resolution);
@@ -317,6 +323,8 @@ protected:
 template<typename T>
 void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
+   alignFrames();
+
    assert(event_reader != nullptr);
    event_reader->setToStart();
 

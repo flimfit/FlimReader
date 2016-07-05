@@ -5,6 +5,15 @@
 #include <cstdint>
 #include <memory>
 
+class RealignmentParameters 
+{
+public:
+   bool use_realignment = false;
+   int spatial_binning = 4;
+   int frame_binning = 4;
+   bool use_rotation = false;
+};
+
 class FLIMReader
 {
 public:
@@ -42,6 +51,9 @@ public:
 
    int dataSizePerChannel();
 
+   virtual bool supportsRealignment() { return false; }
+   void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }
+
    void setSpatialBinning(int spatial_binning_)
    {
       if (n_x > spatial_binning_ && n_y > spatial_binning_)
@@ -61,4 +73,6 @@ protected:
    int n_x = 0;
    int n_y = 0;
    int n_chan = 0;
+
+   RealignmentParameters realign_params;
 };

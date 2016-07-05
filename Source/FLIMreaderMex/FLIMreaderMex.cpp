@@ -10,9 +10,7 @@
 
 using namespace std;
 
-void CheckInput(int nrhs, int needed);
-void ErrorCheck(int nlhs, int nrhs, const mxArray *prhs[]);
-void CheckSize(const mxArray* array, int needed);
+
 void Cleanup();
 
 vector<unique_ptr<FLIMReader>> readers;
@@ -20,14 +18,14 @@ vector<unique_ptr<FLIMReader>> readers;
 void mexFunction(int nlhs, mxArray *plhs[],
    int nrhs, const mxArray *prhs[])
 {
-   ErrorCheck(nlhs, nrhs, prhs);
    mexAtExit(Cleanup);
+   AssertInputCondition(nrhs >= 1);
 
    try
    {
       if ((nrhs == 1) && mxIsChar(prhs[0]))
       {
-         string filename = GetStringFromMatlab(prhs[0]);
+         string filename = getStringFromMatlab(prhs[0]);
 
          auto reader = unique_ptr<FLIMReader>(FLIMReader::createReader(filename));
 
@@ -53,7 +51,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
             "Second argument should be a command string");
 
          int idx = static_cast<int>(mxGetScalar(prhs[0]));
-         string command = GetStringFromMatlab(prhs[1]);
+         string command = getStringFromMatlab(prhs[1]);
 
          if (idx >= readers.size() || readers[idx] == nullptr)
             mexErrMsgIdAndTxt("FLIMreaderMex:invalidReader",
@@ -61,6 +59,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
          if (command == "GetTimePoints")
          {
+            AssertInputCondition(nlhs >= 1);
             const vector<double>& timepoints = readers[idx]->timepoints();
 
             plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
@@ -68,13 +67,15 @@ void mexFunction(int nlhs, mxArray *plhs[],
             for (int i = 0; i < timepoints.size(); i++)
                t[i] = timepoints[i];
          }
-         else if (command == "GetNumberOfChannels" && nlhs > 0)
+         else if (command == "GetNumberOfChannels")
          {
+            AssertInputCondition(nlhs >= 1);
             int n_chan = readers[idx]->getNumChannels();
             plhs[0] = mxCreateDoubleScalar(n_chan);
          }
-         else if (command == "GetImageSize" && nlhs > 0)
+         else if (command == "GetImageSize")
          {
+            AssertInputCondition(nlhs >= 1);
             plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
             double* d = mxGetPr(plhs[0]);
 
@@ -83,11 +84,10 @@ void mexFunction(int nlhs, mxArray *plhs[],
          }
          else if (command == "GetData" && nlhs > 0)
          {
-            if (nrhs < 3)
-               mexErrMsgIdAndTxt("FLIMreaderMex:invalidInput",
-               "Not enough input arguments");
+            AssertInputCondition(nlhs >= 1);
+            AssertInputCondition(nrhs >= 3);
 
-            vector<int> channels = GetVector<int>(prhs[2]);
+            vector<int> channels = getVector<int>(prhs[2]);
 
             mwSize n_t = readers[idx]->timepoints().size();
             mwSize n_chan = channels.size();
@@ -100,25 +100,47 @@ void mexFunction(int nlhs, mxArray *plhs[],
 			   uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
             readers[idx]->readData(d, channels);
          }
-         else if (command == "GetSpatialBinning" && nlhs >= 1)
+         else if (command == "GetSpatialBinning")
          {
+            AssertInputCondition(nlhs >= 1);
             int spatial_binning = readers[idx]->getSpatialBinning();
             plhs[0] = mxCreateDoubleScalar(spatial_binning);
          }
-         else if (command == "SetSpatialBinning" && nrhs >= 3)
+         else if (command == "SetSpatialBinning")
          {
+            AssertInputCondition(nrhs >= 3);
             int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
-         else if (command == "GetNumTemporalBits" && nlhs >= 1)
+         else if (command == "GetNumTemporalBits")
          {
+            AssertInputCondition(nlhs >= 1);
             int n_bits = readers[idx]->getTemporalResolution();
             plhs[0] = mxCreateDoubleScalar(n_bits);
          }
-         else if (command == "SetNumTemporalBits" && nrhs >= 3)
+         else if (command == "SetNumTemporalBits")
          {
+            AssertInputCondition(nrhs >= 3);
             int n_bits = (int)mxGetScalar(prhs[2]);
             readers[idx]->setTemporalResolution(n_bits);
+         }
+         else if (command == "SupportsRealignment")
+         {
+            AssertInputCondition(nlhs >= 1);
+            bool supports_realignment = readers[idx]->supportsRealignment();
+            plhs[0] = mxCreateLogicalMatrix(1, 1);
+            *(mxGetLogicals(plhs[0])) = supports_realignment;
+         }
+         else if (command == "SetRealignmentParameters")
+         {
+            AssertInputCondition(nrhs >= 3);
+            AssertInputCondition(mxIsStruct(prhs[2]));
+            RealignmentParameters params;
+            params.use_realignment = getValueFromStruct(prhs[2], "use_realignment", false);
+            params.use_rotation = getValueFromStruct(prhs[2], "use_rotation", false);
+            params.frame_binning = getValueFromStruct(prhs[2],"frame_binning", 4);
+            params.spatial_binning = getValueFromStruct(prhs[2], "spatial_binning", 4);
+            readers[idx]->setRealignmentParameters(params);
          }
 
          else if (command == "Delete")
@@ -144,13 +166,3 @@ void Cleanup()
 {
    readers.clear();
 }
-
-
-
-void ErrorCheck(int nlhs, int nrhs, const mxArray *prhs[])
-{
-   if (nrhs == 0)
-      mexErrMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Not enough input arguments");
-}
-

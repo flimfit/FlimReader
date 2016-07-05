@@ -134,8 +134,11 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 
 void AbstractFifoReader::alignFrames()
 {
-   int sb = 4;
-   int fb = 4;
+   if (!realign_params.use_realignment)
+      return;
+
+   int sb = realign_params.spatial_binning;
+   int fb = realign_params.frame_binning;
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
@@ -187,7 +190,7 @@ void AbstractFifoReader::alignFrames()
    {
       Transform transform(fb*(i+0.5));
 
-      if (use_rotation)
+      if (realign_params.use_rotation)
       {
          cv::logPolar(frames[i], log_polari, centre, 1.0, CV_WARP_FILL_OUTLIERS);
          auto p = cv::phaseCorrelate(log_polar0, log_polari, window);

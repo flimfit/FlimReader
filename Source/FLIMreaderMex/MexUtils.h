@@ -1,94 +1,36 @@
+#pragma once
+
 #include <mex.h>
 #include <string>
 #include <vector>
-#include <limits>
 
-using std::string;
+#define AssertInputCondition(x) checkInputCondition(#x, x);
+void checkInputCondition(const char* text, bool condition)
+{
+   if (!condition)
+      mexErrMsgIdAndTxt("FLIMfitMex:invalidInput", text);
+}
 
-string GetStringFromMatlab(const mxArray* dat)
+std::string getStringFromMatlab(const mxArray* dat)
 {
    if (mxIsChar(dat))
    {
-      size_t buflen = mxGetN(dat)*sizeof(mxChar) + 1;
+      size_t buflen = mxGetN(dat) * sizeof(mxChar) + 1;
       char* buf = (char*)mxMalloc(buflen);
 
       mxGetString(dat, buf, (mwSize)buflen);
 
-      return string(buf);
+      return std::string(buf);
    }
 
    mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
       "Unable to retrieve string");
 
-   return string();
+   return std::string();
 }
-
-template<typename T>
-T GetHandleScalar(const mxArray* handle, const char* prop, T default_value = std::numeric_limits<T>::quiet_NaN())
-{
-   if (mxArray* a = mxGetProperty(handle, 0, prop))
-      return (T)mxGetScalar(a);
-
-   mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Unable to retrieve property");
-
-   return default_value;
-}
-
-template<typename T>
-T GetHandleArrayIdx(const mxArray* handle, const char* prop, int idx, T default_value = std::numeric_limits<T>::quiet_NaN())
-{
-   if (const mxArray* a = mxGetProperty(handle, 0, prop))
-      if (mxGetNumberOfElements(a) > idx)
-         return (T)((double*)mxGetData(a))[idx];
-
-   mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Unable to retrieve property");
-
-   return default_value;
-}
-
-template<typename T>
-T GetVariableScalar(const char* prop, T default_value = std::numeric_limits<T>::quiet_NaN())
-{
-   if (const mxArray* a = mexGetVariablePtr("caller", prop))
-      return (T)mxGetScalar(a);
-
-   mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Unable to retrieve property");
-
-   return default_value;
-
-}
-
-template<typename T>
-T GetVariableArrayIdx(const char* prop, int idx, T default_value = std::numeric_limits<T>::quiet_NaN())
-{
-   if (const mxArray* a = mexGetVariablePtr("caller", prop))
-      if (mxGetNumberOfElements(a) > idx)
-         return (T)((double*)mxGetData(a))[idx];
-
-   mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Unable to retrieve property");
-
-   return default_value;
-}
-
-template<typename T>
-T GetVariableArrayIdx(const mxArray* a, int idx, T default_value = std::numeric_limits<T>::quiet_NaN())
-{
-   if (mxGetNumberOfElements(a) > idx)
-      return (T)((double*)mxGetData(a))[idx];
-
-   mexWarnMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Unable to retrieve property");
-
-   return default_value;
-}
-
 
 template<typename T, typename U>
-std::vector<T> GetUVector(const mxArray* v)
+std::vector<T> getUVector(const mxArray* v)
 {
    std::vector<T> vec;
    if (mxIsNumeric(v))
@@ -105,42 +47,116 @@ std::vector<T> GetUVector(const mxArray* v)
 };
 
 template<typename T>
-std::vector<T> GetVector(const mxArray* v)
+std::vector<T> getVector(const mxArray* v)
 {
    if (mxIsDouble(v))
-      return GetUVector<T, double>(v);
+      return getUVector<T, double>(v);
    else if (mxIsSingle(v))
-      return GetUVector<T, float>(v);
+      return getUVector<T, float>(v);
    else if (mxIsInt64(v))
-      return GetUVector<T, int64_t>(v);
+      return getUVector<T, int64_t>(v);
    else if (mxIsInt32(v))
-      return GetUVector<T, int32_t>(v);
+      return getUVector<T, int32_t>(v);
    else if (mxIsInt16(v))
-      return GetUVector<T, int16_t>(v);
+      return getUVector<T, int16_t>(v);
    else if (mxIsInt8(v))
-      return GetUVector<T, int8_t>(v);
+      return getUVector<T, int8_t>(v);
    else if (mxIsUint64(v))
-      return GetUVector<T, uint64_t>(v);
+      return getUVector<T, uint64_t>(v);
    else if (mxIsUint32(v))
-      return GetUVector<T, uint32_t>(v);
+      return getUVector<T, uint32_t>(v);
    else if (mxIsUint16(v))
-      return GetUVector<T, uint16_t>(v);
+      return getUVector<T, uint16_t>(v);
    else if (mxIsUint8(v))
-      return GetUVector<T, uint8_t>(v);
+      return getUVector<T, uint8_t>(v);
 
    return std::vector<T>();
 }
 
-void CheckSize(const mxArray* array, int needed)
+void checkSize(const mxArray* array, int needed)
 {
    if (needed != mxGetNumberOfElements(array))
       mexErrMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Input array is the wrong size");
+         "Input array is the wrong size");
 }
 
-void CheckInput(int nrhs, int needed)
+mxArray* getFieldFromStruct(const mxArray* s, const char *field)
+{
+   int field_number = mxGetFieldNumber(s, field);
+   if (field_number == -1)
+   {
+      std::string err = std::string("Missing field in structure: ").append(field);
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
+   }
+
+   return mxGetFieldByNumber(s, 0, field_number);
+}
+
+double getValueFromStruct(const mxArray* s, const char *field, double default_value)
+{
+   int field_number = mxGetFieldNumber(s, field);
+   if (field_number == -1)
+      return default_value;
+
+   const mxArray* v = mxGetFieldByNumber(s, 0, field_number);
+
+   if (!mxIsScalar(v))
+   {
+      std::string err = std::string("Expected field to be scalar: ").append(field);
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
+   }
+
+   return mxGetScalar(v);
+}
+
+double getValueFromStruct(const mxArray* s, const char *field)
+{
+   const mxArray* v = getFieldFromStruct(s, field);
+
+   if (!mxIsScalar(v))
+   {
+      std::string err = std::string("Expected field to be scalar: ").append(field);
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
+   }
+
+   return mxGetScalar(v);
+}
+
+
+template<typename T>
+std::vector<T> getVectorFromStruct(const mxArray* s, const char *field)
+{
+   mxArray* v = getFieldFromStruct(s, field);
+   return getVector<T>(v);
+}
+
+bool isArgument(int nrhs, const mxArray *prhs[], const char* arg, int nstart = 0)
+{
+   for (int i = nstart; (i + 1) < nrhs; i++)
+   {
+      if (mxIsChar(prhs[i]) && getStringFromMatlab(prhs[i]) == arg)
+         return true;
+   }
+   return false;
+}
+
+const mxArray* getNamedArgument(int nrhs, const mxArray *prhs[], const char* arg, int nstart = 0)
+{
+   for (int i = nstart; (i + 1) < nrhs; i++)
+   {
+      if (mxIsChar(prhs[i]) && getStringFromMatlab(prhs[i]) == arg)
+         return prhs[i + 1];
+   }
+
+   std::string err = std::string("Missing argument: ").append(arg);
+   mexErrMsgIdAndTxt("FLIMfit:missingArgument", err.c_str());
+   return static_cast<const mxArray*>(nullptr);
+}
+
+void checkInput(int nrhs, int needed)
 {
    if (nrhs < needed)
       mexErrMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
-      "Not enough input arguments");
+         "Not enough input arguments");
 }
+
