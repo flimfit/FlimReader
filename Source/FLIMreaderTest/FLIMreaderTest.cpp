@@ -22,6 +22,11 @@ int main()
    int sz = reader->dataSizePerChannel();
    std::vector<uint16_t> d(sz);
 
+   RealignmentParameters params;
+   params.use_realignment = true;
+
+   reader->setRealignmentParameters(params);
+
    reader->readData(d.data(), { 0 });
 
 

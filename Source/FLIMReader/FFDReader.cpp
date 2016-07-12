@@ -25,7 +25,6 @@ FfdReader::FfdReader(const std::string& filename) :
    event_reader = std::unique_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position, use_compression, message_size));
 
    determineDwellTime();
-   alignFrames();
 }
 
 void FfdReader::readHeader()
