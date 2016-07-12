@@ -18,6 +18,7 @@ set(SOURCE
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
    FFDReader.cpp
+   BhSPCReader.cpp
    TextReader.cpp
    lz4.c
 )
@@ -30,6 +31,7 @@ set(HEADERS
    PicoquantBINReader.h
    PicoquantHelper.h
    FFDReader.h
+   BhSPCReader.h
    TextReader.h
    PicoquantT3Event.h
    lz4.h
