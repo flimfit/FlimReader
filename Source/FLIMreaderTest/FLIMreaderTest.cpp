@@ -5,14 +5,18 @@ using namespace std;
 
 int main()
 {
-   //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
-   std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
+   std::string filename;
    
    //filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/james.pt3";
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
-   filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
-    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
+   //filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
+   
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Bidirectional scan.ffd";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/hetero-FRET ptu/D1.ptu";
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/GFP-H2B-20MHz_2_1.ptu";
+
+   unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(4);
 //   reader->setSpatialBinning(2);
    

@@ -50,8 +50,9 @@ void AbstractFifoReader::determineDwellTime()
    uint64_t sync_start_count = 0;
    sync_count_per_line = 0;
    int n_averaged = 0;
-   int n_frame = 0;
    int n_line = 0;
+   int n_frame = 0;
+
    bool line_started = false;
    do
    {
@@ -64,10 +65,9 @@ void AbstractFifoReader::determineDwellTime()
          continue;
 
       if (p.mark & markers.FrameMarker)
-      {
          n_frame++;
-      }
-      if (n_frame > 0)
+
+      if (n_frame > 0 || markers.FrameMarker == 0x0)
       {
          if ((p.mark & markers.LineEndMarker) && line_started)
          {
@@ -76,17 +76,19 @@ void AbstractFifoReader::determineDwellTime()
             n_averaged++;
             line_started = false;
          }
-         if (p.mark & markers.LineStartMarker)
+         else if (p.mark & markers.LineStartMarker)
          {
             n_line++;
             sync_start_count = macro_time;
             line_started = true;
          }
-
       }
-      if (n_frame >= 2)
+
+      // if we don't have frame markers break after 512 lines (speed considerations)
+      if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
-   } while (event_reader->hasMoreData());
+
+   } while (event_reader->hasMoreData() && n_frame < 2);
    
    sync_count_per_line /= n_averaged;
    
@@ -99,8 +101,10 @@ void AbstractFifoReader::determineDwellTime()
 	  if (n_x == 0)
          n_x = n_line / line_averaging;
    }
-   else
+   else if (markers.FrameMarker != 0x0)
+   {
       assert(n_y == n_line);
+   }
    
 }
 

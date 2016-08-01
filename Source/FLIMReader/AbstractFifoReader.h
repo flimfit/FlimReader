@@ -12,10 +12,9 @@ class Markers
 {
 public:
    uint8_t PhotonMarker = 0x0;
-   uint8_t PixelMarker = 0x1;
-   uint8_t LineStartMarker = 0x2;
-   uint8_t LineEndMarker = 0x4;
-   uint8_t FrameMarker = 0x8;
+   uint8_t LineStartMarker = 0x0;
+   uint8_t LineEndMarker = 0x0;
+   uint8_t FrameMarker = 0x0;
    uint8_t Invalid = 0x80;
 };
 
@@ -93,7 +92,6 @@ protected:
    
    // Required Picoquant information
    int measurement_mode = 0;
-   //long long n_records;
    double time_resolution_native_ps;
    float t_rep_ps;
    int n_timebins_native;
@@ -133,7 +131,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    
    long long sync_count_accum = 0;
    int cur_line = 0;
-   bool frame_started = 0;
+   bool frame_started = markers.FrameMarker == 0x0;
    bool line_valid = false;
    long long sync_start = 0;
       
@@ -142,6 +140,13 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    
    int n_frame = 0;
    int n_invalid = 0;
+
+   auto incrementFrame = [&]() {
+      n_frame++;
+      frame_started = true;
+      cur_line = -1;
+      cur_direction = 1;
+   };
    
    while (event_reader->hasMoreData())
    {
@@ -152,24 +157,23 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
       if (p.valid)
       {
-         if (p.mark & markers.FrameMarker) // PQ: FRAME = 4
-         {
-            n_frame++;
-            frame_started = true;
-            cur_line = -1;
-            cur_direction = 1;
-         }
+         if (p.mark & markers.FrameMarker)
+            incrementFrame();
+
          if (frame_started)
          {
-            if (p.mark & markers.LineEndMarker) // PQ: LINE_END = 2
+            if ((p.mark & markers.LineEndMarker) && line_valid)
             {
                line_valid = false;
             }
-            if (p.mark & markers.LineStartMarker) // PQ: LINE_START = 1
+            else if (p.mark & markers.LineStartMarker)
             {
                line_valid = true;
                sync_start = cur_sync;
                cur_line++;
+
+               if ((cur_line >= n_y) && markers.FrameMarker == 0x0)
+                  incrementFrame();
 
                if (bi_directional) 
                   cur_direction *= -1;

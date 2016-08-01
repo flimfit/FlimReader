@@ -13,5 +13,5 @@ protected:
    void readHeader();
    int data_position = 0;
    int temporal_binning = 0;
-
+   int rec_type;
 };
