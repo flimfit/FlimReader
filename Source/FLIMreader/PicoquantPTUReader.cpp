@@ -22,7 +22,7 @@ AbstractFifoReader(filename)
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
    // Default if markers aren't specified in data
-   if (markers.LineEndMarker == 0xFF && markers.LineStartMarker == 0xFF)
+   if (markers.LineEndMarker == 0x00 && markers.LineStartMarker == 0x00)
    {
       markers.FrameMarker = 0x4;
       markers.LineEndMarker = 0x2;
