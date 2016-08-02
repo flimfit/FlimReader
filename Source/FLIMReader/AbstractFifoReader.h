@@ -180,8 +180,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             }
          }
 
-         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
+         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started && p.channel < n_chan)
          {
+
             int mapped_channel = channel_map[p.channel];
             if (mapped_channel > -1)
             {

@@ -53,7 +53,11 @@ void AbstractFifoReader::determineDwellTime()
    int n_line = 0;
    int n_frame = 0;
 
-   bool line_started = false;
+   std::vector<uint64_t> sync_counts;
+   if (n_y > 0)
+      sync_counts.reserve(n_y);
+
+   bool line_active = false;
    do
    {
       TcspcEvent p = event_reader->getEvent();
@@ -69,18 +73,21 @@ void AbstractFifoReader::determineDwellTime()
 
       if (n_frame > 0 || markers.FrameMarker == 0x0)
       {
-         if ((p.mark & markers.LineEndMarker) && line_started)
+         if ((p.mark & markers.LineEndMarker) && line_active)
          {
             uint64_t diff = macro_time - sync_start_count;
-            sync_count_per_line += (macro_time - sync_start_count);
+            sync_count_per_line += diff;
+
+            sync_counts.push_back(diff);
+
             n_averaged++;
-            line_started = false;
+            line_active = false;
          }
          else if (p.mark & markers.LineStartMarker)
          {
             n_line++;
             sync_start_count = macro_time;
-            line_started = true;
+            line_active = true;
          }
       }
 
@@ -88,9 +95,25 @@ void AbstractFifoReader::determineDwellTime()
       if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
 
-   } while (event_reader->hasMoreData() && n_frame < 2);
+   } while (event_reader->hasMoreData() && (n_frame < 2 || line_active));
    
    sync_count_per_line /= n_averaged;
+   
+   // Remove sync count outliers
+   // Shouldn't really be required but we seem to sometimes get some strange outliers
+   double cor_sync_count_per_line = 0;
+   int used_lines = 0;
+   double allowed_variance = 0.1 * sync_count_per_line;
+   for (auto& c : sync_counts)
+   {
+      if (abs(c - sync_count_per_line) < allowed_variance)
+      {
+         cor_sync_count_per_line += c;
+         used_lines++;
+      }
+   }
+   sync_count_per_line = cor_sync_count_per_line / used_lines;
+   
    
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
