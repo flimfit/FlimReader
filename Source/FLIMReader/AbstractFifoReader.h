@@ -187,13 +187,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             {
                double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset) * (n_x_binned);
 
-               if (cur_direction == -1)
-                  cur_loc = n_x_binned - 1 - cur_loc;
-
-               if ((cur_line % (spatial_binning * line_averaging)) == 0)
-                  cur_loc += first_line_sync_offset * n_x_binned;
-
                int cur_px = static_cast<int>(cur_loc);
+
+               if (cur_direction == -1)
+                  cur_px = n_x_binned - 1 - cur_px;
 
                int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
                dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
