@@ -32,7 +32,24 @@ public:
    cv::Point2d shift;
 };
 
-class TransformInterpolator
+class AbstractFrameAligner
+{
+public:
+
+   virtual bool empty() = 0;
+   virtual void clear() = 0;
+
+   void setRealignmentParams(RealignmentParameters params_) { realign_params = params_; }
+   virtual void setReference(double frame_t, const cv::Mat& reference_) = 0;
+   virtual void addFrame(double frame_t, const cv::Mat& frame) = 0;
+
+protected:
+   RealignmentParameters realign_params;
+   cv::Mat reference;
+
+};
+
+class TransformInterpolator : public AbstractFrameAligner
 {
 public:
 
@@ -41,9 +58,8 @@ public:
    bool empty();
    void clear();
 
-   void setRealignmentParams(RealignmentParameters params_);
-   void setReference(double frame_t, cv::Mat& reference_);
-   void addFrame(double frame_t, cv::Mat& frame); 
+   void setReference(double frame_t, const cv::Mat& reference_);
+   void addFrame(double frame_t, const cv::Mat& frame); 
    void getAffine(double frame, cv::Mat& affine, cv::Point2d& shift);
    void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift);
 
@@ -53,7 +69,6 @@ protected:
 
 private:
    std::vector<Transform> frame_transform;
-   RealignmentParameters realign_params;
 
    double cache_frame = -1;
    cv::Mat cache_affine;

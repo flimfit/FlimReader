@@ -40,6 +40,7 @@ set(HEADERS
    TransformInterpolator.h
    FifoProcessor.h
    lz4.h
+   FrameWarpAligner.h
 )
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)

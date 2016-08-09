@@ -19,12 +19,7 @@ void TransformInterpolator::clear()
    frame_transform.push_back(Transform(0.0));
 }
 
-void TransformInterpolator::setRealignmentParams(RealignmentParameters params_)
-{
-   realign_params = params_;
-}
-
-void TransformInterpolator::setReference(double frame_t, cv::Mat& reference_)
+void TransformInterpolator::setReference(double frame_t, const cv::Mat& reference_)
 {
    reference = reference_;
 
@@ -39,7 +34,7 @@ void TransformInterpolator::setReference(double frame_t, cv::Mat& reference_)
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
 
-void TransformInterpolator::addFrame(double frame_t, cv::Mat& frame)
+void TransformInterpolator::addFrame(double frame_t, const cv::Mat& frame)
 {
    Transform transform(frame_t);
 

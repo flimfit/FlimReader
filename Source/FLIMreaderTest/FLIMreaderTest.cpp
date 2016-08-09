@@ -1,9 +1,13 @@
 #include "FLIMreader.h"
+
+//#define CATCH_CONFIG_MAIN 
 #include "catch.hpp"
 
-using namespace std;
+#include "FrameWarpAligner.h"
 
-int main()
+using namespace std;
+/*
+TEST_CASE("Loading data", "[load]")
 {
    //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
    std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
@@ -28,6 +32,29 @@ int main()
    reader->setRealignmentParameters(params);
 
    reader->readData(d.data(), { 0 });
+}
+*/
+
+int main()
+{
+   bool error = false;
+   {
+      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image1.png";
+      std::string im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image2.png";
+
+      cv::Mat ref_im = cv::imread(ref_im_file, CV_LOAD_IMAGE_GRAYSCALE);
+      cv::Mat im = cv::imread(im_file, CV_LOAD_IMAGE_GRAYSCALE);
+
+      cv::transpose(ref_im, ref_im);
+      cv::transpose(im, im);
+
+      ref_im.convertTo(ref_im, CV_16S);
+      im.convertTo(im, CV_16S);
+
+      FrameWarpAligner aligner;
+      aligner.setReference(0, ref_im);
+      aligner.addFrame(1, im);
+   }
 
 
    return 0;
