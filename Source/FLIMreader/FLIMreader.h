@@ -5,14 +5,7 @@
 #include <cstdint>
 #include <memory>
 
-class RealignmentParameters 
-{
-public:
-   bool use_realignment = false;
-   int spatial_binning = 1;
-   int frame_binning = 1;
-   bool use_rotation = false;
-};
+#include "TransformInterpolator.h"
 
 class FLIMReader
 {

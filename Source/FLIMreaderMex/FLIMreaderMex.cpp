@@ -136,10 +136,10 @@ void mexFunction(int nlhs, mxArray *plhs[],
             AssertInputCondition(nrhs >= 3);
             AssertInputCondition(mxIsStruct(prhs[2]));
             RealignmentParameters params;
-            params.use_realignment = getValueFromStruct(prhs[2], "use_realignment", false);
-            params.use_rotation = getValueFromStruct(prhs[2], "use_rotation", false);
-            params.frame_binning = getValueFromStruct(prhs[2],"frame_binning", 4);
-            params.spatial_binning = getValueFromStruct(prhs[2], "spatial_binning", 4);
+            params.use_realignment = (bool) (getValueFromStruct(prhs[2], "use_realignment", false) != 0);
+            params.use_rotation = (bool) (getValueFromStruct(prhs[2], "use_rotation", false) != 0);
+            params.frame_binning = (int) getValueFromStruct(prhs[2],"frame_binning", 4);
+            params.spatial_binning = (int) getValueFromStruct(prhs[2], "spatial_binning", 4);
             readers[idx]->setRealignmentParameters(params);
          }
 

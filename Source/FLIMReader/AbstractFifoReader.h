@@ -11,13 +11,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "TransformInterpolator.h"
 #include "FifoProcessor.h"
 
 class AbstractEventReader
 {
 public:
-   AbstractEventReader(const std::string& filename, int data_position) :
+   AbstractEventReader(const std::string& filename, std::streamoff data_position) :
    data_position(data_position)
    {
       fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
@@ -40,7 +39,7 @@ public:
 protected:
    
    std::ifstream fs;
-   int data_position;
+   std::streamoff data_position;
 };
 
 
@@ -78,7 +77,7 @@ protected:
    int measurement_mode = 0;
    //long long n_records;
    double time_resolution_native_ps;
-   float t_rep_ps;
+   double t_rep_ps;
    int n_timebins_native;
 
    SyncSettings sync;
@@ -149,8 +148,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
             p_pos[0] = p.x; p_pos[1] = p.y;
             tr_pos = affine * pos;
-            p.x = p_tr_pos[0] - shift.x; 
-            p.y = p_tr_pos[1] - shift.y;
+            p.x = (int) (p_tr_pos[0] - shift.x); 
+            p.y = (int) (p_tr_pos[1] - shift.y);
          }
 
          p.x /= spatial_binning;

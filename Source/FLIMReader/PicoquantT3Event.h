@@ -37,7 +37,7 @@ class PicoquantEventReader : public AbstractEventReader
 {
 public:
 
-   PicoquantEventReader(const std::string& filename, int data_position)
+   PicoquantEventReader(const std::string& filename, std::streamoff data_position)
       : AbstractEventReader(filename, data_position)
    {}
 

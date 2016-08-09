@@ -10,7 +10,7 @@ public:
 protected:
 
    void readHeader();
-   int data_position = 0;
+   std::streamoff data_position = 0;
 
 };
 
@@ -33,7 +33,7 @@ class BhEventReader : public AbstractEventReader
 {
 public:
 
-   BhEventReader(const std::string& filename, int data_position)
+   BhEventReader(const std::string& filename, std::streamoff data_position)
       : AbstractEventReader(filename, data_position)
    {}
 

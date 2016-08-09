@@ -79,9 +79,9 @@ void FfdReader::readHeader()
          std::cout << value;
 
          if (isTag("NumChannels"))
-            n_chan = value;
+            n_chan = (int) value;
          else if(isTag("NumTimeBins"))
-            n_timebins_native = value;
+            n_timebins_native = (int) value;
       }
       else if (tag_type == TagUInt64)
       {

@@ -23,6 +23,7 @@ set(SOURCE
    BhSPCReader.cpp
    TextReader.cpp
    lz4.c
+   TransformInterpolator.cpp
 )
 
 set(HEADERS

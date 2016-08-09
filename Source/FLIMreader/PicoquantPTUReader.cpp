@@ -18,7 +18,7 @@ AbstractFifoReader(filename)
    n_timebins_native = 1 << 14;
    n_timebins_native /= temporal_binning;
 
-   int n_timebins_useful = ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
+   int n_timebins_useful = (int) ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
 
@@ -65,11 +65,11 @@ void PicoquantPTUReader::readHeader()
             break;
             
          case tyBool8:
-            cout << (bool) tag_head.TagValue;
+            cout << (tag_head.TagValue != 0);
             break;
             
          case tyInt8:
-            cout << (int) tag_head.TagValue;
+            cout << (tag_head.TagValue != 0);
             // get some Values we need to analyse records
 //            if (strcmp(tag_head.Ident, TTTRTagNumRecords)==0) // Number of records
 //               n_records = tag_head.TagValue;
@@ -82,7 +82,7 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, TTResult_SyncRate)==0)
                t_rep_ps = 1e12f / tag_head.TagValue;
             if (strcmp(tag_head.Ident, MeasDesc_BinningFactor)==0)
-               temporal_binning = tag_head.TagValue;
+               temporal_binning = (int) tag_head.TagValue;
             break;
             
          case tyBitSet64:

@@ -108,7 +108,7 @@ void AbstractFifoReader::determineDwellTime()
 
 void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 {
-   int native_resolution = ceil(log2(n_timebins_native));
+   int native_resolution = (int) ceil(log2(n_timebins_native));
    
    temporal_resolution = std::min(native_resolution, temporal_resolution__);
    temporal_resolution = std::max(0, temporal_resolution);

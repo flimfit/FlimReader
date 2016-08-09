@@ -59,7 +59,7 @@ class FfdEventReader : public AbstractEventReader
 {
 public:
 
-   FfdEventReader(const std::string& filename, int version, int data_position, bool use_compression = false, size_t max_message_size = 16 * 1024)
+   FfdEventReader(const std::string& filename, int version, std::streamoff data_position, bool use_compression = false, size_t max_message_size = 16 * 1024)
       : AbstractEventReader(filename, data_position),
         version(version),
         use_compression(use_compression),
@@ -67,7 +67,7 @@ public:
    {
       decode_buffer.resize(buffer_size);
       input_buffer.resize(LZ4_COMPRESSBOUND(max_message_size));
-	  lz4StreamDecode_body = { 0 };
+	   lz4StreamDecode_body = { 0 };
    }
 
    void decode()
@@ -91,7 +91,7 @@ public:
 
       char* const dec_ptr = &decode_buffer[decode_offset];
       decode_bytes = LZ4_decompress_safe_continue(
-         lz4StreamDecode, input_buffer.data(), dec_ptr, cmp_bytes, max_message_size);
+         lz4StreamDecode, input_buffer.data(), dec_ptr, cmp_bytes, (int) max_message_size);
 
       finished_decoding = decode_bytes <= 0;
    }
@@ -189,7 +189,7 @@ protected:
    } FlimMetadataTag;
 
    void readHeader();
-   int data_position = 0;
+   std::streamoff data_position = 0;
    bool use_compression = false;
    size_t message_size = 16 * 1024;
    uint32_t version;
