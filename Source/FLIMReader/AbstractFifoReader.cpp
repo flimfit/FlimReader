@@ -170,46 +170,13 @@ void AbstractFifoReader::alignFrames()
       }
    }
 
-
    cv::Mat window;
    cv::createHanningWindow(window, cv::Size(n_x_binned, n_y_binned), CV_32F);
 
    transform_interpolator.clear();
-   transform_interpolator.setSize(n_x, n_y);
-   transform_interpolator.addTransform(Transform(fb*0.5));
+   transform_interpolator.setRealignmentParams(realign_params);
+   transform_interpolator.setReference(fb*0.5, frames[0]);
   
-   cv::Point2f centre_binned(n_x_binned / 2.0, n_y_binned / 2.0);
-   cv::Point2f centre(n_x / 2.0, n_y / 2.0);
-
-   cv::Mat log_polar0, log_polari, rotatedi;
-   cv::logPolar(frames[0], log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
-
-   bool use_rotation = true;
-
    for (int i = 1; i < frames.size(); i++)
-   {
-      Transform transform(fb*(i+0.5));
-
-      if (realign_params.use_rotation)
-      {
-         cv::logPolar(frames[i], log_polari, centre, 1.0, CV_WARP_FILL_OUTLIERS);
-         auto p = cv::phaseCorrelate(log_polar0, log_polari, window);
-         double rotation = p.y * 90.0 / n_y_binned - 45.0;
-
-         cv::Mat t = cv::getRotationMatrix2D(centre_binned, rotation, 1);
-         cv::warpAffine(frames[i], rotatedi, t, frames[i].size());
-
-         transform.angle = rotation;
-      }
-      else
-      {
-         rotatedi = frames[i];
-      }
-
-      auto p = cv::phaseCorrelate(frames[0], rotatedi, window);
-     
-      transform.shift = p * sb;
-
-      transform_interpolator.addTransform(transform);
-   }
+      transform_interpolator.addFrame(fb*(i+0.5), frames[i]);
 }

@@ -12,6 +12,8 @@ include_directories(${Boost_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
 
+find_package(Eigen REQUIRED)
+
 set(SOURCE
    FLIMreader.cpp
    AbstractFifoReader.cpp
@@ -34,10 +36,10 @@ set(HEADERS
    BhSPCReader.h
    TextReader.h
    PicoquantT3Event.h
+   TransformInterpolator.h
+   FifoProcessor.h
    lz4.h
 )
-
-message("BOOST : ${Boost_LIBRARIES}")
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
