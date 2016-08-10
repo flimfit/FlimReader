@@ -2,20 +2,24 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 
-enum RealignmentType
+enum class RealignmentType
 {
-   NoRealignment,
-   RigidRealignment,
-   WarpRealignment
+   None        = 0,
+   Translation = 1,
+   RigidBody   = 2,
+   Warp        = 3
 };
 
 class RealignmentParameters
 {
 public:
-   bool use_realignment = false;
+   RealignmentType type = RealignmentType::None;
    int spatial_binning = 1;
    int frame_binning = 1;
-   bool use_rotation = false;
+   int n_resampling_points = 30;
+
+   bool use_realignment() { return type != RealignmentType::None; }
+   bool use_rotation() { return type == RealignmentType::RigidBody; }
 };
 
 class ImageScanParameters

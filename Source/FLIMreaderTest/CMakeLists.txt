@@ -4,12 +4,11 @@ PROJECT(FLIMreaderTest)
 
 find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV REQUIRED)
- 
+
 cmake_policy(SET CMP0020 NEW)
 cmake_policy(SET CMP0043 NEW)
 
 include_directories(../FLIMreader)
-
 
 # Source Files
 #====================================

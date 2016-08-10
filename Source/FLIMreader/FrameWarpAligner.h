@@ -34,7 +34,7 @@ protected:
    void computeHessian();
    void steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& sd);
    void warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D);
-   cv::Point warpPoint(const std::vector<cv::Point2d>& D, int x, int y);
+   cv::Point warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning = 1);
 
    std::vector<Range> D_range;
 
@@ -45,6 +45,9 @@ protected:
    std::map<int,std::vector<cv::Point2d>> Dstore;
 
    int nD = 10;
+
+   int n_x_binned;
+   int n_y_binned;
 
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
 

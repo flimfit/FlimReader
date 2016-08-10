@@ -13,15 +13,19 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
    reference = reference_;
 
+   n_x_binned = image_params.n_x / realign_params.spatial_binning;
+   n_y_binned = image_params.n_y / realign_params.spatial_binning;
+   nD = realign_params.n_resampling_points;
+
    precomputeInterp();
    computeSteepestDecentImages();
    computeHessian();
-
+   /*
    cv::Mat out;
-   out.convertTo(out, CV_8U, 5);
+   reference.convertTo(out, CV_8U, 5);
    std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image-out-" + std::to_string(frame_t) + ".png";
    cv::imwrite(ref_im_file, out);
-
+   */
    reference.convertTo(sum_1, CV_32F);
    reference.convertTo(sum_2, CV_32F);
 }
@@ -74,12 +78,12 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    }
 
    Dstore[frame_t] = D;
-   /*
+   
    sum_1 += frame;
    sum_2 += wimg;
 
    cv::Mat img;
-   
+   /*
    cv::transpose(frame, img);
    img.convertTo(img, CV_8U, 5);
    std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-" + std::to_string(frame_t) + ".png";
@@ -91,16 +95,16 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    cv::imwrite(ref_im_file, wimg);
    
    double min, max; 
-   cv::minMaxIdx(sum_1, &min, &max);
-   sum_1.convertTo(img, CV_8U, 0.1);
+   cv::minMaxIdx(sum_2, &min, &max);
+
+   sum_1.convertTo(img, CV_8U, 350.0/max);
    ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-final.png";
    cv::imwrite(ref_im_file, img);
 
-   cv::minMaxIdx(sum_2, &min, &max);
-   sum_2.convertTo(img, CV_8U, 0.1);
+   sum_2.convertTo(img, CV_8U, 350.0/max);
    ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-final.png";
    cv::imwrite(ref_im_file, img);
-   */
+   */   
 }
 
 
@@ -112,9 +116,10 @@ void FrameWarpAligner::shiftPixel(int frame_t, int& x, int& y)
    auto& D = Dstore[frame_t];
    cv::Point loc = warpPoint(D, x, y);
 
-   x = loc.x;
-   y = loc.y;
+   x -= loc.x;
+   y -= loc.y;
 }
+
 
 
 /*
@@ -337,21 +342,28 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
    for (int y = 0; y < size.height; y++)
       for (int x = 0; x < size.width; x++)
       {
-         cv::Point2i loc = warpPoint(D, x, y);
+         cv::Point2i loc = warpPoint(D, x, y, realign_params.spatial_binning);
+         loc.x += x;
+         loc.y += y;
 
          if (img_rect.contains(loc))
             wimg.at<float>(y, x) = img.at<float>(loc);
       }
 }
 
-cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, int y)
+cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning)
 {
-   if ((x < 0) || (x >= (image_params.n_x / realign_params.spatial_binning)) || (y < 0) || (y >= (image_params.n_y / realign_params.spatial_binning)))
+   double factor = ((double)realign_params.spatial_binning) / spatial_binning;
+   int xs = x / factor;
+   int ys = y / factor;
+
+   if ((xs < 0) || (xs >= n_x_binned) || (ys < 0) || (ys >= n_y_binned))
       return cv::Point(x,y);
 
-   double f = Df.at<double>(y, x);
-   int i = Di.at<uint16_t>(y, x);
+   double f = Df.at<double>(ys, xs);
+   int i = Di.at<uint16_t>(ys, xs);
    cv::Point2d p = f * D[i + 1] + (1 - f) * D[i];
+   p *= factor;
 
-   return cv::Point((int)(x + p.x), (int)(y + p.y));
+   return cv::Point((int)p.x, (int)p.y);
 }

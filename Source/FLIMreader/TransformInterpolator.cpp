@@ -39,7 +39,7 @@ void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
 {
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
-   if (realign_params.use_rotation)
+   if (realign_params.use_rotation())
    {
       cv::logPolar(frame, log_polari, centre, 1.0, CV_WARP_FILL_OUTLIERS);
       auto p = cv::phaseCorrelate(log_polar0, log_polari, window);

@@ -22,6 +22,8 @@ message("Set Matlab root: ${Matlab_ROOT_DIR}")
 set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 find_package(OpenCV REQUIRED)
+set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
+
 
 include_directories(../FLIMreader)
 

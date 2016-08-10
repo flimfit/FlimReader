@@ -21,7 +21,7 @@ void main()
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_FFD_Peristalsis2.ffd";
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(4);
-   reader->setSpatialBinning(2);
+   reader->setSpatialBinning(1);
    
    
    int sz = reader->dataSizePerChannel();
@@ -30,7 +30,7 @@ void main()
    RealignmentParameters params;
    params.frame_binning = 1;
    params.spatial_binning = 2;
-   params.use_realignment = true;
+   params.type = RealignmentType::Warp;
    
    reader->setRealignmentParameters(params);
 

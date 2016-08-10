@@ -145,7 +145,7 @@ void AbstractFifoReader::alignFrames()
 {
    frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
 
-   if (!realign_params.use_realignment)
+   if (!realign_params.use_realignment())
       return;
 
    int sb = realign_params.spatial_binning;
@@ -176,6 +176,10 @@ void AbstractFifoReader::alignFrames()
          while (p.frame >= frames.size())
             frames.push_back(cv::Mat(n_x_binned, n_y_binned, CV_32F, cv::Scalar(0)));
 
+#ifdef _DEBUG
+         if (p.frame > 5)
+            break;
+#endif
          if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
             frames[p.frame].at<float>(p.y, p.x)++;
       }
