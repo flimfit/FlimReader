@@ -19,14 +19,14 @@ void TransformInterpolator::clear()
    frame_transform.push_back(Transform(0.0));
 }
 
-void TransformInterpolator::setReference(double frame_t, const cv::Mat& reference_)
+void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
 {
    reference = reference_;
 
    auto size = reference.size();
    cv::createHanningWindow(window, reference.size(), CV_32F);
 
-   addTransform(Transform(frame_t));
+   addTransform(Transform(0.5*realign_params.frame_binning));
 
    centre = cv::Point2d(size.width, size.height) * 0.5;
    centre_binned = cv::Point2d(size.width, size.height) * 0.5 / realign_params.spatial_binning;
@@ -34,9 +34,9 @@ void TransformInterpolator::setReference(double frame_t, const cv::Mat& referenc
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
 
-void TransformInterpolator::addFrame(double frame_t, const cv::Mat& frame)
+void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
 {
-   Transform transform(frame_t);
+   Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
    if (realign_params.use_rotation)
    {
@@ -60,6 +60,27 @@ void TransformInterpolator::addFrame(double frame_t, const cv::Mat& frame)
 
    addTransform(transform);
 }
+
+void TransformInterpolator::shiftPixel(int frame, int& x, int& y)
+{
+   cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
+   cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));
+
+   pos.at<double>(0) = x;
+   pos.at<double>(1) = y;
+
+   cv::Mat affine;
+   cv::Point2d shift;
+
+   double frame_t = frame + y*image_params.interline_duration + x*image_params.pixel_duration;
+
+   getAffine(frame_t, affine, shift);
+   tr_pos = affine * pos;
+
+   x = (int)std::round(tr_pos.at<double>(0) - shift.x);
+   y = (int)std::round(tr_pos.at<double>(1) - shift.y);
+}
+
 
 void TransformInterpolator::getAffine(double frame, cv::Mat& affine, cv::Point2d& shift)
 {

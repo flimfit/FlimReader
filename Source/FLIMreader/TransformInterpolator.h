@@ -1,14 +1,6 @@
 #pragma once
-#include <opencv2/opencv.hpp>
 
-class RealignmentParameters
-{
-public:
-   bool use_realignment = false;
-   int spatial_binning = 1;
-   int frame_binning = 1;
-   bool use_rotation = false;
-};
+#include "AbstractFrameAligner.h"
 
 class Transform
 {
@@ -32,23 +24,6 @@ public:
    cv::Point2d shift;
 };
 
-class AbstractFrameAligner
-{
-public:
-
-   virtual bool empty() = 0;
-   virtual void clear() = 0;
-
-   void setRealignmentParams(RealignmentParameters params_) { realign_params = params_; }
-   virtual void setReference(double frame_t, const cv::Mat& reference_) = 0;
-   virtual void addFrame(double frame_t, const cv::Mat& frame) = 0;
-
-protected:
-   RealignmentParameters realign_params;
-   cv::Mat reference;
-
-};
-
 class TransformInterpolator : public AbstractFrameAligner
 {
 public:
@@ -58,16 +33,15 @@ public:
    bool empty();
    void clear();
 
-   void setReference(double frame_t, const cv::Mat& reference_);
-   void addFrame(double frame_t, const cv::Mat& frame); 
-   void getAffine(double frame, cv::Mat& affine, cv::Point2d& shift);
-   void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift);
-
-protected:
+   void setReference(int frame_t, const cv::Mat& reference_);
+   void addFrame(int frame_t, const cv::Mat& frame); 
+   void shiftPixel(int frame, int& x, int& y);
+private:
 
    void addTransform(Transform t);
+   void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift);
+   void getAffine(double frame, cv::Mat& affine, cv::Point2d& shift);
 
-private:
    std::vector<Transform> frame_transform;
 
    double cache_frame = -1;

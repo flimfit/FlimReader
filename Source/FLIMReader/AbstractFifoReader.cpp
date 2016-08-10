@@ -175,8 +175,8 @@ void AbstractFifoReader::alignFrames()
 
    transform_interpolator.clear();
    transform_interpolator.setRealignmentParams(realign_params);
-   transform_interpolator.setReference(fb*0.5, frames[0]);
+   transform_interpolator.setReference(0, frames[0]);
   
    for (int i = 1; i < frames.size(); i++)
-      transform_interpolator.addFrame(fb*(i+0.5), frames[i]);
+      transform_interpolator.addFrame(i, frames[i]);
 }

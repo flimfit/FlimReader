@@ -24,6 +24,7 @@ set(SOURCE
    TextReader.cpp
    lz4.c
    TransformInterpolator.cpp
+   FrameWarpAligner.cpp
 )
 
 set(HEADERS
@@ -37,9 +38,10 @@ set(HEADERS
    BhSPCReader.h
    TextReader.h
    PicoquantT3Event.h
-   TransformInterpolator.h
    FifoProcessor.h
    lz4.h
+   AbstractFrameAligner.h
+   TransformInterpolator.h
    FrameWarpAligner.h
 )
 

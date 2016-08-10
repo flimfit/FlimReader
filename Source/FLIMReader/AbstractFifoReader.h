@@ -140,17 +140,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-         if (!transform_interpolator.empty())
-         {
-            double sub_frame = p.frame + static_cast<double>(p.y) / n_y;
-
-            transform_interpolator.getAffine(sub_frame, affine, shift);
-
-            p_pos[0] = p.x; p_pos[1] = p.y;
-            tr_pos = affine * pos;
-            p.x = (int) (p_tr_pos[0] - shift.x); 
-            p.y = (int) (p_tr_pos[1] - shift.y);
-         }
+         transform_interpolator.shiftPixel(p.frame, p.x, p.y);
 
          p.x /= spatial_binning;
          p.y /= spatial_binning;
