@@ -3,8 +3,9 @@
 #include "TransformInterpolator.h"
 
 
-TransformInterpolator::TransformInterpolator()
+TransformInterpolator::TransformInterpolator(RealignmentParameters params)
 {
+   realign_params = params;
    frame_transform.push_back(Transform(0.0));
 }
 
@@ -77,8 +78,8 @@ void TransformInterpolator::shiftPixel(int frame, int& x, int& y)
    getAffine(frame_t, affine, shift);
    tr_pos = affine * pos;
 
-   x = (int)std::round(tr_pos.at<double>(0) - shift.x);
-   y = (int)std::round(tr_pos.at<double>(1) - shift.y);
+   x = (int) std::round(tr_pos.at<double>(0) - shift.x);
+   y = (int) std::round(tr_pos.at<double>(1) - shift.y);
 }
 
 

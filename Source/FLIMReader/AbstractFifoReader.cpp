@@ -143,6 +143,8 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 
 void AbstractFifoReader::alignFrames()
 {
+   frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
+
    if (!realign_params.use_realignment)
       return;
 
@@ -184,11 +186,11 @@ void AbstractFifoReader::alignFrames()
 
    ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y);
 
-   transform_interpolator.clear();
-   transform_interpolator.setRealignmentParams(realign_params);
-   transform_interpolator.setImageScanParams(image_params);
-   transform_interpolator.setReference(0, frames[0]);
+   frame_aligner->setRealignmentParams(realign_params);
+   frame_aligner->setImageScanParams(image_params);
+   frame_aligner->setReference(0, frames[0]);
   
+   #pragma omp parallel for
    for (int i = 1; i < frames.size(); i++)
-      transform_interpolator.addFrame(i, frames[i]);
+      frame_aligner->addFrame(i, frames[i]);
 }

@@ -18,16 +18,18 @@ void main()
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Invivo_LateralMotion.ffd";
-
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_FFD_Peristalsis2.ffd";
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(4);
-// reader->setSpatialBinning(2);
+   reader->setSpatialBinning(2);
    
    
    int sz = reader->dataSizePerChannel();
    std::vector<uint16_t> d(sz);
 
    RealignmentParameters params;
+   params.frame_binning = 1;
+   params.spatial_binning = 2;
    params.use_realignment = true;
    
    reader->setRealignmentParameters(params);
@@ -50,7 +52,7 @@ int main()
       cv::transpose(im, im);
 
       ref_im.convertTo(ref_im, CV_16S);
-      im.convertTo(im, CV_16S);
+      im.convertTo(im, CV_32F);
 
       FrameWarpAligner aligner;
       aligner.setReference(0, ref_im);

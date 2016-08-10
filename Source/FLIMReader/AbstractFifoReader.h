@@ -82,14 +82,14 @@ protected:
 
    SyncSettings sync;
 
-   std::unique_ptr<AbstractEventReader> event_reader = nullptr;
+   std::unique_ptr<AbstractEventReader> event_reader;
    Markers markers;
    
 private:
    
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
-   TransformInterpolator transform_interpolator;
+   std::unique_ptr<AbstractFrameAligner> frame_aligner;
 };
 
 
@@ -140,7 +140,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-         transform_interpolator.shiftPixel(p.frame, p.x, p.y);
+         frame_aligner->shiftPixel(p.frame, p.x, p.y);
 
          p.x /= spatial_binning;
          p.y /= spatial_binning;

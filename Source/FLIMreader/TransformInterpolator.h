@@ -28,7 +28,7 @@ class TransformInterpolator : public AbstractFrameAligner
 {
 public:
 
-   TransformInterpolator();
+   TransformInterpolator(RealignmentParameters params);
 
    bool empty();
    void clear();

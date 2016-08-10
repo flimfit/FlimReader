@@ -12,7 +12,17 @@ include_directories(${Boost_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
 
-find_package(Eigen REQUIRED)
+# Enable OpenMP support, disable for XCode
+#===================================================
+find_package("OpenMP")
+if (OPENMP_FOUND)
+   option(USE_OMP "Use OpenMP" ON)
+   if (USE_OMP)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DUSE_OMP")
+      message("Using OpenMP")
+   endif()
+endif()
+
 
 set(SOURCE
    FLIMreader.cpp
@@ -23,6 +33,7 @@ set(SOURCE
    BhSPCReader.cpp
    TextReader.cpp
    lz4.c
+   AbstractFrameAligner.cpp
    TransformInterpolator.cpp
    FrameWarpAligner.cpp
 )

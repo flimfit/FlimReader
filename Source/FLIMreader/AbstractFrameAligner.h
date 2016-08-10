@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/opencv.hpp>
+#include <memory>
 
 enum RealignmentType
 {
@@ -44,6 +45,8 @@ public:
 class AbstractFrameAligner
 {
 public:
+
+   static std::unique_ptr<AbstractFrameAligner> createFrameAligner(RealignmentParameters params);
 
    virtual bool empty() = 0;
    virtual void clear() = 0;
