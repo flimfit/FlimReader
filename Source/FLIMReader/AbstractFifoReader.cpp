@@ -49,6 +49,7 @@ void AbstractFifoReader::determineDwellTime()
    uint64_t sync_count_accum = 0;
    uint64_t sync_start_count = 0;
    double sync_count_per_line = 0;
+   double sync_count_interline = 0;
    int n_averaged = 0;
    int n_frame = 0;
    int n_line = 0;
@@ -78,6 +79,12 @@ void AbstractFifoReader::determineDwellTime()
          }
          if (p.mark & markers.LineStartMarker)
          {
+            if (n_line > 0)
+            {
+               uint64_t diff = macro_time - sync_start_count;
+               sync_count_interline += (macro_time - sync_start_count);
+            }
+
             n_line++;
             sync_start_count = macro_time;
             line_started = true;
@@ -89,7 +96,8 @@ void AbstractFifoReader::determineDwellTime()
    } while (event_reader->hasMoreData());
    
    sync_count_per_line /= n_averaged;
-   
+   sync_count_interline /= (n_averaged-1);
+
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
    
@@ -103,6 +111,7 @@ void AbstractFifoReader::determineDwellTime()
       assert(n_y == n_line);
 
    sync.count_per_line = sync_count_per_line;
+   sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
 }
 
@@ -173,8 +182,11 @@ void AbstractFifoReader::alignFrames()
    cv::Mat window;
    cv::createHanningWindow(window, cv::Size(n_x_binned, n_y_binned), CV_32F);
 
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y);
+
    transform_interpolator.clear();
    transform_interpolator.setRealignmentParams(realign_params);
+   transform_interpolator.setImageScanParams(image_params);
    transform_interpolator.setReference(0, frames[0]);
   
    for (int i = 1; i < frames.size(); i++)

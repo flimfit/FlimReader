@@ -6,8 +6,9 @@
 #include "FrameWarpAligner.h"
 
 using namespace std;
-/*
-TEST_CASE("Loading data", "[load]")
+
+//TEST_CASE("Loading data", "[load]")
+void main()
 {
    //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
    std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
@@ -28,13 +29,13 @@ TEST_CASE("Loading data", "[load]")
 
    RealignmentParameters params;
    params.use_realignment = true;
-
+   
    reader->setRealignmentParameters(params);
 
    reader->readData(d.data(), { 0 });
 }
-*/
 
+/*
 int main()
 {
    bool error = false;
@@ -59,3 +60,4 @@ int main()
 
    return 0;
 }
+*/

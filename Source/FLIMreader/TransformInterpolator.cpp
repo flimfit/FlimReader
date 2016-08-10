@@ -28,8 +28,8 @@ void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
 
    addTransform(Transform(0.5*realign_params.frame_binning));
 
-   centre = cv::Point2d(size.width, size.height) * 0.5;
-   centre_binned = cv::Point2d(size.width, size.height) * 0.5 / realign_params.spatial_binning;
+   centre = cv::Point2d(image_params.n_x, image_params.n_y) * 0.5;
+   centre_binned = centre / realign_params.spatial_binning;
 
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
@@ -72,7 +72,7 @@ void TransformInterpolator::shiftPixel(int frame, int& x, int& y)
    cv::Mat affine;
    cv::Point2d shift;
 
-   double frame_t = frame + y*image_params.interline_duration + x*image_params.pixel_duration;
+   double frame_t = frame + (y*image_params.interline_duration + x*image_params.pixel_duration) / image_params.frame_duration;
 
    getAffine(frame_t, affine, shift);
    tr_pos = affine * pos;

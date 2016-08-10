@@ -23,8 +23,8 @@ public:
    ImageScanParameters(double line_duration = 100, double interline_duration = 101, int n_x = 1, int n_y = 1) :
       line_duration(line_duration), interline_duration(interline_duration), n_x(n_x), n_y(n_y)
    {
-      n_x = std::min(n_x, 1);
-      n_y = std::min(n_y, 1);
+      n_x = std::max(n_x, 1);
+      n_y = std::max(n_y, 1);
 
       if (interline_duration <= line_duration)
          interline_duration = 1.01 * line_duration;
@@ -49,6 +49,7 @@ public:
    virtual void clear() = 0;
 
    void setRealignmentParams(RealignmentParameters params_) { realign_params = params_; }
+   void setImageScanParams(ImageScanParameters params_) { image_params = params_; }
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual void addFrame(int frame_t, const cv::Mat& frame) = 0;
    virtual void shiftPixel(int frame_t, int& x, int& y) = 0;
@@ -56,6 +57,6 @@ public:
 
 protected:
    RealignmentParameters realign_params;
-   cv::Mat reference;
    ImageScanParameters image_params;
+   cv::Mat reference;
 };

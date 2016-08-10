@@ -26,6 +26,7 @@ class SyncSettings
 {
 public:
    double count_per_line;
+   double counts_interline;
    int n_x;
    bool bi_directional = false;
 };

@@ -54,7 +54,7 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    }
 
-   Dstore.push_back(D);
+   Dstore[frame_t] = D;
 
    cv::transpose(wimg, wimg);
    std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image-out.png";
