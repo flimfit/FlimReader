@@ -52,4 +52,6 @@ protected:
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
 
    cv::Mat sum_1, sum_2;
+
+   bool write_debug_images = true;
 };

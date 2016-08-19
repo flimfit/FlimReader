@@ -20,19 +20,24 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    precomputeInterp();
    computeSteepestDecentImages();
    computeHessian();
-   /*
-   cv::Mat out;
-   reference.convertTo(out, CV_8U, 5);
-   std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image-out-" + std::to_string(frame_t) + ".png";
-   cv::imwrite(ref_im_file, out);
-   */
+   
+   if (write_debug_images)
+   {
+      cv::Mat out;
+      reference.convertTo(out, CV_8U, 5);
+      cv::transpose(out, out);
+      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/no-correction-" + std::to_string(frame_t) + ".png";
+      cv::imwrite(ref_im_file, out);
+
+   }
+   
    reference.convertTo(sum_1, CV_32F);
    reference.convertTo(sum_2, CV_32F);
 }
 
 void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
-   int n_iter = 50;
+   int n_iter = 200;
 
    cv::Size size = reference.size();
 
@@ -41,6 +46,8 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
    cv::Mat delta_p(nD * 2, 1, CV_64F, cv::Scalar(0));
    std::vector<cv::Point2d> D(nD);
+
+   double last_rms_error = std::numeric_limits<double>::max();
 
    for (int f = 0; f < n_iter; f++)
    {
@@ -64,6 +71,9 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       std::cout << f << " ===> rms error: " << sqrt(rms_error) << "\n";
 
       // TODO : check convergence
+      //if ((last_rms_error - rms_error) / rms_error < 1e-4)
+      //   break;
+
 
       steepestDecentUpdate(error_img, sd);
 
@@ -79,32 +89,37 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    Dstore[frame_t] = D;
    
-   sum_1 += frame;
-   sum_2 += wimg;
-
-   cv::Mat img;
-   /*
-   cv::transpose(frame, img);
-   img.convertTo(img, CV_8U, 5);
-   std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-" + std::to_string(frame_t) + ".png";
-   cv::imwrite(ref_im_file, img);
    
-   cv::transpose(wimg, wimg);
-   wimg.convertTo(wimg, CV_8U, 5);
-   ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-" + std::to_string(frame_t) + ".png";
-   cv::imwrite(ref_im_file, wimg);
+   if (write_debug_images)
+   {
+      sum_1 += frame;
+      sum_2 += wimg;
+
+
+      cv::Mat img;
+
+      cv::transpose(frame, img);
+      img.convertTo(img, CV_8U, 5);
+      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-" + std::to_string(frame_t) + ".png";
+      cv::imwrite(ref_im_file, img);
+
+      cv::transpose(wimg, wimg);
+      wimg.convertTo(wimg, CV_8U, 5);
+      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-" + std::to_string(frame_t) + ".png";
+      cv::imwrite(ref_im_file, wimg);
+
+      double min, max;
+      cv::minMaxIdx(sum_2, &min, &max);
+
+      sum_1.convertTo(img, CV_8U, 350.0 / max);
+      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-final.png";
+      cv::imwrite(ref_im_file, img);
+
+      sum_2.convertTo(img, CV_8U, 350.0 / max);
+      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-final.png";
+      cv::imwrite(ref_im_file, img);
+   }
    
-   double min, max; 
-   cv::minMaxIdx(sum_2, &min, &max);
-
-   sum_1.convertTo(img, CV_8U, 350.0/max);
-   ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-final.png";
-   cv::imwrite(ref_im_file, img);
-
-   sum_2.convertTo(img, CV_8U, 350.0/max);
-   ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-final.png";
-   cv::imwrite(ref_im_file, img);
-   */   
 }
 
 
@@ -354,8 +369,8 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
 cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning)
 {
    double factor = ((double)realign_params.spatial_binning) / spatial_binning;
-   int xs = x / factor;
-   int ys = y / factor;
+   int xs = (int) (x / factor);
+   int ys = (int) (y / factor);
 
    if ((xs < 0) || (xs >= n_x_binned) || (ys < 0) || (ys >= n_y_binned))
       return cv::Point(x,y);
