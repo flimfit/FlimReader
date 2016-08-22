@@ -75,22 +75,18 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       std::cout << f << " ===> rms error: " << sqrt(rms_error) << "\n";
 
       // TODO : check convergence
-      //if ((last_rms_error - rms_error) / rms_error < 1e-4)
-      //   break;
-
+      if ((last_rms_error - rms_error) / rms_error < 1e-4)
+         break;
+      last_rms_error = rms_error;
 
       steepestDecentUpdate(error_img, sd);
 
       int a = cv::solve(H, sd, delta_p, cv::DECOMP_CHOLESKY);
 
-      cv::Point2d cX;
       for (int i = 0; i < nD; i++)
       {
-         X[i].x -= delta_p.at<double>(i);
-         X[i].y -= delta_p.at<double>(i + nD);
-
-         cX += X[i];
-         D[i] = cX;
+         D[i].x -= delta_p.at<double>(i);
+         D[i].y -= delta_p.at<double>(i + nD);
       }
 
    }
@@ -234,8 +230,9 @@ void FrameWarpAligner::computeSteepestDecentImages()
          VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p) * jac;
       }
    }
-   /*
-   int i = 0; i < (nD - 1); i++)
+   
+   #pragma omp parallel for
+   for(int i = 0; i < (nD - 1); i++)
    {
       int p0 = D_range[i].begin;
       int p1 = D_range[i].end;
@@ -246,30 +243,6 @@ void FrameWarpAligner::computeSteepestDecentImages()
          VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p) * jac;
       }
    }
-   */
-
-   #pragma omp parallel for
-   for (int i = 0; i < (nD - 1); i++)
-   {
-      int p0 = D_range[i].begin;
-      int p1 = D_range[nD-2].end;
-      for (int p = p0; p < p1; p++)
-      {
-         VI_dW_dp_x[i][p] = nabla_Tx.at<double>(p);
-         VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p);
-      }
-   }
-
-/*         
-         int nremain = Df.size().area - D_range[i].begin - np;
-
-         for (int p = 0; p < nremain; p++)
-         {
-            int pos = p + D_range[i].begin + np;
-            VI_dW_dp_x[i][p + p_off] = nabla_Tx.at<double>(pos);
-            VI_dW_dp_y[i][p + p_off] = nabla_Ty.at<double>(pos);
-         }
-         */
 }
 
 double FrameWarpAligner::computeHessianEntry(int pi, int pj)
@@ -279,24 +252,18 @@ double FrameWarpAligner::computeHessianEntry(int pi, int pj)
    int i = pi % nD;
    int j = pj % nD;
 
-   //if (j > i) return computeHessianEntry(pj, pi);
-   //if ((i - j) > 1) return 0;
+   if (j > i) return computeHessianEntry(pj, pi);
+   if ((i - j) > 1) return 0;
 
    auto v1 = getV(pi);
    auto v2 = getV(pj);
   
-   int mi = std::min(i, j);
-
-   int p0 = (mi == 0) ? D_range[mi].begin : D_range[mi - 1].begin;
-   int p1 = D_range[nD - 2].end;
-
-//   int p0 = (i==0) ? D_range[i].begin : D_range[i-1].begin;
-//   int p1 = D_range[nD - 2].end; //(i==(nD-1)) ? D_range[i-1].end : D_range[i].end;
+   int p0 = (i==0) ? D_range[i].begin : D_range[i-1].begin;
+   int p1 = (i==(nD-1)) ? D_range[i-1].end : D_range[i].end;
 
    double h = 0;
    for (int p = p0; p < p1; p++)
       h += v1[p] * v2[p];
-
       
    return h;
 }
@@ -304,16 +271,12 @@ double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 void FrameWarpAligner::computeHessian()
 {
    H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
-
+   
    #pragma omp parallel for
-   for (int pi = 0; pi < nD * 2; pi++)
-      for (int pj = 0; pj < nD * 2; pj++)
-         H.at<double>(pi, pj) = computeHessianEntry(pi, pj);
-
-   /*
    for (int pi = 0; pi < nD * 2; pi++)
       H.at<double>(pi, pi) += computeHessianEntry(pi, pi);
 
+   #pragma omp parallel for
    for (int pi = 1; pi < nD * 2; pi++)
    {
       double h = computeHessianEntry(pi, pi - 1);
@@ -321,6 +284,7 @@ void FrameWarpAligner::computeHessian()
       H.at<double>(pi - 1, pi) = h;
    }
    
+   #pragma omp parallel for
    for (int i = 0; i < nD; i++)
    {
       for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
@@ -330,7 +294,7 @@ void FrameWarpAligner::computeHessian()
          H.at<double>(j + nD, i) += h;
       }
    }
-   */
+   
 
 }
 
@@ -338,54 +302,32 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
 {
    sd.setTo(0);
 
-   for (int i = 0; i < nD; i++)
-   {
-      int p0 = (i == 0) ? D_range[i].begin : D_range[i - 1].begin;
-      int p1 = D_range[nD-2].end;
-      
-      // t
-      // we are ignoring stride here, ok as set up
-      float* err_ptr = reinterpret_cast<float*>(error_img.data); 
-      double* sd_ptr_x = reinterpret_cast<double*>(sd.data) + i;
-      double* sd_ptr_y = sd_ptr_x + nD;
+   // we are ignoring stride here, ok as set up
+   float* err_ptr = reinterpret_cast<float*>(error_img.data);
+   double* sd_ptr_x = reinterpret_cast<double*>(sd.data);
+   double* sd_ptr_y = sd_ptr_x + nD;
 
+
+   for (int i = 1; i < nD; i++)
+   {
+      int p0 = D_range[i - 1].begin;
+      int p1 = D_range[i - 1].end;
       for (int p = p0; p < p1; p++)
       {
-         *sd_ptr_x += VI_dW_dp_x[i][p] * err_ptr[p];
-         *sd_ptr_y += VI_dW_dp_y[i][p] * err_ptr[p];
+         sd_ptr_x[i] += VI_dW_dp_x[i][p] * err_ptr[p];
+         sd_ptr_y[i] += VI_dW_dp_y[i][p] * err_ptr[p];
       }
    }
-
-
-/*
-
-   for (int i = 0; i < nD; i++)
+   for (int i = 0; i < (nD - 1); i++)
    {
-      int p_off = 0;
-      if (i > 0)
+      int p0 = D_range[i].begin;
+      int p1 = D_range[i].end;
+      for (int p = p0; p < p1; p++)
       {
-         int np = D_range[i - 1].interval();
-         for (int p = 0; p < np; p++)
-         {
-            int pos = p + D_range[i - 1].begin;
-            sd.at<double>(i) += VI_dW_dp_x[i][pos] * error_img.at<float>(pos);
-            sd.at<double>(i + nD) += VI_dW_dp_y[i][pos] * error_img.at<float>(pos);
-         }
-         p_off = np;
-      }
-      if (i < (nD - 1))
-      {
-         int np = D_range[i].interval();
-         for (int p = 0; p < np; p++)
-         {
-            int pos = p + D_range[i].begin;
-            double jac = 1 - Df.at<double>(pos);
-            sd.at<double>(i) += VI_dW_dp_x[i][pos] * error_img.at<float>(pos);
-            sd.at<double>(i + nD) += VI_dW_dp_y[i][pos] * error_img.at<float>(pos);
-         }
+         sd_ptr_x[i] += VI_dW_dp_x[i][p] * err_ptr[p];
+         sd_ptr_y[i] += VI_dW_dp_y[i][p] * err_ptr[p];
       }
    }
-   */
 }
 
 void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D)
