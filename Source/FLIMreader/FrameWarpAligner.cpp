@@ -17,6 +17,9 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
    nD = realign_params.n_resampling_points;
 
+   assert(n_x_binned == image_params.n_x);
+   assert(n_y_binned == image_params.n_y);
+
    precomputeInterp();
    computeSteepestDecentImages();
    computeHessian();
@@ -30,7 +33,7 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
       cv::imwrite(ref_im_file, out);
 
    }
-   
+
    reference.convertTo(sum_1, CV_32F);
    reference.convertTo(sum_2, CV_32F);
 }
@@ -45,6 +48,7 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    cv::Mat wimg, error_img;
    cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
    cv::Mat delta_p(nD * 2, 1, CV_64F, cv::Scalar(0));
+   std::vector<cv::Point2d> X(nD);
    std::vector<cv::Point2d> D(nD);
 
    double last_rms_error = std::numeric_limits<double>::max();
@@ -77,12 +81,16 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
       steepestDecentUpdate(error_img, sd);
 
-      cv::solve(H, sd, delta_p, cv::DECOMP_CHOLESKY);
+      int a = cv::solve(H, sd, delta_p, cv::DECOMP_CHOLESKY);
 
+      cv::Point2d cX;
       for (int i = 0; i < nD; i++)
       {
-         D[i].x -= delta_p.at<double>(i);
-         D[i].y -= delta_p.at<double>(i + nD);
+         X[i].x -= delta_p.at<double>(i);
+         X[i].y -= delta_p.at<double>(i + nD);
+
+         cX += X[i];
+         D[i] = cX;
       }
 
    }
@@ -197,12 +205,12 @@ void FrameWarpAligner::precomputeInterp()
       if (D_range[i].interval() > max_interval)
          max_interval = D_range[i].interval();
 
-   int max_VI_dW_dp = max_interval * 2;
+   int max_VI_dW_dp = size.area(); //max_interval * 2;
 
    VI_dW_dp_x.clear();
-   VI_dW_dp_x.resize(nD, std::vector<double>(max_VI_dW_dp));
+   VI_dW_dp_x.resize(nD, std::vector<double>(max_VI_dW_dp, 0.0));
    VI_dW_dp_y.clear();
-   VI_dW_dp_y.resize(nD, std::vector<double>(max_VI_dW_dp));
+   VI_dW_dp_y.resize(nD, std::vector<double>(max_VI_dW_dp, 0.0));
 }
 
 void FrameWarpAligner::computeSteepestDecentImages()
@@ -214,71 +222,82 @@ void FrameWarpAligner::computeSteepestDecentImages()
    cv::Scharr(reference, nabla_Tx, CV_64F, 1, 0, 1.0 / 32.0);
    cv::Scharr(reference, nabla_Ty, CV_64F, 0, 1, 1.0 / 32.0);
 
-   for (int i = 0; i < nD; i++)
+   #pragma omp parallel for
+   for (int i = 1; i < nD; i++)
    {
-      int p_off = 0;
-      if (i > 0)
+      int p0 = D_range[i - 1].begin;
+      int p1 = D_range[i - 1].end;
+      for (int p = p0; p < p1; p++)
       {
-         int np = D_range[i - 1].interval();
-         for (int p = 0; p < np; p++)
-         {
-            int pos = p + D_range[i - 1].begin;
-            double jac = Df.at<double>(pos);
-            VI_dW_dp_x[i][p] = nabla_Tx.at<double>(pos) * jac;
-            VI_dW_dp_y[i][p] = nabla_Ty.at<double>(pos) * jac;
-         }
-         p_off = np;
-      }
-      if (i < (nD - 1))
-      {
-         int np = D_range[i].interval();
-         for (int p = 0; p < np; p++)
-         {
-            int pos = p + D_range[i].begin;
-            double jac = 1 - Df.at<double>(pos);
-            VI_dW_dp_x[i][p + p_off] = nabla_Tx.at<double>(pos) * jac;
-            VI_dW_dp_y[i][p + p_off] = nabla_Ty.at<double>(pos) * jac;
-         }
+         double jac = Df.at<double>(p);
+         VI_dW_dp_x[i][p] = nabla_Tx.at<double>(p) * jac;
+         VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p) * jac;
       }
    }
+   /*
+   int i = 0; i < (nD - 1); i++)
+   {
+      int p0 = D_range[i].begin;
+      int p1 = D_range[i].end;
+      for (int p = p0; p < p1; p++)
+      {
+         double jac = 1 - Df.at<double>(p);
+         VI_dW_dp_x[i][p] = nabla_Tx.at<double>(p) * jac;
+         VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p) * jac;
+      }
+   }
+   */
+
+   #pragma omp parallel for
+   for (int i = 0; i < (nD - 1); i++)
+   {
+      int p0 = D_range[i].begin;
+      int p1 = D_range[nD-2].end;
+      for (int p = p0; p < p1; p++)
+      {
+         VI_dW_dp_x[i][p] = nabla_Tx.at<double>(p);
+         VI_dW_dp_y[i][p] = nabla_Ty.at<double>(p);
+      }
+   }
+
+/*         
+         int nremain = Df.size().area - D_range[i].begin - np;
+
+         for (int p = 0; p < nremain; p++)
+         {
+            int pos = p + D_range[i].begin + np;
+            VI_dW_dp_x[i][p + p_off] = nabla_Tx.at<double>(pos);
+            VI_dW_dp_y[i][p + p_off] = nabla_Ty.at<double>(pos);
+         }
+         */
 }
 
 double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 {
    auto getV = [this](int i) -> const auto& { return (i < nD) ? VI_dW_dp_x[i] : VI_dW_dp_y[i - nD]; };
 
-   double h = 0;
-
    int i = pi % nD;
    int j = pj % nD;
 
-   if (j > i) return computeHessianEntry(pj, pi);
-   if ((i - j) > 1) return 0;
+   //if (j > i) return computeHessianEntry(pj, pi);
+   //if ((i - j) > 1) return 0;
 
    auto v1 = getV(pi);
    auto v2 = getV(pj);
+  
+   int mi = std::min(i, j);
 
-   int p_off1 = 0;
-   int p_off2 = 0;
+   int p0 = (mi == 0) ? D_range[mi].begin : D_range[mi - 1].begin;
+   int p1 = D_range[nD - 2].end;
 
-   if (i == j)
-   {
-      int np = D_range[i].interval();
-      if (i > 0)
-         np += D_range[i - 1].interval();
+//   int p0 = (i==0) ? D_range[i].begin : D_range[i-1].begin;
+//   int p1 = D_range[nD - 2].end; //(i==(nD-1)) ? D_range[i-1].end : D_range[i].end;
 
-      for (int p = 0; p < np; p++)
-         h += v1[p] * v2[p];
-   }
-   else if (i > 0) // we know that i == j + 1 here
-   {
-      int p_off_j = (j == 0) ? 0 : D_range[j - 1].interval();
-      int np = D_range[i - 1].interval();
+   double h = 0;
+   for (int p = p0; p < p1; p++)
+      h += v1[p] * v2[p];
 
-      for (int p = 0; p < np; p++)
-         h += v1[p] * v2[p + p_off2];
-   }
-
+      
    return h;
 }
 
@@ -286,6 +305,12 @@ void FrameWarpAligner::computeHessian()
 {
    H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
 
+   #pragma omp parallel for
+   for (int pi = 0; pi < nD * 2; pi++)
+      for (int pj = 0; pj < nD * 2; pj++)
+         H.at<double>(pi, pj) = computeHessianEntry(pi, pj);
+
+   /*
    for (int pi = 0; pi < nD * 2; pi++)
       H.at<double>(pi, pi) += computeHessianEntry(pi, pi);
 
@@ -295,21 +320,15 @@ void FrameWarpAligner::computeHessian()
       H.at<double>(pi, pi - 1) = h;
       H.at<double>(pi - 1, pi) = h;
    }
-
-   /* These don't seem to help
+   
    for (int i = 0; i < nD; i++)
    {
-   for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
-   {
-   double h = computeHessianEntry(i, j + nD);
-   H.at<double>(i, j + nD) += h;
-   H.at<double>(j + nD, i) += h;
-
-   h = computeHessianEntry(i + nD, j);
-   H.at<double>(i + nD, j) += h;
-   H.at<double>(j, i + nD) += h;
-   }
-
+      for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
+      {
+         double h = computeHessianEntry(i, j + nD);
+         H.at<double>(i, j + nD) += h;
+         H.at<double>(j + nD, i) += h;
+      }
    }
    */
 
@@ -321,6 +340,27 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
 
    for (int i = 0; i < nD; i++)
    {
+      int p0 = (i == 0) ? D_range[i].begin : D_range[i - 1].begin;
+      int p1 = D_range[nD-2].end;
+      
+      // t
+      // we are ignoring stride here, ok as set up
+      float* err_ptr = reinterpret_cast<float*>(error_img.data); 
+      double* sd_ptr_x = reinterpret_cast<double*>(sd.data) + i;
+      double* sd_ptr_y = sd_ptr_x + nD;
+
+      for (int p = p0; p < p1; p++)
+      {
+         *sd_ptr_x += VI_dW_dp_x[i][p] * err_ptr[p];
+         *sd_ptr_y += VI_dW_dp_y[i][p] * err_ptr[p];
+      }
+   }
+
+
+/*
+
+   for (int i = 0; i < nD; i++)
+   {
       int p_off = 0;
       if (i > 0)
       {
@@ -328,8 +368,8 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
          for (int p = 0; p < np; p++)
          {
             int pos = p + D_range[i - 1].begin;
-            sd.at<double>(i) += VI_dW_dp_x[i][p] * error_img.at<float>(pos);
-            sd.at<double>(i + nD) += VI_dW_dp_y[i][p] * error_img.at<float>(pos);
+            sd.at<double>(i) += VI_dW_dp_x[i][pos] * error_img.at<float>(pos);
+            sd.at<double>(i + nD) += VI_dW_dp_y[i][pos] * error_img.at<float>(pos);
          }
          p_off = np;
       }
@@ -340,11 +380,12 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
          {
             int pos = p + D_range[i].begin;
             double jac = 1 - Df.at<double>(pos);
-            sd.at<double>(i) += VI_dW_dp_x[i][p + p_off] * error_img.at<float>(pos);
-            sd.at<double>(i + nD) += VI_dW_dp_y[i][p + p_off] * error_img.at<float>(pos);
+            sd.at<double>(i) += VI_dW_dp_x[i][pos] * error_img.at<float>(pos);
+            sd.at<double>(i + nD) += VI_dW_dp_y[i][pos] * error_img.at<float>(pos);
          }
       }
    }
+   */
 }
 
 void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D)

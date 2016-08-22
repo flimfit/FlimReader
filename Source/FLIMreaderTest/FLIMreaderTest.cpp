@@ -8,7 +8,7 @@
 using namespace std;
 
 //TEST_CASE("Loading data", "[load]")
-void main()
+void test_load()
 {
    //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
    std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
@@ -18,7 +18,8 @@ void main()
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Invivo_LateralMotion.ffd";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_FFD_Peristalsis2.ffd";
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
+
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
    reader->setTemporalResolution(4);
    reader->setSpatialBinning(1);
@@ -37,8 +38,8 @@ void main()
    reader->readData(d.data(), { 0 });
 }
 
-/*
-int main()
+
+int test_realignment()
 {
    bool error = false;
    {
@@ -51,10 +52,18 @@ int main()
       cv::transpose(ref_im, ref_im);
       cv::transpose(im, im);
 
-      ref_im.convertTo(ref_im, CV_16S);
+      ref_im.convertTo(ref_im, CV_32F);
       im.convertTo(im, CV_32F);
 
-      FrameWarpAligner aligner;
+      RealignmentParameters params;
+      params.frame_binning = 1;
+      params.spatial_binning = 1;
+      params.n_resampling_points = 30;
+
+      ImageScanParameters scan(100, 101, im.size().width, im.size().height);
+
+      FrameWarpAligner aligner(params);
+      aligner.setImageScanParams(scan);
       aligner.setReference(0, ref_im);
       aligner.addFrame(1, im);
    }
@@ -62,4 +71,11 @@ int main()
 
    return 0;
 }
-*/
+
+
+int main()
+{
+   test_realignment();
+
+   return 0;
+}
