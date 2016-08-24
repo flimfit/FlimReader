@@ -17,10 +17,6 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
    nD = realign_params.n_resampling_points;
 
-   assert(n_x_binned == image_params.n_x);
-   assert(n_y_binned == image_params.n_y);
-
-
    precomputeInterp();
    computeSteepestDecentImages(reference);
    computeHessian();
@@ -43,6 +39,8 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 
 void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
+
+
    int max_n_iter = 200;
 
    cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;
@@ -57,16 +55,17 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    warpImage(frame, wimg0, D);
    double rms_error0 = computeErrorImage(wimg0, error_img0);
 
-   for (int i = 0; i < nD; i++)
-      D[i] = Dlast;
+   if (Dstore.count(frame_t) == 1)
+      D = Dstore[frame_t];
+   else
+      std::fill(D.begin(), D.end(), Dlast);
 
    warpImage(frame, wimg, D);
    double rms_error = computeErrorImage(wimg, error_img);
 
    if (rms_error0 < rms_error)
    {
-      for (int i = 0; i < nD; i++)
-         D[i] = cv::Point(0,0);
+      std::fill(D.begin(), D.end(), cv::Point(0,0));
       rms_error = rms_error0;
       wimg0.copyTo(wimg);
       error_img0.copyTo(error_img);
@@ -98,11 +97,11 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
          error_img_trial.copyTo(error_img);
          for (int i = 0; i < nD; i++)
             D[i] = Dtrial[i];
-         std::cout << f << " good step ===> " << sqrt(rms_error_trial) << "\n";
+         //std::cout << f << " good step ===> " << sqrt(rms_error_trial) << "\n";
 
          if (((last_rms_error - rms_error) < 1e-10) && f > 20)
          {
-            std::cout << " objective function convergence criteria met \n";
+            //std::cout << " objective function convergence criteria met \n";
             break;
          }
 
@@ -110,14 +109,14 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       else // bad step
       {
          delta *= 5;
-         std::cout << f << " bad step ===> " << sqrt(rms_error_trial) << "\n";
+         //std::cout << f << " bad step ===> " << sqrt(rms_error_trial) << "\n";
       }
 
       last_rms_error = rms_error;
      
    }
 
-   std::cout << frame_t << ": " << sqrt(rms_error) << "\n";
+   //std::cout << frame_t << ": " << sqrt(rms_error) << "\n";
 
    Dstore[frame_t] = D;
    Dlast = *(D.end()-2);
