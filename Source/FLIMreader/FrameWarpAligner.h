@@ -24,7 +24,7 @@ public:
 
    void setReference(int frame_t, const cv::Mat& reference_);
    void addFrame(int frame_t, const cv::Mat& frame);
-   void shiftPixel(int frame_t, int& x, int& y);
+   void shiftPixel(int frame_t, double& x, double& y);
 
 protected:
 

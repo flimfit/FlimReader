@@ -180,13 +180,13 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
    return ms_error;
 }
 
-void FrameWarpAligner::shiftPixel(int frame_t, int& x, int& y)
+void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
 {
    if (Dstore.count(frame_t) == 0)
       return;
 
    auto& D = Dstore[frame_t];
-   cv::Point loc = warpPoint(D, x, y);
+   cv::Point2d loc = warpPoint(D, x, y);
 
    x -= loc.x;
    y -= loc.y;

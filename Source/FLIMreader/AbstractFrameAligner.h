@@ -59,7 +59,7 @@ public:
    void setImageScanParams(ImageScanParameters params_) { image_params = params_; }
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual void addFrame(int frame_t, const cv::Mat& frame) = 0;
-   virtual void shiftPixel(int frame_t, int& x, int& y) = 0;
+   virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
 
 
 protected:

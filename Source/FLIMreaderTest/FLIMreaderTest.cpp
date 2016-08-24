@@ -17,7 +17,9 @@ void test_load()
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Invivo_LateralMotion.ffd";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/ANRN-Rac1f9 T=0 pre-injection pancreas_7_1_001.ffd";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/02 ANRN PMA=200nM tcourse_1_3_001.ffd";
+
    //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
 
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
@@ -30,8 +32,9 @@ void test_load()
 
    RealignmentParameters params;
    params.frame_binning = 1;
-   params.spatial_binning = 2;
+   params.spatial_binning = 4;
    params.type = RealignmentType::Warp;
+   params.n_resampling_points = 10 ;
    
    reader->setRealignmentParameters(params);
 
@@ -75,7 +78,7 @@ int test_realignment()
 
 int main()
 {
-   test_realignment();
+   test_load();
 
    return 0;
 }

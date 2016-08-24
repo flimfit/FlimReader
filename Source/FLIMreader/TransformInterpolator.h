@@ -35,7 +35,7 @@ public:
 
    void setReference(int frame_t, const cv::Mat& reference_);
    void addFrame(int frame_t, const cv::Mat& frame); 
-   void shiftPixel(int frame, int& x, int& y);
+   void shiftPixel(int frame, double& x, double& y);
 private:
 
    void addTransform(Transform t);

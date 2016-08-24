@@ -62,7 +62,7 @@ void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
    addTransform(transform);
 }
 
-void TransformInterpolator::shiftPixel(int frame, int& x, int& y)
+void TransformInterpolator::shiftPixel(int frame, double& x, double& y)
 {
    cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
    cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));

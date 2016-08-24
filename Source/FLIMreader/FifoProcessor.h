@@ -42,8 +42,8 @@ public:
    {}
 
    int frame;
-   int x;
-   int y;
+   double x;
+   double y;
    int channel;
    int bin;
    bool valid;
@@ -97,8 +97,8 @@ public:
             if (cur_direction == -1)
                cur_loc = sync.n_x - 1 - cur_loc;
 
-            int cur_px = static_cast<int>(cur_loc);
-            return Photon(frame_idx, cur_px, cur_line, p.channel, p.micro_time);
+//            int cur_px = static_cast<int>(cur_loc);
+            return Photon(frame_idx, cur_loc, cur_line, p.channel, p.micro_time);
          }
       }
 
