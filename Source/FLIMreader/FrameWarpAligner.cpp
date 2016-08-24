@@ -20,10 +20,11 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    assert(n_x_binned == image_params.n_x);
    assert(n_y_binned == image_params.n_y);
 
+
    precomputeInterp();
-   computeSteepestDecentImages();
+   computeSteepestDecentImages(reference);
    computeHessian();
-   
+
    if (write_debug_images)
    {
       cv::Mat out;
@@ -34,64 +35,92 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 
    }
 
+   Dlast = cv::Point2d(0, 0);
+
    reference.convertTo(sum_1, CV_32F);
    reference.convertTo(sum_2, CV_32F);
 }
 
 void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
-   int n_iter = 200;
+   int max_n_iter = 200;
 
-   cv::Size size = reference.size();
-
-   int n_px = size.area();
-   cv::Mat wimg, error_img;
+   cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;
    cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
    cv::Mat delta_p(nD * 2, 1, CV_64F, cv::Scalar(0));
    std::vector<cv::Point2d> X(nD);
-   std::vector<cv::Point2d> D(nD);
+   std::vector<cv::Point2d> D(nD), Dtrial(nD);
 
    double last_rms_error = std::numeric_limits<double>::max();
+   double delta = 1e-9;
 
-   for (int f = 0; f < n_iter; f++)
+   warpImage(frame, wimg0, D);
+   double rms_error0 = computeErrorImage(wimg0, error_img0);
+
+   for (int i = 0; i < nD; i++)
+      D[i] = Dlast;
+
+   warpImage(frame, wimg, D);
+   double rms_error = computeErrorImage(wimg, error_img);
+
+   if (rms_error0 < rms_error)
    {
-      warpImage(frame, wimg, D);
-      error_img = wimg - reference;
+      for (int i = 0; i < nD; i++)
+         D[i] = cv::Point(0,0);
+      rms_error = rms_error0;
+      wimg0.copyTo(wimg);
+      error_img0.copyTo(error_img);
+   }
 
-      double rms_error = 0;
-      for (int p = 0; p < n_px; p++)
-      {
-         if (wimg.at<float>(p) >= 0)
-         {
-            rms_error += error_img.at<float>(p) * error_img.at<float>(p);
-         }
-         else
-         {
-            error_img.at<float>(p) = 0;
-            wimg.at<float>(p) = 0;
-         }
-      }
-
-      std::cout << f << " ===> rms error: " << sqrt(rms_error) << "\n";
-
-      // TODO : check convergence
-      if ((last_rms_error - rms_error) / rms_error < 1e-4)
-         break;
-      last_rms_error = rms_error;
-
+   for (int f = 0; f < max_n_iter; f++)
+   {
       steepestDecentUpdate(error_img, sd);
 
-      int a = cv::solve(H, sd, delta_p, cv::DECOMP_CHOLESKY);
+      H.copyTo(H_lm);
+      for (int i = 0; i < (nD * 2); i++)
+         H_lm.at<double>(i, i) *= (1 + delta);
+
+      int a = cv::solve(H_lm, sd, delta_p, cv::DECOMP_CHOLESKY);
 
       for (int i = 0; i < nD; i++)
       {
-         D[i].x -= delta_p.at<double>(i);
-         D[i].y -= delta_p.at<double>(i + nD);
+         Dtrial[i].x = D[i].x - delta_p.at<double>(i);
+         Dtrial[i].y = D[i].y - delta_p.at<double>(i + nD);
       }
 
+      warpImage(frame, wimg, Dtrial);
+      double rms_error_trial = computeErrorImage(wimg, error_img_trial);
+
+      if (rms_error_trial <= rms_error) // good step
+      {
+         delta *= 0.2;
+         rms_error = rms_error_trial;
+         error_img_trial.copyTo(error_img);
+         for (int i = 0; i < nD; i++)
+            D[i] = Dtrial[i];
+         std::cout << f << " good step ===> " << sqrt(rms_error_trial) << "\n";
+
+         if (((last_rms_error - rms_error) < 1e-10) && f > 20)
+         {
+            std::cout << " objective function convergence criteria met \n";
+            break;
+         }
+
+      }
+      else // bad step
+      {
+         delta *= 5;
+         std::cout << f << " bad step ===> " << sqrt(rms_error_trial) << "\n";
+      }
+
+      last_rms_error = rms_error;
+     
    }
 
+   std::cout << frame_t << ": " << sqrt(rms_error) << "\n";
+
    Dstore[frame_t] = D;
+   Dlast = *(D.end()-2);
    
    
    if (write_debug_images)
@@ -126,6 +155,31 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    
 }
 
+double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
+{
+   cv::Size size = reference.size();
+   int n_px = size.area();
+
+   error_img = wimg - reference;
+   int n_include = 0;
+
+   double ms_error = 0;
+   for (int p = 0; p < n_px; p++)
+   {
+      if (wimg.at<float>(p) >= 0)
+      {
+         ms_error += error_img.at<float>(p) * error_img.at<float>(p);
+         n_include++;
+      }
+      else
+      {
+         error_img.at<float>(p) = 0;
+         wimg.at<float>(p) = 0;
+      }
+   }
+
+   return ms_error;
+}
 
 void FrameWarpAligner::shiftPixel(int frame_t, int& x, int& y)
 {
@@ -209,14 +263,14 @@ void FrameWarpAligner::precomputeInterp()
    VI_dW_dp_y.resize(nD, std::vector<double>(max_VI_dW_dp, 0.0));
 }
 
-void FrameWarpAligner::computeSteepestDecentImages()
+void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
 {
-   auto size = reference.size();
+   auto size = frame.size();
 
    // Evaluate gradient of reference
    cv::Mat nabla_Tx, nabla_Ty;
-   cv::Scharr(reference, nabla_Tx, CV_64F, 1, 0, 1.0 / 32.0);
-   cv::Scharr(reference, nabla_Ty, CV_64F, 0, 1, 1.0 / 32.0);
+   cv::Scharr(frame, nabla_Tx, CV_64F, 1, 0, 1.0 / 32.0);
+   cv::Scharr(frame, nabla_Ty, CV_64F, 0, 1, 1.0 / 32.0);
 
    #pragma omp parallel for
    for (int i = 1; i < nD; i++)
@@ -356,7 +410,7 @@ cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, 
    int ys = (int) (y / factor);
 
    if ((xs < 0) || (xs >= n_x_binned) || (ys < 0) || (ys >= n_y_binned))
-      return cv::Point(x,y);
+      return cv::Point(0,0);
 
    double f = Df.at<double>(ys, xs);
    int i = Di.at<uint16_t>(ys, xs);

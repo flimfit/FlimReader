@@ -29,18 +29,20 @@ public:
 protected:
 
    void precomputeInterp();
-   void computeSteepestDecentImages();
+   void computeSteepestDecentImages(const cv::Mat& frame);
    double computeHessianEntry(int pi, int pj);
    void computeHessian();
    void steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& sd);
    void warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D);
    cv::Point warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning = 1);
-
+   double computeErrorImage(cv::Mat& wimg, cv::Mat& error_img);
    std::vector<Range> D_range;
 
    cv::Mat Di;
    cv::Mat Df;
    cv::Mat H;
+
+   cv::Point2d Dlast;
 
    std::map<int,std::vector<cv::Point2d>> Dstore;
 
