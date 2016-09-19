@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 PROJECT(FLIMreader)
 
+
 if(MSVC)
   set( Boost_USE_STATIC_LIBS ON )
   add_definitions(-DBOOST_ALL_NO_LIB=1)
@@ -11,6 +12,7 @@ find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
+find_package("OpenMP" REQUIRED)
 
 # Enable OpenMP support, disable for XCode
 #===================================================
@@ -58,4 +60,6 @@ set(HEADERS
 
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
+
+set_property(TARGET FLIMreader PROPERTY CXX_STANDARD 14)
 

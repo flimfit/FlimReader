@@ -8,7 +8,7 @@
 using namespace std;
 
 //TEST_CASE("Loading data", "[load]")
-void main()
+int main()
 {
    //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
    std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
@@ -35,6 +35,8 @@ void main()
    reader->setRealignmentParameters(params);
 
    reader->readData(d.data(), { 0 });
+   
+   return 0;
 }
 
 /*
