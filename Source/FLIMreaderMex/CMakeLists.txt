@@ -24,6 +24,9 @@ find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 find_package(OpenCV REQUIRED)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 
+find_package(OpenMP REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
 
 include_directories(../FLIMreader)
 

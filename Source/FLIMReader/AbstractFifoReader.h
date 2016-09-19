@@ -151,7 +151,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          bin = bin >> downsampling;
 
          if ((bin < n_bin) && (p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
-            histogram[bin + n_bin * (mapped_channel + n_chan_stride * (p.x + n_x_binned * p.y))]++;
+            histogram[(int) (bin + n_bin * (mapped_channel + n_chan_stride * (p.x + n_x_binned * p.y)))]++;
          else
             n_invalid++;
       }
