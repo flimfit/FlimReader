@@ -25,6 +25,7 @@ public:
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
 
+   /*
    template<typename T>
    std::vector<T> readData(const std::vector<int>& channels = {})
    {
@@ -34,6 +35,7 @@ public:
       readData(data.data(), channels_);
       return data;
    }
+   */
 
    const std::vector<double>& timepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }

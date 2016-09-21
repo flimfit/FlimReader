@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
 PROJECT(FLIMreader)
 
@@ -34,7 +34,6 @@ set(SOURCE
    FFDReader.cpp
    BhSPCReader.cpp
    TextReader.cpp
-   lz4.c
    AbstractFrameAligner.cpp
    TransformInterpolator.cpp
    FrameWarpAligner.cpp
@@ -52,12 +51,12 @@ set(HEADERS
    TextReader.h
    PicoquantT3Event.h
    FifoProcessor.h
-   lz4.h
    AbstractFrameAligner.h
    TransformInterpolator.h
    FrameWarpAligner.h
 )
 
+set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
 
