@@ -16,6 +16,9 @@ FfdReader::FfdReader(const std::string& filename) :
 {
    readHeader();
 
+   if (use_compression)
+      throw std::runtime_error("Compressed FFD files are no longer supported");
+
    setTemporalResolution(12);
 
    markers.FrameMarker = 0x8;

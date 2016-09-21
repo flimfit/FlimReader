@@ -1,5 +1,3 @@
-#pragma once
-
 #include "FrameWarpAligner.h"
 #include <functional>
 
@@ -27,7 +25,7 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
       reference.convertTo(out, CV_8U, 5);
       cv::transpose(out, out);
       std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/no-correction-" + std::to_string(frame_t) + ".png";
-      cv::imwrite(ref_im_file, out);
+      //cv::imwrite(ref_im_file, out);
 
    }
 
@@ -133,23 +131,23 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       cv::transpose(frame, img);
       img.convertTo(img, CV_8U, 5);
       std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-" + std::to_string(frame_t) + ".png";
-      cv::imwrite(ref_im_file, img);
+      //cv::imwrite(ref_im_file, img);
 
       cv::transpose(wimg, wimg);
       wimg.convertTo(wimg, CV_8U, 5);
       ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-" + std::to_string(frame_t) + ".png";
-      cv::imwrite(ref_im_file, wimg);
+      //cv::imwrite(ref_im_file, wimg);
 
       double min, max;
       cv::minMaxIdx(sum_2, &min, &max);
 
       sum_1.convertTo(img, CV_8U, 350.0 / max);
       ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-final.png";
-      cv::imwrite(ref_im_file, img);
+      //cv::imwrite(ref_im_file, img);
 
       sum_2.convertTo(img, CV_8U, 350.0 / max);
       ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-final.png";
-      cv::imwrite(ref_im_file, img);
+      //cv::imwrite(ref_im_file, img);
    }
    
 }
