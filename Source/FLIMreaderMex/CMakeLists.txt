@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
 project(FLIMreaderMex)
 set(CMAKE_DEBUG_POSTFIX "")
 
 # Find MATLAB
 set(MATLAB_ADDITIONAL_VERSIONS
+    "R2016a=9.1"
+    "R2016a=9.0"
     "R2015b=8.6"
     "R2015a=8.5"
     "R2014b=8.4")
@@ -23,7 +25,7 @@ set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 find_package(OpenCV REQUIRED)
 
-include_directories(../FLIMreader)
+include_directories(${FLIMreader_INCLUDE_DIR})
 
 set(SOURCE
    FLIMreaderMex.cpp

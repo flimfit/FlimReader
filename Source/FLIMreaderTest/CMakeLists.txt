@@ -1,14 +1,10 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
 PROJECT(FLIMreaderTest)
 
-find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc)
 
-cmake_policy(SET CMP0020 NEW)
-cmake_policy(SET CMP0043 NEW)
-
-include_directories(../FLIMreader)
+include_directories(${FLIMreader_INCLUDE_DIR})
 
 
 # Source Files
