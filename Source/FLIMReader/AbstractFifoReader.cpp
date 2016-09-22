@@ -192,8 +192,9 @@ void AbstractFifoReader::alignFrames()
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
+   frame_aligner->setNumberOfFrames(frames.size());
    frame_aligner->setReference(0, frames[0]);
-  
+
    #pragma omp parallel for
    for (int i = 1; i < frames.size(); i++)
       frame_aligner->addFrame(i, frames[i]);

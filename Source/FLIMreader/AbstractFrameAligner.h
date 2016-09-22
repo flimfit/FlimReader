@@ -60,10 +60,12 @@ public:
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual void addFrame(int frame_t, const cv::Mat& frame) = 0;
    virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
+   virtual void setNumberOfFrames(int n_frames_) { n_frames = n_frames_; }
 
 
 protected:
    RealignmentParameters realign_params;
    ImageScanParameters image_params;
    cv::Mat reference;
+   int n_frames = 1;
 };

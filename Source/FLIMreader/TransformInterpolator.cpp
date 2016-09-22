@@ -15,17 +15,19 @@ bool TransformInterpolator::empty()
 void TransformInterpolator::clear()
 {
    frame_transform.clear();
-   frame_transform.push_back(Transform(0.0));
 }
 
 void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
 {
+   frame_transform.resize(n_frames+1);
+
    reference = reference_;
 
    auto size = reference.size();
    cv::createHanningWindow(window, reference.size(), CV_32F);
 
-   addTransform(Transform(0.5*realign_params.frame_binning));
+   addTransform(0, Transform(0));
+   addTransform(1, Transform(0.5*realign_params.frame_binning));
 
    centre = cv::Point2d(image_params.n_x, image_params.n_y) * 0.5;
    centre_binned = centre / realign_params.spatial_binning;
@@ -57,7 +59,7 @@ void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
 
    transform.shift = p * realign_params.spatial_binning;
 
-   addTransform(transform);
+   addTransform(frame_t,transform);
 }
 
 void TransformInterpolator::shiftPixel(int frame, double& x, double& y)
@@ -123,9 +125,8 @@ void TransformInterpolator::interpolate(Transform& t1, Transform& t2, double fra
    shift = t2.shift * f + t1.shift * (1 - f);
 }
 
-void TransformInterpolator::addTransform(Transform t)
+void TransformInterpolator::addTransform(int frame_t, Transform t)
 {
-   assert(t.frame > frame_transform.back().frame);
-   frame_transform.push_back(t);
+   frame_transform[frame_t+1] = t;
 }
 

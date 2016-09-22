@@ -6,7 +6,7 @@ class Transform
 {
 public:
 
-   Transform(double frame_)
+   Transform(double frame_ = 0)
    {
       frame = frame_;
       angle = 0.0;
@@ -36,9 +36,10 @@ public:
    void setReference(int frame_t, const cv::Mat& reference_);
    void addFrame(int frame_t, const cv::Mat& frame); 
    void shiftPixel(int frame, double& x, double& y);
+
 private:
 
-   void addTransform(Transform t);
+   void addTransform(int frame_t, Transform t);
    void interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift);
    void getAffine(double frame, cv::Mat& affine, cv::Point2d& shift);
 
