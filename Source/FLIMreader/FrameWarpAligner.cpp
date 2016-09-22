@@ -37,8 +37,6 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 
 void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
-
-
    int max_n_iter = 200;
 
    cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;

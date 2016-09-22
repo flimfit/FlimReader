@@ -20,9 +20,19 @@ public:
    data_position(data_position)
    {
       fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
+      
+      fs.seekg(0, fs.end);
+      length = (double) (fs.tellg() - data_position);
+      
       setToStart();
+
    }
    
+   double getProgress()
+   {
+      return (fs.tellg() - data_position) / length;
+   }
+
    void setToStart()
    {
       fs.clear();
@@ -40,6 +50,7 @@ protected:
    
    std::ifstream fs;
    std::streamoff data_position;
+   double length = 0;
 };
 
 
@@ -53,6 +64,8 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
+   void stopReading() { terminate = true; }
+
    bool supportsRealignment() { return true; }
 
    void alignFrames();
@@ -85,6 +98,8 @@ protected:
    std::unique_ptr<AbstractEventReader> event_reader;
    Markers markers;
    
+   bool terminate = false;
+
 private:
    
    int t_rep_resunit;
@@ -99,6 +114,8 @@ private:
 template<typename T>
 void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
+   terminate = false;
+
    alignFrames();
 
    assert(event_reader != nullptr);
@@ -128,7 +145,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    cv::Mat affine;
    cv::Point2d shift;
 
-   while (event_reader->hasMoreData())
+   while (event_reader->hasMoreData() && !terminate)
    {
       TcspcEvent e = event_reader->getEvent();
       Photon p = processor.addEvent(e);
@@ -146,8 +163,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          p.x /= spatial_binning;
          p.y /= spatial_binning;
 
-         int x = std::round(p.x);
-         int y = std::round(p.y);
+         int x = (int) std::round(p.x);
+         int y = (int) std::round(p.y);
 
          int bin = (p.bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
          bin = bin < 0 ? bin + t_rep_resunit : bin;

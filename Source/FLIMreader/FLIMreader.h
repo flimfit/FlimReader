@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "TransformInterpolator.h"
+#include "AbstractFrameAligner.h"
 
 class FLIMReader
 {
@@ -24,6 +24,9 @@ public:
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
+
+   virtual void stopReading() {};
+   virtual float getProgress() { return 0; }
 
    /*
    template<typename T>

@@ -98,7 +98,7 @@ public:
                cur_loc = sync.n_x - 1 - cur_loc;
 
 //            int cur_px = static_cast<int>(cur_loc);
-            return Photon(frame_idx, cur_loc, cur_line, p.channel, p.micro_time);
+            return Photon(frame_idx, (int) cur_loc, cur_line, p.channel, p.micro_time);
          }
       }
 
