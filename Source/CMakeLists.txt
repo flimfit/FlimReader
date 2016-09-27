@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${PLATFORM_FLAGS_DEBUG}")
 
 # CMakeLists.txt
 add_subdirectory(FLIMReader)
-add_subdirectory(FLIMReaderTest)
+#add_subdirectory(FLIMReaderTest)
 
 if(GENERATE_MEX)
    add_subdirectory(FLIMReaderMex)

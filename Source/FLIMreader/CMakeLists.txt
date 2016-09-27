@@ -11,7 +11,7 @@ endif()
 find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIR})
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core imgproc)
 find_package("OpenMP" REQUIRED)
 
 # Enable OpenMP support, disable for XCode
