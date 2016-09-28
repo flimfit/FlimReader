@@ -9,10 +9,10 @@ if(MSVC)
 endif()
 
 find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
-include_directories(${Boost_INCLUDE_DIR})
-
 find_package(OpenCV REQUIRED core imgproc)
-find_package("OpenMP" REQUIRED)
+find_package(OpenMP REQUIRED)
+
+include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
 # Enable OpenMP support, disable for XCode
 #===================================================
@@ -56,7 +56,7 @@ set(HEADERS
    FrameWarpAligner.h
 )
 
-set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
 set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
 add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
 
