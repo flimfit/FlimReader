@@ -31,7 +31,7 @@ set(SOURCE
    AbstractFifoReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
-   FFDReader.cpp
+   FfdReader.cpp
    BhSPCReader.cpp
    TextReader.cpp
    AbstractFrameAligner.cpp
@@ -46,7 +46,8 @@ set(HEADERS
    PicoquantPTUReader.h
    PicoquantBINReader.h
    PicoquantHelper.h
-   FFDReader.h
+   FfdReader.h
+   FfdHeader.h
    BhSPCReader.h
    TextReader.h
    PicoquantT3Event.h
@@ -54,6 +55,9 @@ set(HEADERS
    AbstractFrameAligner.h
    TransformInterpolator.h
    FrameWarpAligner.h
+   MetadataTag.h
+   FlimCube.h
+   FlimCubeWriter.h
 )
 
 set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)

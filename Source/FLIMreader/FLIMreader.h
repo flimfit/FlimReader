@@ -6,6 +6,10 @@
 #include <memory>
 
 #include "AbstractFrameAligner.h"
+#include "MetadataTag.h"
+#include "FlimCube.h"
+
+typedef std::map<std::string, MetaDataTag> TagMap;
 
 class FLIMReader
 {
@@ -25,20 +29,18 @@ public:
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
 
-   virtual void stopReading() {};
-   virtual float getProgress() { return 0; }
-
-   /*
    template<typename T>
-   std::vector<T> readData(const std::vector<int>& channels = {})
+   void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {})
    {
       int n_chan_stride = -1;
-      std::vector<int> channels_ = validateChannels(channels, n_chan_stride);
-      std::vector<T> data(channels_.size() * timepoints_.size());
-      readData(data.data(), channels_);
-      return data;
+      std::vector<int> ch = validateChannels(channels, n_chan_stride);
+
+      cube->init(timepoints_, ch.size(), numX(), numY());
+      readData(cube->getDataPtr(), ch);
    }
-   */
+
+   virtual void stopReading() {};
+   virtual float getProgress() { return 0; }
 
    const std::vector<double>& timepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }
@@ -60,6 +62,8 @@ public:
    
    int getSpatialBinning() { return spatial_binning; }
    
+   TagMap getTags() { return tags; }
+
 protected:
 
    std::vector<double> timepoints_;
@@ -71,6 +75,8 @@ protected:
    int n_x = 0;
    int n_y = 0;
    int n_chan = 0;
+
+   TagMap tags;
 
    RealignmentParameters realign_params;
 };

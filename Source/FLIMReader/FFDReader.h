@@ -58,11 +58,9 @@ class FfdEventReader : public AbstractEventReader
 {
 public:
 
-   FfdEventReader(const std::string& filename, int version, std::streamoff data_position, bool use_compression = false, size_t max_message_size = 16 * 1024)
+   FfdEventReader(const std::string& filename, int version, std::streamoff data_position)
       : AbstractEventReader(filename, data_position),
-        version(version),
-        use_compression(use_compression),
-        max_message_size(max_message_size)
+        version(version)
    {
    }
 
@@ -71,8 +69,6 @@ public:
    {
       return !fs.eof() && !fs.fail();
    }
-
-
 
    TcspcEvent getEvent()
    {
@@ -96,12 +92,9 @@ public:
 protected: 
 
    static const int buffer_size = 128 * 1024;
-   size_t max_message_size;
-
    uint32_t version;
    uint64_t macro_time_offset = 0;
    bool finished_decoding = false;
-   bool use_compression = false;
 };
 
 
@@ -111,23 +104,11 @@ public:
 
    FfdReader(const std::string& filename);
 
+   enum FfdType { fifo, histogram };
+
 protected:
-   
-   enum 
-   {
-      TagDouble = 0,
-      TagUInt64 = 1,
-      TagInt64 = 2,
-      TagBool = 4,
-      TagString = 5,
-      TagDate = 6,
-      TagEndHeader = 7
-   } FlimMetadataTag;
 
    void readHeader();
    std::streamoff data_position = 0;
-   bool use_compression = false;
-   size_t message_size = 16 * 1024;
    uint32_t version;
-
 };

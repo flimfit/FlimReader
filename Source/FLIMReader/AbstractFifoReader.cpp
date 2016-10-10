@@ -181,7 +181,7 @@ void AbstractFifoReader::alignFrames()
             break;
 #endif
          if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
-            frames[p.frame].at<float>(p.y, p.x)++;
+            frames[p.frame].at<float>((int) p.y, (int) p.x)++;
       }
    }
 
@@ -192,7 +192,7 @@ void AbstractFifoReader::alignFrames()
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
-   frame_aligner->setNumberOfFrames(frames.size());
+   frame_aligner->setNumberOfFrames((int) frames.size());
    frame_aligner->setReference(0, frames[0]);
 
    #pragma omp parallel for
