@@ -104,7 +104,6 @@ private:
    
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
-   std::unique_ptr<AbstractFrameAligner> frame_aligner;
 };
 
 
@@ -115,8 +114,6 @@ template<typename T>
 void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
    terminate = false;
-
-   alignFrames();
 
    assert(event_reader != nullptr);
    event_reader->setToStart();

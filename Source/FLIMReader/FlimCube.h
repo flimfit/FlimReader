@@ -19,10 +19,12 @@ public:
       n_t = timepoints.size();
       size_t n_el = timepoints.size() * n_chan * n_x * n_y;
       data.resize(n_el);
+      ready = true;
    }
 
    T* getDataPtr()
    {
+      assert(ready);
       return data.data();
    }
 
@@ -36,7 +38,9 @@ public:
    uint64_t n_x = 1;
    uint64_t n_y = 1;
    std::vector<double> timepoints;
+   bool isReady() { return ready; }
 
 protected:
+   bool ready = false;
    std::vector<T> data;
 };

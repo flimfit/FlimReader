@@ -14,15 +14,17 @@ typedef std::map<std::string, MetaDataTag> TagMap;
 class FLIMReader
 {
 public:
-   
+
    static FLIMReader* createReader(const std::string& filename);
 
    FLIMReader(const std::string& filename_);
-    
+
    static std::string determineExtension(const std::string& filename);
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
    virtual ~FLIMReader() {};
+
+   virtual void alignFrames() {};
 
    virtual int getNumChannels() { return n_chan; };
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
@@ -35,7 +37,7 @@ public:
       int n_chan_stride = -1;
       std::vector<int> ch = validateChannels(channels, n_chan_stride);
 
-      cube->init(timepoints_, ch.size(), numX(), numY());
+      cube->init(timepoints_, (int)ch.size(), numX(), numY());
       readData(cube->getDataPtr(), ch);
    }
 
@@ -78,6 +80,8 @@ public:
       return reader_tags;
    }
 
+   const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
+
 protected:
 
    std::vector<double> timepoints_;
@@ -90,7 +94,11 @@ protected:
    int n_y = 0;
    int n_chan = 0;
 
+
    TagMap tags;
 
    RealignmentParameters realign_params;
+   std::unique_ptr<AbstractFrameAligner> frame_aligner;
+   std::vector<cv::Mat> frames; // for realignment
+   std::vector<RealignmentResult> realignment;
 };

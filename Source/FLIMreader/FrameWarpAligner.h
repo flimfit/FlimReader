@@ -23,7 +23,7 @@ public:
    void clear() { Dstore.clear(); };
 
    void setReference(int frame_t, const cv::Mat& reference_);
-   void addFrame(int frame_t, const cv::Mat& frame);
+   RealignmentResult addFrame(int frame_t, const cv::Mat& frame);
    void shiftPixel(int frame_t, double& x, double& y);
 
 protected:
@@ -55,5 +55,5 @@ protected:
 
    cv::Mat sum_1, sum_2;
 
-   bool write_debug_images = true;
+   bool write_debug_images = false;
 };

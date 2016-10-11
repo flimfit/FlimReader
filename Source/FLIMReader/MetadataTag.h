@@ -113,7 +113,7 @@ public:
          return std::to_string(*reinterpret_cast<uint64_t*>(&data));
       case TagBool:
          return std::to_string(*reinterpret_cast<bool*>(&data));
-      case TagString:
+      default:
          return string_data;
       }
    }

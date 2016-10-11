@@ -33,11 +33,11 @@ protected:
 
       it = tags.find("NumX");
       if (it != tags.end())
-         n_x = it->second.getValue<int64_t>();
+         n_x = (int) it->second.getValue<int64_t>();
 
       it = tags.find("NumY");
       if (it != tags.end())
-         n_y = it->second.getValue<int64_t>();
+         n_y = (int) it->second.getValue<int64_t>();
 
       it = tags.find("NumChannels");
       if (it != tags.end())
@@ -51,7 +51,7 @@ protected:
       if (it != tags.end())
          data_type = it->second.getString();
 
-      n_timepoints = timepoints_.size();
+      n_timepoints = (int) timepoints_.size();
 
       fs.close();
 

@@ -158,30 +158,29 @@ void AbstractFifoReader::alignFrames()
    int n_y_binned = n_y / sb;
    int n_invalid = 0;
 
-   FifoProcessor processor(markers, sync);
+   // we'll use this as a buffer eventually...
+   frames.clear();
 
-   std::vector<cv::Mat> frames;
-
-   while (event_reader->hasMoreData())
+   if (frames.empty())
    {
-      TcspcEvent e = event_reader->getEvent();
-      Photon p = processor.addEvent(e);
-
-      if (p.valid)
+      FifoProcessor processor(markers, sync);
+      while (event_reader->hasMoreData())
       {
-         p.x /= sb;
-         p.y /= sb;
-         p.frame /= fb;
+         TcspcEvent e = event_reader->getEvent();
+         Photon p = processor.addEvent(e);
 
-         while (p.frame >= frames.size())
-            frames.push_back(cv::Mat(n_x_binned, n_y_binned, CV_32F, cv::Scalar(0)));
+         if (p.valid)
+         {
+            p.x /= sb;
+            p.y /= sb;
+            p.frame /= fb;
 
-#ifdef _DEBUG
-         if (p.frame > 5)
-            break;
-#endif
-         if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
-            frames[p.frame].at<float>((int) p.y, (int) p.x)++;
+            while (p.frame >= frames.size())
+               frames.push_back(cv::Mat(n_x_binned, n_y_binned, CV_32F, cv::Scalar(0)));
+
+            if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
+               frames[p.frame].at<float>((int)p.y, (int)p.x)++;
+         }
       }
    }
 
@@ -197,5 +196,5 @@ void AbstractFifoReader::alignFrames()
 
    #pragma omp parallel for
    for (int i = 1; i < frames.size(); i++)
-      frame_aligner->addFrame(i, frames[i]);
+      realignment.push_back(frame_aligner->addFrame(i, frames[i]));
 }

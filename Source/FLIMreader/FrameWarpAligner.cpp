@@ -35,7 +35,7 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    reference.convertTo(sum_2, CV_32F);
 }
 
-void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    int max_n_iter = 200;
 
@@ -148,6 +148,13 @@ void FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       //cv::imwrite(ref_im_file, img);
    }
    
+   RealignmentResult r;
+   r.frame = frame;
+   r.realigned = wimg;
+   r.correlation = last_rms_error;
+
+   return r;
+
 }
 
 double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)

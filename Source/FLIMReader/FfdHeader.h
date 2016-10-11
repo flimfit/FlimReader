@@ -77,8 +77,6 @@ public:
          {
             tag.string_data.resize(tag_data_length);
             fs.read(&tag.string_data[0], tag_data_length);
-            size_t extracted = fs.gcount();
-            assert(extracted == tag_data_length);
          }
          else if (tag.type <= 0x4) // double, uint64_t, int64_t, bool
          {

@@ -35,7 +35,7 @@ void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
 
-void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
 {
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
@@ -55,11 +55,19 @@ void TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
       rotatedi = frame;
    }
 
-   auto p = cv::phaseCorrelate(reference, rotatedi, window);
+   double response;
+   auto p = cv::phaseCorrelate(reference, rotatedi, window, &response);
 
    transform.shift = p * realign_params.spatial_binning;
 
    addTransform(frame_t,transform);
+
+   RealignmentResult r;
+   r.frame = frame;
+   r.realigned = frame;
+   r.correlation = response;
+
+   return r; // TODO
 }
 
 void TransformInterpolator::shiftPixel(int frame, double& x, double& y)

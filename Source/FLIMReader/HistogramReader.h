@@ -62,7 +62,7 @@ protected:
 
                   for (int t = 0; t < n_timepoints; t++)
                   {
-                     data[p + t] += data_buf[px++];
+                     data[p + t] += (T) data_buf[px++];
                   }
                }
             }
