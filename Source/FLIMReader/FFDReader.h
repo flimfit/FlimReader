@@ -104,8 +104,6 @@ public:
 
    FfdReader(const std::string& filename);
 
-   enum FfdType { fifo, histogram };
-
 protected:
 
    void readHeader();

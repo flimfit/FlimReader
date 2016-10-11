@@ -7,11 +7,6 @@
 #include <algorithm>
 #include <functional>
 
-using namespace std;
-
-
-#define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
-
 FfdReader::FfdReader(const std::string& filename) :
    AbstractFifoReader(filename)
 {
@@ -30,16 +25,15 @@ FfdReader::FfdReader(const std::string& filename) :
 
 void FfdReader::readHeader()
 {
-   ifstream fs(filename, ifstream::in | ifstream::binary);
-   
+   std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
    FfdHeader header(fs);
 
    version = header.version;
    data_position = header.data_position;
    tags = header.tags;
 
-   if (header.type != fifo)
-      throw runtime_error("Must be fifo");
+   if (header.type != FfdHeader::fifo)
+      throw std::runtime_error("Must be fifo");
 
    TagMap::iterator it;
    

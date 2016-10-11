@@ -17,7 +17,7 @@ public:
       n_x = n_x_;
       n_y = n_y_;
       n_t = timepoints.size();
-      int n_el = timepoints.size() * n_chan * n_x * n_y;
+      size_t n_el = timepoints.size() * n_chan * n_x * n_y;
       data.resize(n_el);
    }
 
@@ -28,7 +28,7 @@ public:
 
    uint64_t getDataSize()
    {
-      return n_t * n_chan * n_y * n_x;
+      return n_t * n_chan * n_y * n_x * sizeof(T);
    }
 
    uint64_t n_t = 1;

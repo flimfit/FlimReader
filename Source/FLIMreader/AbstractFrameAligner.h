@@ -10,6 +10,8 @@ enum class RealignmentType
    Warp        = 3
 };
 
+std::string realignmentTypeString(RealignmentType t);
+
 class RealignmentParameters
 {
 public:

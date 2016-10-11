@@ -62,7 +62,21 @@ public:
    
    int getSpatialBinning() { return spatial_binning; }
    
+   const std::string& getFilename() { return filename; }
+
    TagMap getTags() { return tags; }
+   
+   virtual TagMap getReaderTags()
+   {
+      TagMap reader_tags;
+      reader_tags["SpatialBinning"] = spatial_binning;
+      reader_tags["RealignmentType"] = realignmentTypeString(realign_params.type);
+      reader_tags["RealignmentFrameBinning"] = realign_params.frame_binning;
+      reader_tags["RealignmentSpatialBinning"] = realign_params.spatial_binning;
+      reader_tags["RealignmentNumResamplingPoints"] = realign_params.n_resampling_points;
+
+      return reader_tags;
+   }
 
 protected:
 

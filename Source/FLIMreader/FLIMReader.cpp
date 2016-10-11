@@ -2,7 +2,8 @@
 #include "PicoquantTTRReader.h"
 #include "PicoquantPTUReader.h"
 #include "PicoquantBINReader.h"
-#include "FFDReader.h"
+#include "FfdReader.h"
+#include "FfhReader.h"
 #include "TextReader.h"
 
 FLIMReader* FLIMReader::createReader(const std::string& filename)
@@ -19,6 +20,8 @@ FLIMReader* FLIMReader::createReader(const std::string& filename)
       return new PicoquantBINReader(filename, extension);
    else if (extension == "ffd")
       return new FfdReader(filename);
+   else if (extension == "ffh")
+      return new FfhReader(filename);
 
    throw std::runtime_error("Unrecognised file format");
 }

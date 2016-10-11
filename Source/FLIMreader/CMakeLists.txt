@@ -47,7 +47,9 @@ set(HEADERS
    PicoquantBINReader.h
    PicoquantHelper.h
    FfdReader.h
+   FfhReader.h
    FfdHeader.h
+   HistogramReader.h
    BhSPCReader.h
    TextReader.h
    PicoquantT3Event.h

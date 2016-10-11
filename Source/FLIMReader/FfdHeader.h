@@ -64,37 +64,36 @@ public:
          READ(fs, tag_type);
          READ(fs, tag_data_length);
 
-         std::vector<char> data(tag_data_length);
-         char* data_ptr = data.data();
-         fs.read(data_ptr, tag_data_length);
+         MetaDataTag tag;
+         tag.is_vector = tag_type & 0x80;
+         tag.type = (MetaDataTag::TagType) (tag_type & 0x7F);
 
-         if (tag_type == TagDouble)
+         if (tag.is_vector)
          {
-            tags[tag_name] = MetaDataTag(*(double*)data_ptr);
+            tag.vector_data.resize(tag_data_length / sizeof(uint64_t));
+            fs.read((char*) tag.vector_data.data(), tag_data_length);
          }
-         else if (tag_type == TagInt64)
+         else if (tag.type == MetaDataTag::TagDate || tag.type == MetaDataTag::TagString)
          {
-            tags[tag_name] = MetaDataTag(*(int64_t*)data_ptr);
+            tag.string_data.resize(tag_data_length);
+            fs.read(&tag.string_data[0], tag_data_length);
+            size_t extracted = fs.gcount();
+            assert(extracted == tag_data_length);
          }
-         else if (tag_type == TagUInt64)
+         else if (tag.type <= 0x4) // double, uint64_t, int64_t, bool
          {
-            tags[tag_name] = MetaDataTag(*(uint64_t*)data_ptr);
-         }
-         else if (tag_type == TagBool)
-         {
-            tags[tag_name] = MetaDataTag(*(bool*)data_ptr);
-         }
-         else if (tag_type == TagDate || tag_type == TagString)
-         {
-            std::string value;
-            value.resize(tag_data_length);
-            memcpy(&value[0], data_ptr, tag_data_length);
+            tag_data_length = std::min((uint32_t)8, tag_data_length);
+            fs.read((char*)&tag.data, tag_data_length);
 
-            tags[tag_name] = MetaDataTag(value);
          }
+
+         if (tag_type != TagEndHeader)
+            tags[tag_name] = tag;
+
       } while (tag_type != TagEndHeader);
 
       data_position = fs.tellg();
+
    }
 
    FfdType type;
