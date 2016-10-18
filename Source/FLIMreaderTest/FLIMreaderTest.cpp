@@ -18,7 +18,7 @@ void test_load()
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/ANRN-Rac1f9 T=0 pre-injection pancreas_7_1_001.ffd";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/02 ANRN PMA=200nM tcourse_1_3_001.ffd";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Lijuan Zhang/ATTO_488_10_4_2/ATTO_488_10_4_2.ptu";
 
    //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
 
@@ -33,47 +33,14 @@ void test_load()
    RealignmentParameters params;
    params.frame_binning = 1;
    params.spatial_binning = 4;
-   params.type = RealignmentType::Warp;
+   params.type = RealignmentType::None;
    params.n_resampling_points = 10 ;
    
    reader->setRealignmentParameters(params);
 
-   reader->readData(d.data(), { 0 });
+   reader->readData(d.data(), { 1 });
 }
 
-
-int test_realignment()
-{
-   bool error = false;
-   {
-      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image1.png";
-      std::string im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/image2.png";
-
-      cv::Mat ref_im = cv::imread(ref_im_file, CV_LOAD_IMAGE_GRAYSCALE);
-      cv::Mat im = cv::imread(im_file, CV_LOAD_IMAGE_GRAYSCALE);
-
-      cv::transpose(ref_im, ref_im);
-      cv::transpose(im, im);
-
-      ref_im.convertTo(ref_im, CV_32F);
-      im.convertTo(im, CV_32F);
-
-      RealignmentParameters params;
-      params.frame_binning = 1;
-      params.spatial_binning = 1;
-      params.n_resampling_points = 30;
-
-      ImageScanParameters scan(100, 101, im.size().width, im.size().height);
-
-      FrameWarpAligner aligner(params);
-      aligner.setImageScanParams(scan);
-      aligner.setReference(0, ref_im);
-      aligner.addFrame(1, im);
-   }
-
-
-   return 0;
-}
 
 
 int main()
