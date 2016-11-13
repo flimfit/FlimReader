@@ -99,6 +99,6 @@ protected:
 
    RealignmentParameters realign_params;
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
-   std::vector<cv::Mat> frames; // for realignment
+   std::vector<cv::Mat> frames;
    std::vector<RealignmentResult> realignment;
 };

@@ -82,6 +82,9 @@ private:
          return "double";
       if (typeid(T) == typeid(float))
          return "float";
+
+      throw std::runtime_error("Unrecognised type");
+      return "";
    }
 
 

@@ -143,10 +143,11 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 
 void AbstractFifoReader::alignFrames()
 {
-   frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
-
    if (!realign_params.use_realignment())
       return;
+
+   if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
+      frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
 
    int sb = realign_params.spatial_binning;
    int fb = realign_params.frame_binning;
@@ -169,6 +170,11 @@ void AbstractFifoReader::alignFrames()
          TcspcEvent e = event_reader->getEvent();
          Photon p = processor.addEvent(e);
 
+#ifdef _DEBUG
+         if (p.frame > 10)
+            break;
+#endif
+          
          if (p.valid)
          {
             p.x /= sb;
@@ -184,17 +190,29 @@ void AbstractFifoReader::alignFrames()
       }
    }
 
-   cv::Mat window;
-   cv::createHanningWindow(window, cv::Size(n_x_binned, n_y_binned), CV_32F);
+   double max_m = 0;
+   int max_idx = 0;
+   for (int i = 0; i < frames.size(); i++)
+   {
+      double new_v = cv::mean(frames[i])(0);
+      if (new_v > max_m)
+      {
+         max_m = new_v;
+         max_idx = i;
+      }
+   }
 
    ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y);
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames((int) frames.size());
-   frame_aligner->setReference(0, frames[0]);
+   frame_aligner->setReference(max_idx, frames[max_idx]);
 
+   realignment.clear();
    #pragma omp parallel for
-   for (int i = 1; i < frames.size(); i++)
+   for (int i = 0; i < frames.size(); i++)
       realignment.push_back(frame_aligner->addFrame(i, frames[i]));
+
+   //frame_aligner->reprocess();
 }

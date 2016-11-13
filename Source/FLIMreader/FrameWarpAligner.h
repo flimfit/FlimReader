@@ -22,9 +22,13 @@ public:
    bool empty() { return false; };
    void clear() { Dstore.clear(); };
 
+   RealignmentType getType() { return RealignmentType::Warp; };
+
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame);
    void shiftPixel(int frame_t, double& x, double& y);
+
+   void reprocess();
 
 protected:
 
@@ -45,6 +49,7 @@ protected:
    cv::Point2d Dlast;
 
    std::map<int,std::vector<cv::Point2d>> Dstore;
+   std::map<int,RealignmentResult> results;
 
    int nD = 10;
 
