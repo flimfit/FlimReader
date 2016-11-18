@@ -19,6 +19,8 @@ public:
    int spatial_binning = 1;
    int frame_binning = 1;
    int n_resampling_points = 30;
+   bool reprocessing = false;
+
 
    bool use_realignment() { return type != RealignmentType::None; }
    bool use_rotation() { return type == RealignmentType::RigidBody; }
@@ -65,6 +67,8 @@ public:
    virtual bool empty() = 0;
    virtual void clear() = 0;
 
+   virtual RealignmentType getType() = 0;
+
    void setRealignmentParams(RealignmentParameters params_) { realign_params = params_; }
    void setImageScanParams(ImageScanParameters params_) { image_params = params_; }
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
@@ -72,6 +76,7 @@ public:
    virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
    virtual void setNumberOfFrames(int n_frames_) { n_frames = n_frames_; }
 
+   virtual void reprocess() {};
 
 protected:
    RealignmentParameters realign_params;

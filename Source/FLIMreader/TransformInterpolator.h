@@ -33,6 +33,8 @@ public:
    bool empty();
    void clear();
 
+   RealignmentType getType() { return realign_params.use_rotation() ? RealignmentType::RigidBody : RealignmentType::Translation; };
+
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame); 
    void shiftPixel(int frame, double& x, double& y);

@@ -9,6 +9,7 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
+
    reference = reference_;
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
@@ -35,6 +36,15 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    reference.convertTo(sum_2, CV_32F);
 }
 
+void FrameWarpAligner::reprocess()
+{
+   sum_2 /= results.size();
+   setReference(0, sum_2);
+
+//   for (auto iter : results)
+//      addFrame(iter.first, iter.second.frame);
+}
+
 RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    int max_n_iter = 200;
@@ -46,12 +56,12 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    std::vector<cv::Point2d> D(nD), Dtrial(nD);
 
    double last_rms_error = std::numeric_limits<double>::max();
-   double delta = 1e-9;
+   double delta = 1e-7;
 
    warpImage(frame, wimg0, D);
    double rms_error0 = computeErrorImage(wimg0, error_img0);
 
-   if (Dstore.count(frame_t) == 1)
+   if (Dstore.count(frame_t) == 1 && D.size() == Dstore[frame_t].size())
       D = Dstore[frame_t];
    else
       std::fill(D.begin(), D.end(), Dlast);
@@ -117,13 +127,11 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    Dstore[frame_t] = D;
    Dlast = *(D.end()-2);
    
-   
+   sum_1 += frame;
+   sum_2 += wimg;
+
    if (write_debug_images)
    {
-      sum_1 += frame;
-      sum_2 += wimg;
-
-
       cv::Mat img;
 
       cv::transpose(frame, img);
@@ -153,8 +161,9 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    r.realigned = wimg;
    r.correlation = last_rms_error;
 
-   return r;
+   results[frame_t] = r;
 
+   return r;
 }
 
 double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
@@ -185,7 +194,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
 
 void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
 {
-   if (Dstore.count(frame_t) == 0)
+   if (!realign_params.use_realignment() || Dstore.count(frame_t) == 0)
       return;
 
    auto& D = Dstore[frame_t];
