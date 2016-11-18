@@ -13,6 +13,12 @@
 #define HWRouter_Channels  "HWRouter_Channels"
 #define TTResult_SyncRate  "TTResult_SyncRate"
 #define MeasDesc_BinningFactor  "MeasDesc_BinningFactor"
+#define ImgHdr_LineStart "ImgHdr_LineStart"
+#define ImgHdr_LineStop "ImgHdr_LineStop"
+#define ImgHdr_Frame "ImgHdr_Frame"
+#define ImgHdr_PixX "ImgHdr_PixX"
+#define ImgHdr_PixY "ImgHdr_PixY"
+
 
 #define Line_Averaging     "Line_Averaging"            // Inserted by PTU splitter
 

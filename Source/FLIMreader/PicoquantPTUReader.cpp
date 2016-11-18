@@ -21,13 +21,16 @@ AbstractFifoReader(filename)
    int n_timebins_useful = (int) ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
+   // Default if markers aren't specified in data
+   if (markers.LineEndMarker == 0x00 && markers.LineStartMarker == 0x00)
+   {
+      markers.FrameMarker = 0x4;
+      markers.LineEndMarker = 0x2;
+      markers.LineStartMarker = 0x1;
+   }
 
    setTemporalResolution(14);
    assert(measurement_mode == 3);
-
-   markers.FrameMarker = 0x4;
-   markers.LineEndMarker = 0x2;
-   markers.LineStartMarker = 0x1;
 
    event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position));
       
@@ -40,7 +43,8 @@ void PicoquantPTUReader::readHeader()
    
    char magic[8];
    char version[8];
-   
+   std::vector<char> data;
+
    fs.read(magic, sizeof(magic));
    
    if (string("PQTTTR") != magic)
@@ -57,7 +61,7 @@ void PicoquantPTUReader::readHeader()
       fs.read(reinterpret_cast<char*>(&tag_head), sizeof(tag_head));
       
       cout << "\n" << tag_head.Ident << " : ";
-      
+
       switch (tag_head.Typ)
       {
          case tyEmpty8:
@@ -70,9 +74,8 @@ void PicoquantPTUReader::readHeader()
             
          case tyInt8:
             cout << (tag_head.TagValue != 0);
-            // get some Values we need to analyse records
-//            if (strcmp(tag_head.Ident, TTTRTagNumRecords)==0) // Number of records
-//               n_records = tag_head.TagValue;
+            if (strcmp(tag_head.Ident, TTTRTagTTTRRecType) == 0)
+               rec_type = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
                measurement_mode = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
@@ -83,6 +86,16 @@ void PicoquantPTUReader::readHeader()
                t_rep_ps = 1e12f / tag_head.TagValue;
             if (strcmp(tag_head.Ident, MeasDesc_BinningFactor)==0)
                temporal_binning = (int) tag_head.TagValue;
+            if (strcmp(tag_head.Ident, ImgHdr_LineStart)==0)
+               markers.LineStartMarker = 1 << (tag_head.TagValue - 1);
+            if (strcmp(tag_head.Ident, ImgHdr_LineStop) == 0)
+               markers.LineEndMarker = 1 << (tag_head.TagValue - 1);
+            if (strcmp(tag_head.Ident, ImgHdr_Frame) == 0)
+               markers.FrameMarker = 1 << (tag_head.TagValue - 1);
+            if (strcmp(tag_head.Ident, ImgHdr_PixX) == 0)
+               n_x = tag_head.TagValue;
+            if (strcmp(tag_head.Ident, ImgHdr_PixY) == 0)
+               n_y = tag_head.TagValue;
             break;
             
          case tyBitSet64:
@@ -106,7 +119,9 @@ void PicoquantPTUReader::readHeader()
          case tyFloat8Array:
          case tyWideString:
          case tyBinaryBlob:
-            fs.seekg((long)tag_head.TagValue, ios_base::cur);
+            data.resize(tag_head.TagValue);
+            fs.read(data.data(), tag_head.TagValue);
+            cout << std::string(data.data());
             break;
          
          default:

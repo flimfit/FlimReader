@@ -15,7 +15,6 @@ AbstractFifoReader(filename)
    
    n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
-   //n_records = info.n_records;
    time_resolution_native_ps = hw_info.resolution * 1e3;
    n_x = info.n_x;
    n_y = info.n_y;

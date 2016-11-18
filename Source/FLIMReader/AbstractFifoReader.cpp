@@ -51,9 +51,14 @@ void AbstractFifoReader::determineDwellTime()
    double sync_count_per_line = 0;
    double sync_count_interline = 0;
    int n_averaged = 0;
-   int n_frame = 0;
    int n_line = 0;
-   bool line_started = false;
+   int n_frame = 0;
+
+   std::vector<uint64_t> sync_counts;
+   if (n_y > 0)
+      sync_counts.reserve(n_y);
+
+   bool line_active = false;
    do
    {
       TcspcEvent p = event_reader->getEvent();
@@ -65,19 +70,21 @@ void AbstractFifoReader::determineDwellTime()
          continue;
 
       if (p.mark & markers.FrameMarker)
-      {
          n_frame++;
-      }
-      if (n_frame > 0)
+
+      if (n_frame > 0 || markers.FrameMarker == 0x0)
       {
-         if ((p.mark & markers.LineEndMarker) && line_started)
+         if ((p.mark & markers.LineEndMarker) && line_active)
          {
             uint64_t diff = macro_time - sync_start_count;
-            sync_count_per_line += (macro_time - sync_start_count);
+            sync_count_per_line += diff;
+
+            sync_counts.push_back(diff);
+
             n_averaged++;
-            line_started = false;
+            line_active = false;
          }
-         if (p.mark & markers.LineStartMarker)
+         else if (p.mark & markers.LineStartMarker)
          {
             if (n_line > 0)
             {
@@ -87,17 +94,34 @@ void AbstractFifoReader::determineDwellTime()
 
             n_line++;
             sync_start_count = macro_time;
-            line_started = true;
+            line_active = true;
          }
-
       }
-      if (n_frame >= 2)
+
+      // if we don't have frame markers break after 512 lines (speed considerations)
+      if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
-   } while (event_reader->hasMoreData());
+
+   } while (event_reader->hasMoreData() && (n_frame < 2 || line_active));
    
    sync_count_per_line /= n_averaged;
    sync_count_interline /= (n_averaged-1);
 
+   // Remove sync count outliers
+   // Shouldn't really be required but we seem to sometimes get some strange outliers
+   double cor_sync_count_per_line = 0;
+   int used_lines = 0;
+   double allowed_variance = 0.1 * sync_count_per_line;
+   for (auto& c : sync_counts)
+   {
+      if (abs(c - sync_count_per_line) < allowed_variance)
+      {
+         cor_sync_count_per_line += c;
+         used_lines++;
+      }
+   }
+   sync_count_per_line = cor_sync_count_per_line / used_lines;
+   
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
    
@@ -107,12 +131,15 @@ void AbstractFifoReader::determineDwellTime()
 	  if (n_x == 0)
          n_x = n_line / line_averaging;
    }
-   else
+   else if (markers.FrameMarker != 0x0)
+   {
       assert(n_y == n_line);
+   }
 
    sync.count_per_line = sync_count_per_line;
    sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
+   
 }
 
 void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
