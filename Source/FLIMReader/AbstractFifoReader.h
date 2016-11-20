@@ -7,22 +7,9 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
-
-<<<<<<< HEAD
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
-=======
-class Markers
-{
-public:
-   uint8_t PhotonMarker = 0x0;
-   uint8_t LineStartMarker = 0x0;
-   uint8_t LineEndMarker = 0x0;
-   uint8_t FrameMarker = 0x0;
-   uint8_t Invalid = 0x80;
-};
 
->>>>>>> stable
 
 #include "FifoProcessor.h"
 
@@ -139,23 +126,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       channel_map[c] = idx++;
    
    int n_bin = 1 << temporal_resolution;
-<<<<<<< HEAD
-=======
-   
-   event_reader->setToStart();
-   
-   long long sync_count_accum = 0;
-   int cur_line = 0;
-   bool frame_started = markers.FrameMarker == 0x0;
-   bool line_valid = false;
-   long long sync_start = 0;
-      
->>>>>>> stable
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
    int n_invalid = 0;
 
-<<<<<<< HEAD
    FifoProcessor processor(markers, sync);
 
    cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
@@ -163,15 +137,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    double* p_pos = pos.ptr<double>();
    double* p_tr_pos = pos.ptr<double>();
-=======
-   auto incrementFrame = [&]() {
-      n_frame++;
-      frame_started = true;
-      cur_line = -1;
-      cur_direction = 1;
-   };
->>>>>>> stable
-   
+
    cv::Mat affine;
    cv::Point2d shift;
 
@@ -187,7 +153,6 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-<<<<<<< HEAD
          if (frame_aligner != nullptr)
             frame_aligner->shiftPixel(p.frame, p.x, p.y);
 
@@ -205,59 +170,6 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
          else
             n_invalid++;
-=======
-      if (p.valid)
-      {
-         if (p.mark & markers.FrameMarker)
-            incrementFrame();
-
-         if (frame_started)
-         {
-            if ((p.mark & markers.LineEndMarker) && line_valid)
-            {
-               line_valid = false;
-            }
-            else if (p.mark & markers.LineStartMarker)
-            {
-               line_valid = true;
-               sync_start = cur_sync;
-               cur_line++;
-
-               if ((cur_line >= n_y) && markers.FrameMarker == 0x0)
-                  incrementFrame();
-
-               if (bi_directional) 
-                  cur_direction *= -1;
-            }
-         }
-
-         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started && p.channel < n_chan)
-         {
-
-            int mapped_channel = channel_map[p.channel];
-            if (mapped_channel > -1)
-            {
-               double cur_loc = ((cur_sync - sync_start) / sync_count_per_line - sync_offset) * (n_x_binned);
-
-               int cur_px = static_cast<int>(cur_loc);
-
-               if (cur_direction == -1)
-                  cur_px = n_x_binned - 1 - cur_px;
-
-               int dtime = (p.micro_time + time_shifts_resunit[p.channel]) % t_rep_resunit;
-               dtime = dtime < 0 ? dtime + t_rep_resunit : dtime;
-               int bin = dtime >> downsampling;
-
-               int x = cur_px;
-               int y = cur_line / (spatial_binning * line_averaging);
-
-               if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
-                  histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
-               else
-                  n_invalid++;
-            }
-         }
->>>>>>> stable
       }
 
    }
