@@ -57,6 +57,15 @@ void FfdReader::readHeader()
    if (it != tags.end())
       sync.bi_directional = it->second.getValue<bool>();
 
+   // Fix error in PLIM files
+   it = tags.find("UsingPixelMarkers");
+   if (it != tags.end())
+   {
+      bool using_pixel_markers = it->second.getValue<bool>();
+      if (using_pixel_markers) // kludge for detecting PLIM
+         t_rep_ps = 1e15;
+   }
+
    it = tags.find("UseCompression");
    if (it != tags.end())
    {
