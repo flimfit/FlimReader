@@ -59,7 +59,7 @@ class FfdEventReader : public AbstractEventReader
 public:
 
    FfdEventReader(const std::string& filename, int version, std::streamoff data_position)
-      : AbstractEventReader(filename, data_position),
+      : AbstractEventReader(filename, data_position, (version == 1) ? sizeof(ffd_evt_v1) : sizeof(ffd_evt) ),
         version(version)
    {
    }
@@ -74,14 +74,12 @@ public:
    {
       if (version == 1)
       {
-         ffd_evt_v1 evt;
-         fs.read(reinterpret_cast<char*>(&evt), sizeof(evt));
+         ffd_evt_v1 evt = *reinterpret_cast<const ffd_evt_v1*>(getPacket());
          return FfdEvent(evt);
       }
       else
       {
-         ffd_evt evt;
-         fs.read(reinterpret_cast<char*>(&evt), sizeof(evt));
+         ffd_evt evt = *reinterpret_cast<const ffd_evt*>(getPacket());
          return FfdEvent(evt);
       }
 

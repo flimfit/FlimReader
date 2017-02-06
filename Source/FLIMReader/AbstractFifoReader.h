@@ -9,6 +9,10 @@
 #include <memory>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <list>
 
 
 #include "FifoProcessor.h"
@@ -16,41 +20,106 @@
 class AbstractEventReader
 {
 public:
-   AbstractEventReader(const std::string& filename, std::streamoff data_position) :
-   data_position(data_position)
+   AbstractEventReader(const std::string& filename, std::streamoff data_position, uint packet_size) :
+   data_position(data_position), packet_size(packet_size)
    {
       fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
       
       fs.seekg(0, fs.end);
       length = (double) (fs.tellg() - data_position);
+      n_packet = length / packet_size;
+      uint64_t n_block = n_packet / block_size + 1;
+      data.reserve(n_block);
+      
+      reader_thread = std::thread(&AbstractEventReader::read, this);
       
       setToStart();
-
    }
    
+   ~AbstractEventReader()
+   {
+      if (reader_thread.joinable())
+         reader_thread.join();
+   }
+
+
+   void read()
+   {
+      uint64_t sz = block_size * packet_size;
+      
+      fs.seekg(data_position);
+
+      int n_read = 0;
+      do
+      {
+         std::vector<char> block(sz);
+         fs.read(&block[0], sz);
+         n_read = fs.gcount();
+
+         if (n_read < sz)
+            int a = 1;
+
+         std::unique_lock<std::mutex> lk(m);
+         data.push_back(block);
+         cv.notify_one();
+      } while (n_read > 0);
+   }
+
    double getProgress()
    {
-      return (fs.tellg() - data_position) / length;
+      return ((double) cur_pos) / n_packet;
    }
 
    void setToStart()
    {
-      fs.clear();
-      fs.seekg(data_position, std::ios_base::beg);
+      cur_pos = 0;
    }
 
    virtual bool hasMoreData()
    {
-      return !fs.eof();
+      return cur_pos < n_packet;
    }
 
    virtual TcspcEvent getEvent() = 0;
+
+   const char* getPacket()
+   {
+      int block = cur_pos / block_size;
+      int packet = cur_pos % block_size;
+      //if (block >= (data.size()-1))
+      //{
+         std::unique_lock<std::mutex> lk(m);
+         cv.wait(lk, [&]() { return block < data.size(); });
+      //}
+
+      assert(block < data.size());
+
+
+      int b = data[block].size();
+      int a = packet * packet_size;
+      assert(packet < block_size);
+      assert((packet*packet_size) < data[block].size());
+        
+      cur_pos++;
+      return &(data[block][packet*packet_size]);
+   }
    
 protected:
    
    std::ifstream fs;
    std::streamoff data_position;
-   double length = 0;
+   uint64_t packet_size;
+   uint64_t length = 0;
+   uint64_t n_packet = 0;
+   std::vector<std::vector<char>> data;
+
+   uint64_t block_size = 1024;
+
+   uint64_t cur_pos = 0;
+
+   std::thread reader_thread;
+   std::mutex m;
+   std::condition_variable cv;
 };
 
 

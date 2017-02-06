@@ -38,13 +38,12 @@ class PicoquantEventReader : public AbstractEventReader
 public:
 
    PicoquantEventReader(const std::string& filename, std::streamoff data_position)
-      : AbstractEventReader(filename, data_position)
+      : AbstractEventReader(filename, data_position, sizeof(uint32_t))
    {}
 
    TcspcEvent getEvent()
    {
-      uint32_t evt;
-      fs.read(reinterpret_cast<char *>(&evt), sizeof(evt));
+      uint32_t evt = *reinterpret_cast<const uint32_t*>(getPacket());
       return PicoquantT3Event(evt);
    }
 };

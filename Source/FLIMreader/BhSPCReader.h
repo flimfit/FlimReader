@@ -29,12 +29,13 @@ public:
    }
 };
 
+
 class BhEventReader : public AbstractEventReader
 {
 public:
 
    BhEventReader(const std::string& filename, std::streamoff data_position)
-      : AbstractEventReader(filename, data_position)
+      : AbstractEventReader(filename, data_position, 6)
    {}
 
    TcspcEvent getEvent()
@@ -46,4 +47,3 @@ public:
       return BhEvent(evt1, evt2);
    }
 };
-
