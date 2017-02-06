@@ -2,6 +2,7 @@
 
 //#define CATCH_CONFIG_MAIN 
 #include "catch.hpp"
+#include <chrono>
 
 #include "FrameWarpAligner.h"
 
@@ -17,13 +18,17 @@ void test_load()
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/ANRN-Rac1f9 T=0 pre-injection pancreas_7_1_001.ffd";
-   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Lijuan Zhang/ATTO_488_10_4_2/ATTO_488_10_4_2.ptu";
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/ANRN-Rac1f9 T=0 pre-injection pancreas_7_1_001.ffd";
+   //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Lijuan Zhang/ATTO_488_10_4_2/ATTO_488_10_4_2.ptu";
+
+   //filename = "Z:/James/FLIM Lifetimes/20161128 PLIMFLIM/PLIM/Mouse=30741 Treatment=AZD25 Image=1_001_001.ffd";
 
    //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
 
+   auto start = chrono::high_resolution_clock::now();
+
    unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
-   reader->setTemporalResolution(4);
+   //reader->setTemporalResolution(4);
    reader->setSpatialBinning(1);
    
    
@@ -34,11 +39,16 @@ void test_load()
    params.frame_binning = 1;
    params.spatial_binning = 4;
    params.type = RealignmentType::None;
-   params.n_resampling_points = 10 ;
+   params.n_resampling_points = 10;
    
-   reader->setRealignmentParameters(params);
+   //reader->setRealignmentParameters(params);
 
-   reader->readData(d.data(), { 1 });
+   reader->readData(d.data(), { 0 });
+
+   auto end = chrono::high_resolution_clock::now();
+
+   cout << chrono::duration <double, milli>(end-start).count() << " ms" << endl;
+
 }
 
 
