@@ -131,6 +131,13 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateLogicalMatrix(1, 1);
             *(mxGetLogicals(plhs[0])) = supports_realignment;
          }
+         else if (command == "IsBidirectional")
+         {
+            AssertInputCondition(nlhs >= 1);
+            bool is_bidirectional = readers[idx]->isBidirectional();
+            plhs[0] = mxCreateLogicalMatrix(1, 1);
+            *(mxGetLogicals(plhs[0])) = is_bidirectional;
+         }
          else if (command == "SetRealignmentParameters")
          {
             AssertInputCondition(nrhs >= 3);
@@ -141,6 +148,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
             params.spatial_binning = (int) getValueFromStruct(prhs[2], "spatial_binning", 4);
             params.n_resampling_points = (int) getValueFromStruct(prhs[2], "n_resampling_points", 10);
             readers[idx]->setRealignmentParameters(params);
+         }
+         else if (command == "SetBidirectionalPhase")
+         {
+            AssertInputCondition(nrhs >= 3);
+            double phase = mxGetScalar(prhs[2]);
+            readers[idx]->setBidirectionalPhase(phase);
          }
 
          else if (command == "Delete")

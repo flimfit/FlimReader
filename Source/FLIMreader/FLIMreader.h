@@ -48,6 +48,9 @@ public:
    int numX() { return n_x / spatial_binning; }
    int numY() { return n_y / spatial_binning; }
 
+   virtual bool isBidirectional() { return false; }
+   virtual void setBidirectionalPhase(double phase) {}
+
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
    int getTemporalResolution() { return temporal_resolution; }
 
@@ -93,8 +96,7 @@ protected:
    int n_x = 0;
    int n_y = 0;
    int n_chan = 0;
-
-
+   
    TagMap tags;
 
    RealignmentParameters realign_params;

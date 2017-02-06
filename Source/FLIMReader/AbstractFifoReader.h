@@ -67,6 +67,8 @@ public:
    void stopReading() { terminate = true; }
 
    bool supportsRealignment() { return true; }
+   bool isBidirectional() { return sync.bi_directional; }
+   void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
    void alignFrames();
 

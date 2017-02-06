@@ -123,7 +123,7 @@ void PicoquantTTTRReader::readHeader()
          READ(fs, linestart);
          READ(fs, linestop);
          READ(fs, pattern);
-         
+         sync.bi_directional = pattern;
          READ(fs, info.n_x);
          READ(fs, info.n_y);
          break;

@@ -29,6 +29,7 @@ public:
    double counts_interline;
    int n_x;
    bool bi_directional = false;
+   double phase = 0;
 };
 
 class Photon {
@@ -85,7 +86,7 @@ public:
                sync_start = cur_sync;
                cur_line++;
 
-               if (bi_directional)
+               if (sync.bi_directional)
                   cur_direction *= -1;
             }
          }
@@ -95,9 +96,8 @@ public:
             double cur_loc = ((cur_sync - sync_start) / sync.count_per_line) * (sync.n_x);
 
             if (cur_direction == -1)
-               cur_loc = sync.n_x - 1 - cur_loc;
+               cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
 
-//            int cur_px = static_cast<int>(cur_loc);
             return Photon(frame_idx, (int) cur_loc, cur_line, p.channel, p.micro_time);
          }
       }
@@ -117,7 +117,6 @@ protected:
 
    int cur_line;
    int cur_direction = 1;
-   bool bi_directional = false;
    bool line_valid = false;
    bool frame_started = false;
 };
