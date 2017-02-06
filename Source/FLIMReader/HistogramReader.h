@@ -47,23 +47,22 @@ protected:
       int yi, xi;
       int px = 0;
 
-      for (int y = 0; y < n_y; y++)
+      for (int ci = 0; ci < channels.size(); ci++)
       {
-         yi = y / spatial_binning;
-         for (int x = 0; x < n_x; x++)
+         int c = channels[ci];
+
+         for (int y = 0; y < n_y; y++)
          {
-            xi = x / spatial_binning;
-            for (int c = 0; c < n_chan; c++)
+            yi = y / spatial_binning;
+            for (int x = 0; x < n_x; x++)
             {
-               int mapped_channel = channel_map[c];
-               if (mapped_channel > -1)
+               xi = x / spatial_binning;
                {
-                  int p = ((yi*n_xi + xi)*n_chan_stride + mapped_channel)*n_timepoints;
+                  int pi = ((yi*n_xi + xi)*n_chan_stride + ci)*n_timepoints;
+                  int p = ((y*n_x + x)*n_chan + c)*n_timepoints;
 
                   for (int t = 0; t < n_timepoints; t++)
-                  {
-                     data[p + t] += (T) data_buf[px++];
-                  }
+                     data[pi + t] += (T)data_buf[p++];
                }
             }
          }
