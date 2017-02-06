@@ -76,12 +76,16 @@ void AbstractFifoReader::determineDwellTime()
       {
          if ((p.mark & markers.LineEndMarker) && line_active)
          {
-            uint64_t diff = macro_time - sync_start_count;
-            sync_count_per_line += diff;
+            if (macro_time >= sync_start_count) // not sure why this is sometimes violated
+            {
+               uint64_t diff = macro_time - sync_start_count;
+               sync_count_per_line += diff;
 
-            sync_counts.push_back(diff);
+               sync_counts.push_back(diff);
 
-            n_averaged++;
+               n_averaged++;
+            }
+
             line_active = false;
          }
          else if (p.mark & markers.LineStartMarker)
@@ -107,6 +111,7 @@ void AbstractFifoReader::determineDwellTime()
    sync_count_per_line /= n_averaged;
    sync_count_interline /= (n_averaged-1);
 
+   /*
    // Remove sync count outliers
    // Shouldn't really be required but we seem to sometimes get some strange outliers
    double cor_sync_count_per_line = 0;
@@ -121,7 +126,9 @@ void AbstractFifoReader::determineDwellTime()
       }
    }
    sync_count_per_line = cor_sync_count_per_line / used_lines;
-   
+   */
+
+
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
    
