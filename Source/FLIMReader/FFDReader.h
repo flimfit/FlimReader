@@ -64,12 +64,6 @@ public:
    {
    }
 
-   
-   bool hasMoreData()
-   {
-      return !fs.eof() && !fs.fail();
-   }
-
    TcspcEvent getEvent()
    {
       if (version == 1)

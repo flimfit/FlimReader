@@ -75,7 +75,7 @@ public:
       cur_pos = 0;
    }
 
-   virtual bool hasMoreData()
+   bool hasMoreData()
    {
       return cur_pos < n_packet;
    }
@@ -86,20 +86,10 @@ public:
    {
       int block = cur_pos / block_size;
       int packet = cur_pos % block_size;
-      //if (block >= (data.size()-1))
-      //{
-         std::unique_lock<std::mutex> lk(m);
-         cv.wait(lk, [&]() { return block < data.size(); });
-      //}
-
-      assert(block < data.size());
-
-
-      int b = data[block].size();
-      int a = packet * packet_size;
-      assert(packet < block_size);
-      assert((packet*packet_size) < data[block].size());
-        
+      
+      std::unique_lock<std::mutex> lk(m);
+      cv.wait(lk, [&]() { return block < data.size(); });
+  
       cur_pos++;
       return &(data[block][packet*packet_size]);
    }

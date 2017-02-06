@@ -224,6 +224,9 @@ void AbstractFifoReader::alignFrames()
       }
    }
 
+   if (frames.size() == 0)
+      return;
+
    double max_m = 0;
    int max_idx = 0;
    for (int i = 0; i < frames.size(); i++)
