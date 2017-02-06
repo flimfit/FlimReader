@@ -244,9 +244,11 @@ void AbstractFifoReader::alignFrames()
    frame_aligner->setReference(max_idx, frames[max_idx]);
 
    realignment.clear();
+   realignment.resize(frames.size());
+
    #pragma omp parallel for
    for (int i = 0; i < frames.size(); i++)
-      realignment.push_back(frame_aligner->addFrame(i, frames[i]));
+      realignment[i] = frame_aligner->addFrame(i, frames[i]);;
 
    //frame_aligner->reprocess();
 }
