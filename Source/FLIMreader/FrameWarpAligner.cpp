@@ -312,7 +312,7 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
 
 double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 {
-   auto getV = [this](int i) -> const auto& { return (i < nD) ? VI_dW_dp_x[i] : VI_dW_dp_y[i - nD]; };
+   auto getV = [this](int i) -> const std::vector<double>& { return (i < nD) ? VI_dW_dp_x[i] : VI_dW_dp_y[i - nD]; };
 
    int i = pi % nD;
    int j = pj % nD;
