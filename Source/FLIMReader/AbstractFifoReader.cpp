@@ -111,24 +111,6 @@ void AbstractFifoReader::determineDwellTime()
    sync_count_per_line /= n_averaged;
    sync_count_interline /= (n_averaged-1);
 
-   /*
-   // Remove sync count outliers
-   // Shouldn't really be required but we seem to sometimes get some strange outliers
-   double cor_sync_count_per_line = 0;
-   int used_lines = 0;
-   double allowed_variance = 0.1 * sync_count_per_line;
-   for (auto& c : sync_counts)
-   {
-      if (abs(c - sync_count_per_line) < allowed_variance)
-      {
-         cor_sync_count_per_line += c;
-         used_lines++;
-      }
-   }
-   sync_count_per_line = cor_sync_count_per_line / used_lines;
-   */
-
-
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
    
@@ -155,21 +137,23 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
    
    temporal_resolution = std::min(native_resolution, temporal_resolution__);
    temporal_resolution = std::max(0, temporal_resolution);
-   
-   int n_t = 1 << temporal_resolution;
-   timepoints_.resize(n_t);
-   
+      
    downsampling = (native_resolution - temporal_resolution);
    int downsampling_factor = 1 << downsampling;
-   
+  
    double t_0 = 0;
    double t_step = time_resolution_native_ps * downsampling_factor;
-   
+  
+   t_rep_resunit = (int)std::round(t_rep_ps / time_resolution_native_ps);
+
+   int n_t = ceil(t_rep_ps / t_step);
+   timepoints_.resize(n_t);
+
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
-   
-   t_rep_resunit = (int) std::round(t_rep_ps / time_resolution_native_ps);
-   
+
+
+
    time_shifts_resunit.clear();
    for(auto shift : time_shifts_ps)
       time_shifts_resunit.push_back((int) std::round(shift / time_resolution_native_ps));
