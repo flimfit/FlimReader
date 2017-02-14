@@ -38,6 +38,7 @@ public:
    
    ~AbstractEventReader()
    {
+      terminate = true;
       if (reader_thread.joinable())
          reader_thread.join();
    }
@@ -62,7 +63,7 @@ public:
          std::unique_lock<std::mutex> lk(m);
          data.push_back(block);
          cv.notify_one();
-      } while (n_read > 0);
+      } while (n_read > 0 && !terminate);
    }
 
    double getProgress()
@@ -110,6 +111,8 @@ protected:
    std::thread reader_thread;
    std::mutex m;
    std::condition_variable cv;
+
+   bool terminate = false;
 };
 
 
