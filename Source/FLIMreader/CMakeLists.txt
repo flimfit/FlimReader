@@ -8,7 +8,7 @@ if(MSVC)
   add_definitions(-DBOOST_ALL_NO_LIB=1)
 endif()
 
-find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV REQUIRED core imgproc)
 find_package(OpenMP REQUIRED)
 
@@ -16,7 +16,6 @@ include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
 # Enable OpenMP support, disable for XCode
 #===================================================
-find_package("OpenMP")
 if (OPENMP_FOUND)
    option(USE_OMP "Use OpenMP" ON)
    if (USE_OMP)
