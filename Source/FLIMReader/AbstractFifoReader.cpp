@@ -146,7 +146,7 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
   
    t_rep_resunit = (int)std::round(t_rep_ps / time_resolution_native_ps);
 
-   int n_t_rep = ceil(t_rep_ps / t_step);
+   int n_t_rep = floor(t_rep_ps / t_step);
    int n_t_native = 1 << temporal_resolution;
    int n_t = std::min(n_t_rep, n_t_native);
 
