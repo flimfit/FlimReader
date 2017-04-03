@@ -9,8 +9,8 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
-
-   reference = reference_;
+   reference_.convertTo(reference, CV_32F);
+   cv::medianBlur(reference, reference, 5);
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
@@ -38,16 +38,22 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 
 void FrameWarpAligner::reprocess()
 {
-   sum_2 /= results.size();
+   sum_2 /= (double) results.size();
    setReference(0, sum_2);
 
 //   for (auto iter : results)
 //      addFrame(iter.first, iter.second.frame);
 }
 
-RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_in)
 {
    int max_n_iter = 200;
+
+   cv::Mat frame;
+   frame_in.convertTo(frame, CV_32F);
+   cv::medianBlur(frame, frame, 5);
+
+
 
    cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;
    cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
@@ -246,14 +252,18 @@ void FrameWarpAligner::precomputeInterp()
          double f = modf(t / frame_duration * (nD - 1), &Di_xy);
          i = (int)Di_xy;
 
-         Di.at<uint16_t>(y, x) = i;
-         Df.at<double>(y, x) = f;
+         int x_true = x;
+         if (image_params.bidirectional && ((y % 2) == 1))
+            x_true = size.width - x - 1;
+
+         Di.at<uint16_t>(y, x_true) = i;
+         Df.at<double>(y, x_true) = f;
 
          if (i > last_i)
          {
             if (last_i >= 0)
-               D_range[last_i].end = y*size.width + x - 1;
-            D_range[i].begin = y*size.width + x;
+               D_range[last_i].end = y*size.width + x_true - 1;
+            D_range[i].begin = y*size.width + x_true;
             last_i = i;
          }
       }

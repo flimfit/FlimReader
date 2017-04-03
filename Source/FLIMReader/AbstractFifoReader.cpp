@@ -226,17 +226,19 @@ void AbstractFifoReader::alignFrames()
       }
    }
 
-   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y);
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y, sync.bi_directional);
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames((int) frames.size());
+   
+   max_idx = 0;
    frame_aligner->setReference(max_idx, frames[max_idx]);
 
    realignment.clear();
    realignment.resize(frames.size());
 
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (int i = 0; i < frames.size(); i++)
       realignment[i] = frame_aligner->addFrame(i, frames[i]);;
 

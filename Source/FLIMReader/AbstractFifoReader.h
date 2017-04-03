@@ -26,7 +26,7 @@ public:
       fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
       
       fs.seekg(0, fs.end);
-      length = (double) (fs.tellg() - data_position);
+      length = fs.tellg() - data_position;
       n_packet = length / packet_size;
       uint64_t n_block = n_packet / block_size + 1;
       data.reserve(n_block);
@@ -50,15 +50,12 @@ public:
       
       fs.seekg(data_position);
 
-      int n_read = 0;
+      size_t n_read = 0;
       do
       {
          std::vector<char> block(sz);
          fs.read(&block[0], sz);
          n_read = fs.gcount();
-
-         if (n_read < sz)
-            int a = 1;
 
          std::unique_lock<std::mutex> lk(m);
          data.push_back(block);
@@ -85,8 +82,8 @@ public:
 
    const char* getPacket()
    {
-      int block = cur_pos / block_size;
-      int packet = cur_pos % block_size;
+      uint64_t block = cur_pos / block_size;
+      uint64_t packet = cur_pos % block_size;
       
       std::unique_lock<std::mutex> lk(m);
       cv.wait(lk, [&]() { return block < data.size(); });
