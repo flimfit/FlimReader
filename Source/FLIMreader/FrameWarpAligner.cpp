@@ -42,8 +42,11 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
-   reference_.convertTo(reference, CV_32F);
-   cv::medianBlur(reference, reference, 5);
+   cv::Mat r1;
+   reference_.convertTo(r1, CV_32F);
+
+   if (realign_params.smoothing > 0.0)
+      cv::GaussianBlur(r1, reference, cv::Size(0, 0), realign_params.smoothing);
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
@@ -82,11 +85,11 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_i
 {
    int max_n_iter = 200;
 
-   cv::Mat frame;
-   frame_in.convertTo(frame, CV_32F);
-   cv::medianBlur(frame, frame, 5);
+   cv::Mat frame, f1;
+   frame_in.convertTo(f1, CV_32F);
 
-
+   if (realign_params.smoothing > 0.0)
+      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing);
 
    cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;
    cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
