@@ -30,6 +30,8 @@ public:
    int n_x;
    bool bi_directional = false;
    double phase = 0;
+
+   int n_line = -1; // used if we don't have frame markers
 };
 
 class Photon {
@@ -69,19 +71,19 @@ public:
       {
          if (p.mark & markers.FrameMarker)
          {
-            frame_idx++;
-            frame_started = true;
-            cur_line = -1;
-            cur_direction = 1;
+            incrementFrame();
          }
-         if (frame_started)
+         if (frame_started || markers.FrameMarker == 0x0)
          {
-            if (p.mark & markers.LineEndMarker)
+            if ((p.mark & markers.LineEndMarker) && line_valid == true)
             {
                line_valid = false;
             }
-            if (p.mark & markers.LineStartMarker)
+            else if (p.mark & markers.LineStartMarker)
             {
+               if (markers.FrameMarker == 0x0 && ((cur_line + 1) == sync.n_line || cur_line == -1))
+                  incrementFrame();
+
                line_valid = true;
                sync_start = cur_sync;
                cur_line++;
@@ -107,6 +109,14 @@ public:
 
 protected:
 
+   void incrementFrame()
+   {
+      frame_idx++;
+      frame_started = true;
+      cur_line = -1;
+      cur_direction = 1;
+   }
+
    Markers markers;
    SyncSettings sync;
 
@@ -115,7 +125,7 @@ protected:
    long long sync_count_accum = 0;
    long long sync_start = 0;
 
-   int cur_line;
+   int cur_line = -1;
    int cur_direction = 1;
    bool line_valid = false;
    bool frame_started = false;

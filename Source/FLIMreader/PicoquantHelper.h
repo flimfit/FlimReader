@@ -16,6 +16,7 @@
 #define ImgHdr_LineStart "ImgHdr_LineStart"
 #define ImgHdr_LineStop "ImgHdr_LineStop"
 #define ImgHdr_Frame "ImgHdr_Frame"
+#define ImgHdr_BiDirect "ImgHdr_BiDirect"
 #define ImgHdr_PixX "ImgHdr_PixX"
 #define ImgHdr_PixY "ImgHdr_PixY"
 

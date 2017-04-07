@@ -51,6 +51,7 @@ void PicoquantPTUReader::readHeader()
       throw runtime_error("Wrong magic string, this is not a PTU file");
 
    n_chan = 1;
+   markers.FrameMarker = 0; // No frame marker by default
 
    
    fs.read(version, sizeof(version));
@@ -70,10 +71,12 @@ void PicoquantPTUReader::readHeader()
             
          case tyBool8:
             cout << (tag_head.TagValue != 0);
+            if (strcmp(tag_head.Ident, ImgHdr_BiDirect) == 0)
+               sync.bi_directional = tag_head.TagValue;
             break;
             
          case tyInt8:
-            cout << (tag_head.TagValue != 0);
+            cout << tag_head.TagValue;
             if (strcmp(tag_head.Ident, TTTRTagTTTRRecType) == 0)
                rec_type = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
@@ -95,7 +98,10 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, ImgHdr_PixX) == 0)
                n_x = tag_head.TagValue;
             if (strcmp(tag_head.Ident, ImgHdr_PixY) == 0)
+            {
                n_y = tag_head.TagValue;
+               sync.n_line = n_y;
+            }
             break;
             
          case tyBitSet64:

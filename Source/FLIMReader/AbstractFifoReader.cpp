@@ -72,6 +72,9 @@ void AbstractFifoReader::determineDwellTime()
       if (p.mark & markers.FrameMarker)
          n_frame++;
 
+      if (p.mark > 0 && p.mark < 0x40)
+         n_frame = n_frame;
+
       if (n_frame > 0 || markers.FrameMarker == 0x0)
       {
          if ((p.mark & markers.LineEndMarker) && line_active)
