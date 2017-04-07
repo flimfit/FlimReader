@@ -1,5 +1,38 @@
 #include "FrameWarpAligner.h"
 #include <functional>
+#include "LinearInterpolation.h"
+
+void interpolatePoint2d(const std::vector<cv::Point2d>& Ds, std::vector<cv::Point2d>& D)
+{
+   int nD = D.size();
+   int nDs = Ds.size();
+   auto ud = std::vector<double>(nDs);
+   auto vd_x = std::vector<double>(nDs);
+   auto vd_y = std::vector<double>(nDs);
+
+   auto ui = std::vector<double>(nD);
+   auto vi_x = std::vector<double>(nDs);
+   auto vi_y = std::vector<double>(nDs);
+
+   for (int i = 0; i < nDs; i++)
+   {
+      ud[i] = i / (nDs - 1.0);
+      vd_x[i] = D[i].x;
+      vd_y[i] = D[i].y;
+   }
+
+   for (int i = 0; i < nD; i++)
+      ui[i] = i / (nD - 1.0);
+
+   pwl_interp_1d(ud, vd_x, ui, vi_x);
+   pwl_interp_1d(ud, vd_y, ui, vi_y);
+
+   for (int i = 0; i < nD; i++)
+   {
+      D[i].x = vi_x[i];
+      D[i].y = vi_y[i];
+   }
+}
 
 FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 {
@@ -67,8 +100,11 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_i
    warpImage(frame, wimg0, D);
    double rms_error0 = computeErrorImage(wimg0, error_img0);
 
-   if (Dstore.count(frame_t) == 1 && D.size() == Dstore[frame_t].size())
-      D = Dstore[frame_t];
+   if (Dstore.count(frame_t) == 1)
+      if (D.size() == Dstore[frame_t].size())
+         D = Dstore[frame_t];
+      else
+         interpolatePoint2d(Dstore[frame_t], D);
    else
       std::fill(D.begin(), D.end(), Dlast);
 
@@ -178,7 +214,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
    int n_px = size.area();
 
    error_img = wimg - reference;
-   int n_include = 0;
+   double n_include = 0;
 
    double ms_error = 0;
    for (int p = 0; p < n_px; p++)

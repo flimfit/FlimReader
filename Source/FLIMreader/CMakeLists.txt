@@ -59,6 +59,7 @@ set(HEADERS
    MetadataTag.h
    FlimCube.h
    FlimCubeWriter.h
+   LinearInterpolation.h
 )
 
 set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
