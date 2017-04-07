@@ -180,8 +180,8 @@ void AbstractFifoReader::alignFrames()
    int n_y_binned = n_y / sb;
    int n_invalid = 0;
 
-   // we'll use this as a buffer eventually...
-   frames.clear();
+   if (!frames.empty() && (frames[1].size() != cv::Size(n_x_binned, n_y_binned)))
+      frames.clear();
 
    if (frames.empty())
    {
