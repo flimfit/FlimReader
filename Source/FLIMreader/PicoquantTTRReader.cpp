@@ -12,8 +12,6 @@ PicoquantTTTRReader::PicoquantTTTRReader(const std::string& filename) :
 AbstractFifoReader(filename)
 {
    readHeader();
-
-   sync.bi_directional = false;
    
    n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
@@ -125,7 +123,7 @@ void PicoquantTTTRReader::readHeader()
          READ(fs, linestart);
          READ(fs, linestop);
          READ(fs, pattern);
-         sync.bi_directional = false;
+         sync.bi_directional = (pattern == 1);
          READ(fs, info.n_x);
          READ(fs, info.n_y);
          break;
