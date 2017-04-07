@@ -27,7 +27,8 @@ public:
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame);
    void shiftPixel(int frame_t, double& x, double& y);
-
+   double getFrameScore(int frame_t) { return results[frame_t].correlation; };
+   double getFrameCoverage(int frame_t) { return results[frame_t].coverage; };
    void reprocess();
 
 protected:

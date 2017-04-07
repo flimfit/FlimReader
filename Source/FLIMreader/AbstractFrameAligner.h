@@ -20,7 +20,8 @@ public:
    int frame_binning = 1;
    int n_resampling_points = 30;
    bool reprocessing = false;
-
+   double smoothing = 0;
+   double threshold = 0;
 
    bool use_realignment() { return type != RealignmentType::None; }
    bool use_rotation() { return type == RealignmentType::RigidBody; }
@@ -32,6 +33,7 @@ public:
    cv::Mat frame;
    cv::Mat realigned;
    double correlation = 0;
+   double coverage = 0;
 };
 
 class ImageScanParameters
@@ -75,6 +77,8 @@ public:
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual RealignmentResult addFrame(int frame_t, const cv::Mat& frame) = 0; // shold return aligned frame
    virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
+   virtual double getFrameScore(int frame_t) { return 0.; }
+   virtual double getFrameCoverage(int frame_t) { return 0.; }
    virtual void setNumberOfFrames(int n_frames_) { n_frames = n_frames_; }
 
    virtual void reprocess() {};

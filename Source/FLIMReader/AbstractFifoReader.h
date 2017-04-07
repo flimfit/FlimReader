@@ -215,7 +215,13 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             continue;
 
          if (frame_aligner != nullptr)
+         {
+            double score = frame_aligner->getFrameScore(p.frame);
+            if (realign_params.threshold > 0 && score > realign_params.threshold)
+               continue;
+
             frame_aligner->shiftPixel(p.frame, p.x, p.y);
+         }
 
          p.x /= spatial_binning;
          p.y /= spatial_binning;
