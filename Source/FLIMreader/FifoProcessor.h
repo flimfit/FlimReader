@@ -114,7 +114,7 @@ protected:
       frame_idx++;
       frame_started = true;
       cur_line = -1;
-      cur_direction = 1;
+      cur_direction = -1;
    }
 
    Markers markers;
