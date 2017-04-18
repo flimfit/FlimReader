@@ -79,11 +79,15 @@ public:
       reader_tags["RealignmentFrameBinning"] = realign_params.frame_binning;
       reader_tags["RealignmentSpatialBinning"] = realign_params.spatial_binning;
       reader_tags["RealignmentNumResamplingPoints"] = realign_params.n_resampling_points;
+      reader_tags["RealignmentSmoothing"] = realign_params.smoothing;
+      reader_tags["RealignmentCorrelationThreshold"] = realign_params.correlation_threshold;
+      reader_tags["RealignmentCoverageThreshold"] = realign_params.correlation_threshold;
 
       return reader_tags;
    }
 
    const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
+   const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
 
 protected:
 

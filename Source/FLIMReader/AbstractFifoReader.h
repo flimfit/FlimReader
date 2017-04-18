@@ -216,8 +216,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
          if (frame_aligner != nullptr)
          {
-            double score = frame_aligner->getFrameScore(p.frame);
-            if (realign_params.threshold > 0 && score > realign_params.threshold)
+            double correlation = frame_aligner->getFrameCorrelation(p.frame);
+            double coverage = frame_aligner->getFrameCoverage(p.frame);
+            if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
 
             frame_aligner->shiftPixel(p.frame, p.x, p.y);

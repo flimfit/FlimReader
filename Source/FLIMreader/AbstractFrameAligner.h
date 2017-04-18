@@ -21,7 +21,8 @@ public:
    int n_resampling_points = 30;
    bool reprocessing = false;
    double smoothing = 0;
-   double threshold = 0;
+   double correlation_threshold = 0;
+   double coverage_threshold = 0;
 
    bool use_realignment() { return type != RealignmentType::None; }
    bool use_rotation() { return type == RealignmentType::RigidBody; }
@@ -77,9 +78,11 @@ public:
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual RealignmentResult addFrame(int frame_t, const cv::Mat& frame) = 0; // shold return aligned frame
    virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
-   virtual double getFrameScore(int frame_t) { return 0.; }
+   virtual double getFrameCorrelation(int frame_t) { return 0.; }
    virtual double getFrameCoverage(int frame_t) { return 0.; }
    virtual void setNumberOfFrames(int n_frames_) { n_frames = n_frames_; }
+
+   virtual void writeRealignmentInfo(std::string filename) {};
 
    virtual void reprocess() {};
 

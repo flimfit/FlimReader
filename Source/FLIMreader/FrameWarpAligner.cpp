@@ -1,6 +1,33 @@
 #include "FrameWarpAligner.h"
 #include <functional>
 #include "LinearInterpolation.h"
+#include <fstream>
+
+double correlation(cv::Mat &image_1, cv::Mat &image_2, cv::Mat &mask)
+{
+
+   // convert data-type to "float"
+   cv::Mat im_float_1;
+   image_1.convertTo(im_float_1, CV_32F);
+   cv::Mat im_float_2;
+   image_2.convertTo(im_float_2, CV_32F);
+
+   // Compute mean and standard deviation of both images
+   cv::Scalar im1_Mean, im1_Std, im2_Mean, im2_Std;
+   meanStdDev(im_float_1, im1_Mean, im1_Std, mask);
+   meanStdDev(im_float_2, im2_Mean, im2_Std, mask);
+
+   im_float_1 -= im1_Mean[0];
+   im_float_2 -= im2_Mean[0];
+
+   cv::multiply(im_float_1, im_float_2, im_float_1);
+
+   // Compute covariance and correlation coefficient
+   double covar = cv::mean(im_float_1, mask)[0];
+   double correl = covar / (im1_Std[0] * im2_Std[0]);
+
+   return correl;
+}
 
 void interpolatePoint2d(const std::vector<cv::Point2d>& Ds, std::vector<cv::Point2d>& D)
 {
@@ -56,16 +83,6 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    computeSteepestDecentImages(reference);
    computeHessian();
 
-   if (write_debug_images)
-   {
-      cv::Mat out;
-      reference.convertTo(out, CV_8U, 5);
-      cv::transpose(out, out);
-      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/no-correction-" + std::to_string(frame_t) + ".png";
-      //cv::imwrite(ref_im_file, out);
-
-   }
-
    Dlast = cv::Point2d(0, 0);
 
    reference.convertTo(sum_1, CV_32F);
@@ -85,7 +102,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_i
 {
    int max_n_iter = 200;
 
-   cv::Mat frame, f1;
+   cv::Mat frame, f1, mask;
    frame_in.convertTo(f1, CV_32F);
 
    if (realign_params.smoothing > 0.0)
@@ -139,6 +156,8 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_i
       }
 
       warpImage(frame, wimg, Dtrial);
+      cv::compare(wimg, -1, mask, cv::CMP_GT);
+
       double rms_error_trial = computeErrorImage(wimg, error_img_trial);
 
       if (rms_error_trial <= rms_error) // good step
@@ -175,36 +194,11 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_i
    sum_1 += frame;
    sum_2 += wimg;
 
-   if (write_debug_images)
-   {
-      cv::Mat img;
-
-      cv::transpose(frame, img);
-      img.convertTo(img, CV_8U, 5);
-      std::string ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-" + std::to_string(frame_t) + ".png";
-      //cv::imwrite(ref_im_file, img);
-
-      cv::transpose(wimg, wimg);
-      wimg.convertTo(wimg, CV_8U, 5);
-      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-" + std::to_string(frame_t) + ".png";
-      //cv::imwrite(ref_im_file, wimg);
-
-      double min, max;
-      cv::minMaxIdx(sum_2, &min, &max);
-
-      sum_1.convertTo(img, CV_8U, 350.0 / max);
-      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/nocorrection-final.png";
-      //cv::imwrite(ref_im_file, img);
-
-      sum_2.convertTo(img, CV_8U, 350.0 / max);
-      ref_im_file = "C:/Users/CIMLab/Documents/flim-data-zoo/warp/corrected-final.png";
-      //cv::imwrite(ref_im_file, img);
-   }
-   
    RealignmentResult r;
    r.frame = frame;
    r.realigned = wimg;
-   r.correlation = last_rms_error;
+   r.correlation = correlation(wimg, reference, mask);
+   r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
 
    results[frame_t] = r;
 
