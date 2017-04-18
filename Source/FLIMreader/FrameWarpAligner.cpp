@@ -479,3 +479,23 @@ cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, 
 
    return cv::Point((int)p.x, (int)p.y);
 }
+
+void FrameWarpAligner::writeRealignmentInfo(std::string filename)
+{
+   if (Dstore.empty())
+      return;
+   
+   std::ofstream os(filename);
+
+   os << "Frame, Correlation, Coverage";
+   for (int j = 0; j < Dstore[0].size(); j++)
+      os << ", p_" << j;
+   os << "\n";
+   for (int i = 0; i < Dstore.size(); i++)
+   {
+      os << i << "," << results[i].correlation << ", " << results[i].coverage;
+      for (int j = 0; j < Dstore[i].size(); j++)
+         os << ", " << Dstore[i][j].x << std::showpos << Dstore[i][j].y << std::noshowpos << "i";
+      os << "\n";
+   }
+}
