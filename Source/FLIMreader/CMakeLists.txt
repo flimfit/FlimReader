@@ -11,6 +11,7 @@ endif()
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV REQUIRED core imgproc)
 find_package(OpenMP REQUIRED)
+find_package(dlib REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 

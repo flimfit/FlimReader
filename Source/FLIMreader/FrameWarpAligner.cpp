@@ -69,24 +69,22 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
-   cv::Mat r1;
-   reference_.convertTo(r1, CV_32F);
+   reference_.convertTo(reference, CV_32F);
 
    if (realign_params.smoothing > 0.0)
-      cv::GaussianBlur(r1, reference, cv::Size(0, 0), realign_params.smoothing);
+      cv::GaussianBlur(reference, smoothed_reference, cv::Size(0, 0), realign_params.smoothing);
+   else
+      smoothed_reference = reference;
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
    nD = realign_params.n_resampling_points;
 
    precomputeInterp();
-   computeSteepestDecentImages(reference);
+   computeSteepestDecentImages(smoothed_reference);
    computeHessian();
 
    Dlast = cv::Point2d(0, 0);
-
-   reference.convertTo(sum_1, CV_32F);
-   reference.convertTo(sum_2, CV_32F);
 }
 
 void FrameWarpAligner::reprocess()
@@ -98,119 +96,206 @@ void FrameWarpAligner::reprocess()
 //      addFrame(iter.first, iter.second.frame);
 }
 
-RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame_in)
+void D2col(const std::vector<cv::Point2d> &D, column_vector& col)
 {
-   int max_n_iter = 200;
+   int nD = D.size();
+   col.set_size(nD * 2);
 
-   cv::Mat frame, f1, mask;
-   frame_in.convertTo(f1, CV_32F);
+   for (int i = 0; i < nD; i++)
+   {
+      col(i) = D[i].x;
+      col(i + nD) = D[i].y;
+   }
+}
 
-   if (realign_params.smoothing > 0.0)
-      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing);
+void col2D(const column_vector& col, std::vector<cv::Point2d> &D)
+{
+   int nD = col.size() / 2;
+   D.resize(nD);
 
-   cv::Mat wimg, wimg0, error_img, error_img0, error_img_trial, H_lm;
-   cv::Mat sd(nD * 2, 1, CV_64F, cv::Scalar(0));
-   cv::Mat delta_p(nD * 2, 1, CV_64F, cv::Scalar(0));
-   std::vector<cv::Point2d> X(nD);
-   std::vector<cv::Point2d> D(nD), Dtrial(nD);
+   for (int i = 0; i < nD; i++)
+   {
+      D[i].x = col(i);
+      D[i].y = col(i + nD);
+   }
+}
 
-   double last_rms_error = std::numeric_limits<double>::max();
-   double delta = 1e-7;
 
-   warpImage(frame, wimg0, D);
-   double rms_error0 = computeErrorImage(wimg0, error_img0);
+RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
+{
+   auto model = OptimisationModel(this, frame);
 
+   std::vector<column_vector> starting_point(2, column_vector(2 * nD));
+
+   // zero starting point
+   std::fill(starting_point[0].begin(), starting_point[0].end(), 0);
+
+   // last starting point
+   std::vector<cv::Point2d> D(nD);
    if (Dstore.count(frame_t) == 1)
       if (D.size() == Dstore[frame_t].size())
          D = Dstore[frame_t];
       else
          interpolatePoint2d(Dstore[frame_t], D);
    else
-      std::fill(D.begin(), D.end(), Dlast);
-
-   warpImage(frame, wimg, D);
-   double rms_error = computeErrorImage(wimg, error_img);
-
-   if (rms_error0 < rms_error)
-   {
-      std::fill(D.begin(), D.end(), cv::Point(0,0));
-      rms_error = rms_error0;
-      wimg0.copyTo(wimg);
-      error_img0.copyTo(error_img);
-   }
-
-   for (int f = 0; f < max_n_iter; f++)
-   {
-      steepestDecentUpdate(error_img, sd);
-
-      H.copyTo(H_lm);
-      for (int i = 0; i < (nD * 2); i++)
-         H_lm.at<double>(i, i) *= (1 + delta);
-
-      int a = cv::solve(H_lm, sd, delta_p, cv::DECOMP_CHOLESKY);
-
-      for (int i = 0; i < nD; i++)
-      {
-         Dtrial[i].x = D[i].x - delta_p.at<double>(i);
-         Dtrial[i].y = D[i].y - delta_p.at<double>(i + nD);
-      }
-
-      warpImage(frame, wimg, Dtrial);
-      cv::compare(wimg, -1, mask, cv::CMP_GT);
-
-      double rms_error_trial = computeErrorImage(wimg, error_img_trial);
-
-      if (rms_error_trial <= rms_error) // good step
-      {
-         delta *= 0.2;
-         rms_error = rms_error_trial;
-         error_img_trial.copyTo(error_img);
-         for (int i = 0; i < nD; i++)
-            D[i] = Dtrial[i];
-         //std::cout << f << " good step ===> " << sqrt(rms_error_trial) << "\n";
-
-         if (((last_rms_error - rms_error) < 1e-10) && f > 20)
-         {
-            //std::cout << " objective function convergence criteria met \n";
-            break;
-         }
-
-      }
-      else // bad step
-      {
-         delta *= 5;
-         //std::cout << f << " bad step ===> " << sqrt(rms_error_trial) << "\n";
-      }
-
-      last_rms_error = rms_error;
-     
-   }
-
-   //std::cout << frame_t << ": " << sqrt(rms_error) << "\n";
-
-   Dstore[frame_t] = D;
-   Dlast = *(D.end()-2);
+      std::fill(D.begin(), D.end(), cv::Point2d(0,0));
+   D2col(D, starting_point[1]);
    
-   sum_1 += frame;
-   sum_2 += wimg;
+   double best = std::numeric_limits<double>::max();
+   int best_start = 0;
+   for (int i = 0; i < starting_point.size(); i++)
+   {
+      double new_value = model(starting_point[i]);
+      if (new_value < best)
+      {
+         best_start = i;
+         best = new_value;
+      }
+   }
+
+   column_vector x = starting_point[best_start];
+
+   auto f_der = [&](const column_vector& x) -> column_vector 
+   {
+      column_vector der;
+      matrix<double> hess;
+      model.get_derivative_and_hessian(x, der, hess);
+      return der;
+   };
+
+   auto f = [&](const column_vector& x) -> double
+   {
+      return model(x);
+   };
+
+   /*
+   auto d1 = derivative(f, 4)(x);
+   column_vector d2 = f_der(x);
+   double l = length(d1 - d2);
+
+   std::cout << "Difference between analytic derivative and numerical approximation of derivative: "
+      << l << std::endl;
+      */
+
+   try
+   {
+      find_min_trust_region(dlib::objective_delta_stop_strategy(1e-5),
+         model,
+         x,
+         1 // initial trust region radius
+      );
+
+      /*
+      find_min_using_approximate_derivatives(
+         bfgs_search_strategy(),
+         objective_delta_stop_strategy(1e-5),
+         f,
+         x,
+         -1);
+         */
+   }
+   catch (dlib::error e)
+   {
+      std::cout << e.info;
+   }
+
+   col2D(x, D);
+   Dstore[frame_t] = D;
+   Dlast = *(D.end() - 2);
+
+   std::cout << "*";
+
+
+
+   cv::Mat warped = model.getWarpedRawImage(x);
+   cv::Mat mask = model.getMask(x);
 
    RealignmentResult r;
    r.frame = frame;
-   r.realigned = wimg;
-   r.correlation = correlation(wimg, reference, mask);
+   r.realigned = warped;
+   r.correlation = correlation(warped, smoothed_reference, mask);
    r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
 
    results[frame_t] = r;
 
    return r;
+
+
 }
+
+OptimisationModel::OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& raw_frame) :
+   aligner(aligner),
+   raw_frame(raw_frame),
+   realign_params(aligner->realign_params)
+{
+   cv::Mat f1;
+   raw_frame.convertTo(f1, CV_32F);
+
+   if (realign_params.smoothing > 0.0)
+      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing);
+   else
+      frame = f1;
+}
+
+
+double OptimisationModel::operator() (const column_vector& x) const
+{
+   std::vector<cv::Point2d> D;
+   cv::Mat warped_image, error_image;
+   
+   // Get displacement matrix from warp parameters
+   col2D(x, D);
+
+   aligner->warpImage(frame, warped_image, D);
+   double rms_error = aligner->computeErrorImage(warped_image, error_image);
+   //std::cout << "f = " << rms_error << "\n";
+   return rms_error;
+}
+
+void OptimisationModel::get_derivative_and_hessian(const column_vector& x, column_vector& der, general_matrix& hess) const
+{
+   std::vector<cv::Point2d> D;
+   cv::Mat warped_image, error_image;
+
+   // Get displacement matrix from warp parameters
+   col2D(x, D);
+
+   aligner->warpImage(frame, warped_image, D);
+   double rms_error = aligner->computeErrorImage(warped_image, error_image);
+
+   aligner->computeJacobian(error_image, der);
+   hess = aligner->H;
+}
+
+cv::Mat OptimisationModel::getMask(const column_vector& x)
+{
+   std::vector<cv::Point2d> D;
+   col2D(x, D);
+   
+   cv::Mat mask, warped_image;
+   aligner->warpImage(frame, warped_image, D);
+   cv::compare(warped_image, -1, mask, cv::CMP_GT);
+   return mask;
+}
+
+cv::Mat OptimisationModel::getWarpedRawImage(const column_vector& x)
+{
+   std::vector<cv::Point2d> D;
+   col2D(x, D);
+
+   cv::Mat warped_image, error_image;
+   aligner->warpImage(frame, warped_image, D);
+   double rms_error = aligner->computeErrorImage(warped_image, error_image);
+   return warped_image;
+}
+
 
 double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
 {
    cv::Size size = reference.size();
    int n_px = size.area();
 
-   error_img = wimg - reference;
+   error_img = wimg - smoothed_reference;
    double n_include = 0;
 
    double ms_error = 0;
@@ -228,7 +313,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
       }
    }
 
-   return ms_error;
+   return ms_error * n_px / n_include;
 }
 
 void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
@@ -262,7 +347,7 @@ Jacobian structure:
 
 void FrameWarpAligner::precomputeInterp()
 {
-   cv::Size size = reference.size();
+   cv::Size size = smoothed_reference.size();
 
    double pixel_duration = image_params.pixel_duration * realign_params.spatial_binning;
    double frame_duration = image_params.frame_duration;
@@ -272,6 +357,7 @@ void FrameWarpAligner::precomputeInterp()
 
    Di = cv::Mat(size, CV_16U);
    Df = cv::Mat(size, CV_64F);
+   nx = size.width;
 
    double Di_xy;
    int i;
@@ -326,7 +412,7 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
    cv::Scharr(frame, nabla_Tx, CV_64F, 1, 0, 1.0 / 32.0);
    cv::Scharr(frame, nabla_Ty, CV_64F, 0, 1, 1.0 / 32.0);
 
-   #pragma omp parallel for
+   //#pragma omp parallel for
    for (int i = 1; i < nD; i++)
    {
       int p0 = D_range[i - 1].begin;
@@ -339,7 +425,7 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
       }
    }
    
-   #pragma omp parallel for
+   //#pragma omp parallel for
    for(int i = 0; i < (nD - 1); i++)
    {
       int p0 = D_range[i].begin;
@@ -378,43 +464,45 @@ double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 
 void FrameWarpAligner::computeHessian()
 {
-   H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
+//   H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
    
-   #pragma omp parallel for
-   for (int pi = 0; pi < nD * 2; pi++)
-      H.at<double>(pi, pi) += computeHessianEntry(pi, pi);
+   H.set_size(2 * nD, 2 * nD);
+   std::fill(H.begin(), H.end(), 0);
 
-   #pragma omp parallel for
+  // #pragma omp parallel for
+   for (int pi = 0; pi < nD * 2; pi++)
+      H(pi, pi) += computeHessianEntry(pi, pi);
+
+   //#pragma omp parallel for
    for (int pi = 1; pi < nD * 2; pi++)
    {
       double h = computeHessianEntry(pi, pi - 1);
-      H.at<double>(pi, pi - 1) = h;
-      H.at<double>(pi - 1, pi) = h;
+      H(pi, pi - 1) = h;
+      H(pi - 1, pi) = h;
    }
    
-   #pragma omp parallel for
+  // #pragma omp parallel for
    for (int i = 0; i < nD; i++)
    {
       for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
       {
          double h = computeHessianEntry(i, j + nD);
-         H.at<double>(i, j + nD) += h;
-         H.at<double>(j + nD, i) += h;
+         H(i, j + nD) += h;
+         H(j + nD, i) += h;
       }
    }
    
 
 }
 
-void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& sd)
+
+void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& jac)
 {
-   sd.setTo(0);
+   jac.set_size(nD * 2);
+   std::fill(jac.begin(), jac.end(), 0);
 
    // we are ignoring stride here, ok as set up
    float* err_ptr = reinterpret_cast<float*>(error_img.data);
-   double* sd_ptr_x = reinterpret_cast<double*>(sd.data);
-   double* sd_ptr_y = sd_ptr_x + nD;
-
 
    for (int i = 1; i < nD; i++)
    {
@@ -422,8 +510,8 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
       int p1 = D_range[i - 1].end;
       for (int p = p0; p < p1; p++)
       {
-         sd_ptr_x[i] += VI_dW_dp_x[i][p] * err_ptr[p];
-         sd_ptr_y[i] += VI_dW_dp_y[i][p] * err_ptr[p];
+         jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x 
+         jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
       }
    }
    for (int i = 0; i < (nD - 1); i++)
@@ -432,8 +520,8 @@ void FrameWarpAligner::steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& s
       int p1 = D_range[i].end;
       for (int p = p0; p < p1; p++)
       {
-         sd_ptr_x[i] += VI_dW_dp_x[i][p] * err_ptr[p];
-         sd_ptr_y[i] += VI_dW_dp_y[i][p] * err_ptr[p];
+         jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x
+         jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
       }
    }
 }
@@ -442,22 +530,54 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
 {
    auto size = img.size();
    wimg = cv::Mat(size, CV_32F, cv::Scalar(-1));
-
+   
    cv::Rect2i img_rect(cv::Point2i(0, 0), size);
+
+//   float* img_d = reinterpret_cast<float*>(img.data());
 
    for (int y = 0; y < size.height; y++)
       for (int x = 0; x < size.width; x++)
       {
-         cv::Point2i loc = warpPoint(D, x, y, realign_params.spatial_binning);
+         cv::Point2d loc = warpPoint(D, x, y, realign_params.spatial_binning);
+         
          loc.x += x;
          loc.y += y;
 
+         //if (img_rect.contains(loc))
+         //   wimg.at<float>(y, x) = img.at<float>(loc);
+
+         cv::Point loc0(floor(loc.x), floor(loc.y));
+         cv::Point loc1 = loc0 + cv::Point(1, 1);
+
+         cv::Point2d locf(loc.x - loc0.x, loc.y - loc0.y);
+
+
+         if (img_rect.contains(loc0) && img_rect.contains(loc1))
+         {
+            wimg.at<float>(y, x) =
+               img.at<float>(loc0.y, loc0.x) * (1 - locf.y) * (1 - locf.x) + 
+               img.at<float>(loc1.y, loc0.x) * (    locf.y) * (1 - locf.x) + 
+               img.at<float>(loc0.y, loc1.x) * (1 - locf.y) * (    locf.x) + 
+               img.at<float>(loc1.y, loc1.x) * (    locf.y) * (    locf.x);
+         }
+         
+         
+         /*
+         loc.x = x - loc.x;
+         loc.y = y - loc.y;
+
          if (img_rect.contains(loc))
-            wimg.at<float>(y, x) = img.at<float>(loc);
+         {
+            if (wimg.at<float>(loc) == -1)
+               wimg.at<float>(loc) = img.at<float>(y, x);
+            else 
+               wimg.at<float>(loc) = img.at<float>(y, x);
+         }
+         */
       }
 }
 
-cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning)
+cv::Point2d FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning)
 {
    double factor = ((double)realign_params.spatial_binning) / spatial_binning;
    int xs = (int) (x / factor);
@@ -466,12 +586,16 @@ cv::Point FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x, 
    if ((xs < 0) || (xs >= n_x_binned) || (ys < 0) || (ys >= n_y_binned))
       return cv::Point(0,0);
 
-   double f = Df.at<double>(ys, xs);
-   int i = Di.at<uint16_t>(ys, xs);
+   double* Df_d = reinterpret_cast<double*>(Df.data);
+   uint16_t* Di_d = reinterpret_cast<uint16_t*>(Di.data);
+   int loc = xs + ys * nx;
+
+   double f = Df_d[loc];
+   int i = Di_d[loc];
    cv::Point2d p = f * D[i + 1] + (1 - f) * D[i];
    p *= factor;
 
-   return cv::Point((int)p.x, (int)p.y);
+   return p;
 }
 
 void FrameWarpAligner::writeRealignmentInfo(std::string filename)

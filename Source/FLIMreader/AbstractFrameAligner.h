@@ -92,3 +92,4 @@ protected:
    cv::Mat reference;
    int n_frames = 1;
 };
+

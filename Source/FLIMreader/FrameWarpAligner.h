@@ -3,6 +3,10 @@
 #include "TransformInterpolator.h"
 #include <functional>
 #include <opencv2/opencv.hpp>
+#include <dlib/optimization.h>
+
+using namespace dlib;
+typedef matrix<double, 0, 1> column_vector;
 
 class Range
 {
@@ -12,6 +16,7 @@ public:
 
    int interval() { return end - begin; }
 };
+
 
 class FrameWarpAligner : public AbstractFrameAligner
 {
@@ -39,15 +44,17 @@ protected:
    void computeSteepestDecentImages(const cv::Mat& frame);
    double computeHessianEntry(int pi, int pj);
    void computeHessian();
-   void steepestDecentUpdate(const cv::Mat& error_img, cv::Mat& sd);
+   void computeJacobian(const cv::Mat& error_img, column_vector& jac);
    void warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D);
-   cv::Point warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning = 1);
+   cv::Point2d warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning = 1);
    double computeErrorImage(cv::Mat& wimg, cv::Mat& error_img);
    std::vector<Range> D_range;
 
+   cv::Mat smoothed_reference;
+
    cv::Mat Di;
    cv::Mat Df;
-   cv::Mat H;
+   matrix<double> H;
 
    cv::Point2d Dlast;
 
@@ -55,6 +62,7 @@ protected:
    std::map<int,RealignmentResult> results;
 
    int nD = 10;
+   int nx;
 
    int n_x_binned;
    int n_y_binned;
@@ -62,4 +70,40 @@ protected:
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
 
    cv::Mat sum_1, sum_2;
+
+   friend class OptimisationModel;
+};
+
+
+class OptimisationModel
+{
+   /*!
+   This object is a "function model" which can be used with the
+   find_min_trust_region() routine.
+   !*/
+
+public:
+   typedef ::column_vector column_vector;
+   typedef matrix<double> general_matrix;
+
+   OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& frame);
+
+   double operator() (const column_vector& x) const;
+   void get_derivative_and_hessian(const column_vector& x, column_vector& der, general_matrix& hess) const;
+
+   cv::Mat getMask(const column_vector& x);
+   cv::Mat getWarpedRawImage(const column_vector& x);
+
+protected:
+
+   FrameWarpAligner* aligner;
+   cv::Mat raw_frame;
+   cv::Mat frame;
+   RealignmentParameters realign_params;
+
+   /*
+   std::vector<cv::Point2d> D;
+   cv::Mat warped_image;
+   cv::Mat error_image;
+   */
 };
