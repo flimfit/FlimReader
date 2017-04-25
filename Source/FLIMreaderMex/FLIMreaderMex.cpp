@@ -60,7 +60,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          if (command == "GetTimePoints")
          {
             AssertInputCondition(nlhs >= 1);
-            const vector<double>& timepoints = readers[idx]->timepoints();
+            const vector<double>& timepoints = readers[idx]->getTimepoints();
 
             plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
             double* t = mxGetPr(plhs[0]);
@@ -89,7 +89,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             vector<int> channels = getVector<int>(prhs[2]);
 
-            mwSize n_t = readers[idx]->timepoints().size();
+            mwSize n_t = readers[idx]->getTimepoints().size();
             mwSize n_chan = channels.size();
             mwSize n_x = readers[idx]->numX();
             mwSize n_y = readers[idx]->numY();
@@ -137,6 +137,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
             bool is_bidirectional = readers[idx]->isBidirectional();
             plhs[0] = mxCreateLogicalMatrix(1, 1);
             *(mxGetLogicals(plhs[0])) = is_bidirectional;
+         }
+         else if (command == "GetRepRate")
+         {
+            AssertInputCondition(nlhs >= 1);
+            double rep_rate = readers[idx]->getRepRateHz();
+            plhs[0] = mxCreateDoubleScalar(rep_rate);
          }
          else if (command == "SetRealignmentParameters")
          {

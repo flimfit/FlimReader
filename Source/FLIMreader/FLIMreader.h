@@ -46,6 +46,8 @@ public:
    virtual bool supportsRealignment() { return false; }
    int getTemporalResolution() { return temporal_resolution; }
    int getSpatialBinning() { return spatial_binning; }
+   double getRepRateHz() { return rep_rate_hz; }
+
    const std::string& getFilename() { return filename; }
    TagMap getTags() { return tags; }
    virtual TagMap getReaderTags();
@@ -69,7 +71,8 @@ protected:
    int n_x = 0;
    int n_y = 0;
    int n_chan = 0;
-   
+   double rep_rate_hz = std::numeric_limits<double>::quiet_NaN(); // when we don't know 
+
    TagMap tags;
 
    RealignmentParameters realign_params;
@@ -79,7 +82,7 @@ protected:
 };
 
 template<typename T>
-void FLIMreader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {})
+void FLIMReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels)
 {
    int n_chan_stride = -1;
    std::vector<int> ch = validateChannels(channels, n_chan_stride);

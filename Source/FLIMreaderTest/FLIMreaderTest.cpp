@@ -24,6 +24,7 @@ void test_load()
    //filename = "Z:/James/FLIM Lifetimes/20161128 PLIMFLIM/PLIM/Mouse=30741 Treatment=AZD25 Image=1_001_001.ffd";
 
    //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/hetero-FRET ptu/D1.ptu";
 
    auto start = chrono::high_resolution_clock::now();
 

@@ -85,8 +85,11 @@ void PicoquantPTUReader::readHeader()
                n_chan = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
                line_averaging = (int) tag_head.TagValue;
-            if (strcmp(tag_head.Ident, TTResult_SyncRate)==0)
+            if (strcmp(tag_head.Ident, TTResult_SyncRate) == 0)
+            {
+               rep_rate_hz = tag_head.TagValue;
                t_rep_ps = 1e12f / tag_head.TagValue;
+            }
             if (strcmp(tag_head.Ident, MeasDesc_BinningFactor)==0)
                temporal_binning = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, ImgHdr_LineStart)==0)

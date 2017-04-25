@@ -18,6 +18,7 @@ AbstractFifoReader(filename)
    time_resolution_native_ps = hw_info.resolution * 1e3;
    n_x = info.n_x;
    n_y = info.n_y;
+   rep_rate_hz = info.input0_countrate;
    t_rep_ps = 1e12f / info.input0_countrate; // rep time in picoseconds
       
    int n_bits = 14 - info.range_no;
