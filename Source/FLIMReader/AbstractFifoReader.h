@@ -186,7 +186,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    for (auto& c : channels)
       channel_map[c] = idx++;
    
-   int n_bin = timepoints_.size();
+   int n_bin = (int)timepoints_.size();
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
    int n_invalid = 0;

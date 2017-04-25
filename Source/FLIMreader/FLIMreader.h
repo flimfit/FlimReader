@@ -32,59 +32,28 @@ public:
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
 
    template<typename T>
-   void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {})
-   {
-      int n_chan_stride = -1;
-      std::vector<int> ch = validateChannels(channels, n_chan_stride);
-
-      cube->init(timepoints_, (int)ch.size(), numX(), numY());
-      readData(cube->getDataPtr(), ch);
-   }
+   void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {});
 
    virtual void stopReading() {};
    virtual float getProgress() { return 0; }
 
-   const std::vector<double>& timepoints() { return timepoints_; };
+   const std::vector<double>& getTimepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }
    int numY() { return n_y / spatial_binning; }
-
-   virtual bool isBidirectional() { return false; }
-   virtual void setBidirectionalPhase(double phase) {}
-
-   virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
-   int getTemporalResolution() { return temporal_resolution; }
-
    int dataSizePerChannel();
 
+   virtual bool isBidirectional() { return false; }
    virtual bool supportsRealignment() { return false; }
-   void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }
-
-   void setSpatialBinning(int spatial_binning_)
-   {
-      if (n_x > spatial_binning_ && n_y > spatial_binning_)
-         spatial_binning = spatial_binning_;
-   }
-   
+   int getTemporalResolution() { return temporal_resolution; }
    int getSpatialBinning() { return spatial_binning; }
-   
    const std::string& getFilename() { return filename; }
-
    TagMap getTags() { return tags; }
-   
-   virtual TagMap getReaderTags()
-   {
-      TagMap reader_tags;
-      reader_tags["SpatialBinning"] = spatial_binning;
-      reader_tags["RealignmentType"] = realignmentTypeString(realign_params.type);
-      reader_tags["RealignmentFrameBinning"] = realign_params.frame_binning;
-      reader_tags["RealignmentSpatialBinning"] = realign_params.spatial_binning;
-      reader_tags["RealignmentNumResamplingPoints"] = realign_params.n_resampling_points;
-      reader_tags["RealignmentSmoothing"] = realign_params.smoothing;
-      reader_tags["RealignmentCorrelationThreshold"] = realign_params.correlation_threshold;
-      reader_tags["RealignmentCoverageThreshold"] = realign_params.correlation_threshold;
+   virtual TagMap getReaderTags();
 
-      return reader_tags;
-   }
+   virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
+   virtual void setBidirectionalPhase(double phase) {}
+   void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }
+   void setSpatialBinning(int spatial_binning_);
 
    const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
    const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
@@ -108,3 +77,13 @@ protected:
    std::vector<cv::Mat> frames;
    std::vector<RealignmentResult> realignment;
 };
+
+template<typename T>
+void FLIMreader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {})
+{
+   int n_chan_stride = -1;
+   std::vector<int> ch = validateChannels(channels, n_chan_stride);
+
+   cube->init(timepoints_, (int)ch.size(), numX(), numY());
+   readData(cube->getDataPtr(), ch);
+}

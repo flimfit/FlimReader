@@ -68,3 +68,24 @@ int FLIMReader::dataSizePerChannel()
    int n_bin = (int) timepoints_.size();
    return n_bin * n_x * n_y / (spatial_binning * spatial_binning);
 }
+
+void FLIMReader::setSpatialBinning(int spatial_binning_)
+{
+   if (n_x > spatial_binning_ && n_y > spatial_binning_)
+      spatial_binning = spatial_binning_;
+}
+
+TagMap FLIMReader::getReaderTags()
+{
+   TagMap reader_tags;
+   reader_tags["SpatialBinning"] = spatial_binning;
+   reader_tags["RealignmentType"] = realignmentTypeString(realign_params.type);
+   reader_tags["RealignmentFrameBinning"] = realign_params.frame_binning;
+   reader_tags["RealignmentSpatialBinning"] = realign_params.spatial_binning;
+   reader_tags["RealignmentNumResamplingPoints"] = realign_params.n_resampling_points;
+   reader_tags["RealignmentSmoothing"] = realign_params.smoothing;
+   reader_tags["RealignmentCorrelationThreshold"] = realign_params.correlation_threshold;
+   reader_tags["RealignmentCoverageThreshold"] = realign_params.correlation_threshold;
+
+   return reader_tags;
+}
