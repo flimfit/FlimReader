@@ -28,13 +28,12 @@ AbstractFifoReader(filename)
 
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
-   assert(measurement_mode == 3);
+   if (measurement_mode != 3)
+      throw std::runtime_error("Picoquant data should be recorded in TTTR Mode 3 for FLIM analysis");
 
-   markers.FrameMarker = 0x4;
-   markers.LineEndMarker = 0x2;
-   markers.LineStartMarker = 0x1;
+   PicoquantRecordType rec_type = (std::string("PicoHarp 300").compare(info.ident) == 0) ? PicoHarp_T3 : HydraHarpV2_T3;
 
-   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position));
+   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
 
    setTemporalResolution(14);
    determineDwellTime();
@@ -44,9 +43,9 @@ void PicoquantTTTRReader::readHeader()
 {
    ifstream fs(filename, ifstream::in | ifstream::binary);
 
-   if(!fs.is_open())
+   if (!fs.is_open())
       throw std::runtime_error("Could not open file");
-   
+
    READ(fs, info.ident);
    READ(fs, info.format_version);
    READ(fs, info.creator_name);
@@ -110,12 +109,18 @@ void PicoquantTTTRReader::readHeader()
          READ(fs, info.n_x);
          READ(fs, info.n_y);
          fs.ignore(5 * 4);
+         markers.FrameMarker = 0x4;
+         markers.LineEndMarker = 0x2;
+         markers.LineStartMarker = 0x1;
          break;
       case 4: // KDT180-100-lm
          fs.ignore(6 * 4);
          READ(fs, info.n_x);
          READ(fs, info.n_y);
          fs.ignore(4);
+         markers.FrameMarker = 0x4;
+         markers.LineEndMarker = 0x2;
+         markers.LineStartMarker = 0x1;
          break;
       case 3: // LSM
          //fs.ignore(4 * 4);
@@ -124,6 +129,9 @@ void PicoquantTTTRReader::readHeader()
          READ(fs, linestart);
          READ(fs, linestop);
          READ(fs, pattern);
+         markers.FrameMarker = 1 << (frame-1);
+         markers.LineStartMarker = 1 << (linestart-1);
+         markers.LineEndMarker = 1 << (linestop-1);
          sync.bi_directional = (pattern == 1);
          READ(fs, info.n_x);
          READ(fs, info.n_y);
@@ -142,7 +150,5 @@ void PicoquantTTTRReader::readHeader()
    fs.seekg(info.spec_header_length * 4, ios_base::cur);
 
    data_position = fs.tellg();
-   
-   assert(std::string("PicoHarp 300").compare(info.ident) == 0);
 }
 

@@ -59,7 +59,7 @@ public:
    FifoProcessor(Markers markers, SyncSettings sync) :
       markers(markers), sync(sync)
    {
-
+      incrementFrame(); // handle cases where we don't have a frame marker before the start of the data
    }
 
    Photon addEvent(TcspcEvent p)

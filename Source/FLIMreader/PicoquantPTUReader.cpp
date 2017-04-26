@@ -32,7 +32,7 @@ AbstractFifoReader(filename)
    setTemporalResolution(14);
    assert(measurement_mode == 3);
 
-   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position));
+   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
       
    determineDwellTime();
 }
@@ -78,7 +78,7 @@ void PicoquantPTUReader::readHeader()
          case tyInt8:
             cout << tag_head.TagValue;
             if (strcmp(tag_head.Ident, TTTRTagTTTRRecType) == 0)
-               rec_type = (int) tag_head.TagValue;
+               rec_type = (PicoquantRecordType) tag_head.TagValue;
             if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
                measurement_mode = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
