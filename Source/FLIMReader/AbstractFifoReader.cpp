@@ -189,6 +189,7 @@ void AbstractFifoReader::alignFrames()
          TcspcEvent e = event_reader->getEvent();
          Photon p = processor.addEvent(e);
 
+         p.frame--;
 #ifdef _DEBUG
          if (p.frame > 10)
             break;
