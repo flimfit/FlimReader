@@ -44,8 +44,8 @@ void interpolatePoint2d(const std::vector<cv::Point2d>& Ds, std::vector<cv::Poin
    for (int i = 0; i < nDs; i++)
    {
       ud[i] = i / (nDs - 1.0);
-      vd_x[i] = D[i].x;
-      vd_y[i] = D[i].y;
+      vd_x[i] = Ds[i].x;
+      vd_y[i] = Ds[i].y;
    }
 
    for (int i = 0; i < nD; i++)
