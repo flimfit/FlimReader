@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TransformInterpolator.h"
+#include "RigidFrameAligner.h"
 #include <functional>
 #include <opencv2/opencv.hpp>
 #include <dlib/optimization.h>
@@ -70,6 +70,8 @@ protected:
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
 
    cv::Mat sum_1, sum_2;
+
+   std::unique_ptr<RigidFrameAligner> rigid_aligner;
 
    friend class OptimisationModel;
 };

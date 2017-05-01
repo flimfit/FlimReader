@@ -31,6 +31,12 @@ double correlation(cv::Mat &image_1, cv::Mat &image_2, cv::Mat &mask)
 
 void interpolatePoint2d(const std::vector<cv::Point2d>& Ds, std::vector<cv::Point2d>& D)
 {
+   if (D.size() == Ds.size())
+   {
+      D = Ds;
+      return;
+   }
+
    int nD = D.size();
    int nDs = Ds.size();
    auto ud = std::vector<double>(nDs);
@@ -64,11 +70,18 @@ void interpolatePoint2d(const std::vector<cv::Point2d>& Ds, std::vector<cv::Poin
 FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 {
    realign_params = params;
+
+   RealignmentParameters rigid_params = params;
+   params.type = RealignmentType::Translation;
+   rigid_aligner = std::make_unique<RigidFrameAligner>(params);
 }
 
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
+   rigid_aligner->setNumberOfFrames(n_frames);
+   rigid_aligner->setReference(frame_t, reference_);
+
    reference_.convertTo(reference, CV_32F);
 
    if (realign_params.smoothing > 0.0)
@@ -125,22 +138,24 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    auto model = OptimisationModel(this, frame);
 
-   std::vector<column_vector> starting_point(2, column_vector(2 * nD));
+
+   std::vector<column_vector> starting_point(3, column_vector(2 * nD));
 
    // zero starting point
    std::fill(starting_point[0].begin(), starting_point[0].end(), 0);
 
    // last starting point
-   std::vector<cv::Point2d> D(nD);
+   std::vector<cv::Point2d> D(nD, cv::Point2d(0,0));
    if (Dstore.count(frame_t) == 1)
-      if (D.size() == Dstore[frame_t].size())
-         D = Dstore[frame_t];
-      else
-         interpolatePoint2d(Dstore[frame_t], D);
-   else
-      std::fill(D.begin(), D.end(), cv::Point2d(0,0));
+      interpolatePoint2d(Dstore[frame_t], D);
    D2col(D, starting_point[1]);
-   
+
+   // rigid starting point
+   rigid_aligner->addFrame(frame_t, frame);
+   cv::Point2d rigid_shift = rigid_aligner->getRigidShift(frame_t);
+   std::vector<cv::Point2d> D_rigid(nD, rigid_shift);
+   D2col(D_rigid, starting_point[2]);
+
    double best = std::numeric_limits<double>::max();
    int best_start = 0;
    for (int i = 0; i < starting_point.size(); i++)
@@ -182,7 +197,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
       find_min_trust_region(dlib::objective_delta_stop_strategy(1e-5),
          model,
          x,
-         1 // initial trust region radius
+         20 // initial trust region radius
       );
 
       /*
@@ -313,7 +328,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
       }
    }
 
-   return ms_error * n_px / n_include;
+   return ms_error;// *n_px / n_include;
 }
 
 void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
