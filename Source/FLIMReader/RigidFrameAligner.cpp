@@ -39,6 +39,8 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
+   cv::Mat log_polari, rotatedi, refi;
+
    if (realign_params.use_rotation())
    {
       cv::logPolar(frame, log_polari, centre, 1.0, CV_WARP_FILL_OUTLIERS);
@@ -52,11 +54,12 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
    }
    else
    {
-      rotatedi = frame;
+      frame.copyTo(rotatedi);
    }
 
+   reference.copyTo(refi);
    double response;
-   auto p = cv::phaseCorrelate(reference, rotatedi, window, &response);
+   auto p = cv::phaseCorrelate(refi, rotatedi, window, &response);
 
    transform.shift = p * realign_params.spatial_binning;
 
@@ -131,6 +134,12 @@ void RigidFrameAligner::interpolate(Transform& t1, Transform& t2, double frame, 
    affine = cv::getRotationMatrix2D(centre, angle, 1.0);
 
    shift = t2.shift * f + t1.shift * (1 - f);
+}
+
+
+cv::Point2d RigidFrameAligner::getRigidShift(int frame)
+{
+   return frame_transform[frame + 1].shift;
 }
 
 void RigidFrameAligner::addTransform(int frame_t, Transform t)

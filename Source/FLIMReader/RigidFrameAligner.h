@@ -38,6 +38,8 @@ public:
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame); 
    void shiftPixel(int frame, double& x, double& y);
+   
+   cv::Point2d getRigidShift(int frame);
 
 private:
 
@@ -54,10 +56,8 @@ private:
    cv::Point2d centre;
    cv::Point2d centre_binned;
 
-   cv::Mat window;
    cv::Mat reference;
+   cv::Mat window;
 
    cv::Mat log_polar0;
-   cv::Mat log_polari;
-   cv::Mat rotatedi;
 };
