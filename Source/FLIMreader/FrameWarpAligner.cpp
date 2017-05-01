@@ -220,15 +220,18 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    std::cout << "*";
 
-
-
    cv::Mat warped = model.getWarpedRawImage(x);
    cv::Mat mask = model.getMask(x);
+
+   cv::Mat m;
+   cv::compare(mask, 0, m, cv::CMP_GT);
+
 
    RealignmentResult r;
    r.frame = frame;
    r.realigned = warped;
-   r.correlation = correlation(warped, smoothed_reference, mask);
+   r.mask = mask;
+   r.correlation = correlation(warped, smoothed_reference, m);
    r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
 
    results[frame_t] = r;
@@ -287,9 +290,8 @@ cv::Mat OptimisationModel::getMask(const column_vector& x)
    std::vector<cv::Point2d> D;
    col2D(x, D);
    
-   cv::Mat mask, warped_image;
-   aligner->warpImage(frame, warped_image, D);
-   cv::compare(warped_image, -1, mask, cv::CMP_GT);
+   cv::Mat mask;
+   aligner->warpCoverage(mask, D);
    return mask;
 }
 
@@ -575,9 +577,9 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
                img.at<float>(loc0.y, loc1.x) * (1 - locf.y) * (    locf.x) + 
                img.at<float>(loc1.y, loc1.x) * (    locf.y) * (    locf.x);
          }
-         
-         
          /*
+         
+         
          loc.x = x - loc.x;
          loc.y = y - loc.y;
 
@@ -586,9 +588,28 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
             if (wimg.at<float>(loc) == -1)
                wimg.at<float>(loc) = img.at<float>(y, x);
             else 
-               wimg.at<float>(loc) = img.at<float>(y, x);
+               wimg.at<float>(loc) += img.at<float>(y, x);
          }
-         */
+        */ 
+      }
+}
+
+void FrameWarpAligner::warpCoverage(cv::Mat& coverage, const std::vector<cv::Point2d>& D)
+{
+   auto size = reference.size();
+   coverage = cv::Mat(size, CV_16U, cv::Scalar(0));
+
+   cv::Rect2i img_rect(cv::Point2i(0, 0), size);
+
+   for (int y = 0; y < size.height; y++)
+      for (int x = 0; x < size.width; x++)
+      {
+         cv::Point2d loc = warpPoint(D, x, y, realign_params.spatial_binning);
+         loc.x = x - loc.x;
+         loc.y = y - loc.y;
+
+         if (img_rect.contains(loc))
+            coverage.at<uint16_t>(loc)++;
       }
 }
 

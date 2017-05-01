@@ -33,6 +33,7 @@ class RealignmentResult
 public:
    cv::Mat frame;
    cv::Mat realigned;
+   cv::Mat mask;
    double correlation = 0;
    double coverage = 0;
 };

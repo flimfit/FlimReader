@@ -136,6 +136,8 @@ public:
 protected:
    
    void readSettings();
+
+   void computeIntensityNormalisation();
    
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
@@ -177,6 +179,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
+
+   computeIntensityNormalisation();
 
    auto channels = validateChannels(channels_, n_chan_stride);
 

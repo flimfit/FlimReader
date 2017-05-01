@@ -60,6 +60,8 @@ public:
    const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
    const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
 
+   cv::Mat getIntensityNormalisation() { return intensity_normalisation; }
+
 protected:
 
    std::vector<double> timepoints_;
@@ -79,6 +81,8 @@ protected:
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
    std::vector<cv::Mat> frames;
    std::vector<RealignmentResult> realignment;
+
+   cv::Mat intensity_normalisation;
 };
 
 template<typename T>

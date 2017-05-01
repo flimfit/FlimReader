@@ -189,7 +189,6 @@ void AbstractFifoReader::alignFrames()
          TcspcEvent e = event_reader->getEvent();
          Photon p = processor.addEvent(e);
 
-         p.frame--;
 #ifdef _DEBUG
          if (p.frame > 10)
             break;
@@ -245,4 +244,20 @@ void AbstractFifoReader::alignFrames()
    }
 
    //frame_aligner->reprocess();
+}
+
+void AbstractFifoReader::computeIntensityNormalisation()
+{
+   if (!realignment.empty())
+   {
+      // Get intensity
+      cv::Mat intensity(realignment[0].frame.size(), CV_16U, cv::Scalar(0));
+      for (int i = 0; i < realignment.size(); i++)
+      {
+         if (realignment[i].correlation >= realign_params.coverage_threshold &&
+            realignment[i].coverage >= realign_params.coverage_threshold)
+            intensity += realignment[i].mask;
+      }
+      intensity_normalisation = intensity;
+   }
 }
