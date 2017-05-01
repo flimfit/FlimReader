@@ -1,23 +1,23 @@
-#include "TransformInterpolator.h"
+#include "RigidFrameAligner.h"
 
 
-TransformInterpolator::TransformInterpolator(RealignmentParameters params)
+RigidFrameAligner::RigidFrameAligner(RealignmentParameters params)
 {
    realign_params = params;
    frame_transform.push_back(Transform(0.0));
 }
 
-bool TransformInterpolator::empty()
+bool RigidFrameAligner::empty()
 {
    return frame_transform.size() <= 1;
 }
 
-void TransformInterpolator::clear()
+void RigidFrameAligner::clear()
 {
    frame_transform.clear();
 }
 
-void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
+void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
    frame_transform.resize(n_frames+1);
 
@@ -35,7 +35,7 @@ void TransformInterpolator::setReference(int frame_t, const cv::Mat& reference_)
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
 
-RealignmentResult TransformInterpolator::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
@@ -70,7 +70,7 @@ RealignmentResult TransformInterpolator::addFrame(int frame_t, const cv::Mat& fr
    return r; // TODO
 }
 
-void TransformInterpolator::shiftPixel(int frame, double& x, double& y)
+void RigidFrameAligner::shiftPixel(int frame, double& x, double& y)
 {
    cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
    cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));
@@ -91,7 +91,7 @@ void TransformInterpolator::shiftPixel(int frame, double& x, double& y)
 }
 
 
-void TransformInterpolator::getAffine(double frame, cv::Mat& affine, cv::Point2d& shift)
+void RigidFrameAligner::getAffine(double frame, cv::Mat& affine, cv::Point2d& shift)
 {
    assert(frame >= 0);
 
@@ -123,7 +123,7 @@ void TransformInterpolator::getAffine(double frame, cv::Mat& affine, cv::Point2d
    cache_shift = shift;
 }
 
-void TransformInterpolator::interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift)
+void RigidFrameAligner::interpolate(Transform& t1, Transform& t2, double frame, cv::Mat& affine, cv::Point2d& shift)
 {
    double f = (frame - t1.frame) / (t2.frame - t1.frame);
 
@@ -133,7 +133,7 @@ void TransformInterpolator::interpolate(Transform& t1, Transform& t2, double fra
    shift = t2.shift * f + t1.shift * (1 - f);
 }
 
-void TransformInterpolator::addTransform(int frame_t, Transform t)
+void RigidFrameAligner::addTransform(int frame_t, Transform t)
 {
    frame_transform[frame_t+1] = t;
 }

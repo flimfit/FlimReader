@@ -35,7 +35,7 @@ set(SOURCE
    BhSPCReader.cpp
    TextReader.cpp
    AbstractFrameAligner.cpp
-   TransformInterpolator.cpp
+   RigidFrameAligner.cpp
    FrameWarpAligner.cpp
 )
 
@@ -55,7 +55,7 @@ set(HEADERS
    PicoquantT3Event.h
    FifoProcessor.h
    AbstractFrameAligner.h
-   TransformInterpolator.h
+   RigidFrameAligner.h
    FrameWarpAligner.h
    MetadataTag.h
    FlimCube.h

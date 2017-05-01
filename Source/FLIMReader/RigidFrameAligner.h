@@ -24,11 +24,11 @@ public:
    cv::Point2d shift;
 };
 
-class TransformInterpolator : public AbstractFrameAligner
+class RigidFrameAligner : public AbstractFrameAligner
 {
 public:
 
-   TransformInterpolator(RealignmentParameters params);
+   RigidFrameAligner(RealignmentParameters params);
 
    bool empty();
    void clear();

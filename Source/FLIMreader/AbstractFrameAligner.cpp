@@ -1,4 +1,4 @@
-#include "TransformInterpolator.h"
+#include "RigidFrameAligner.h"
 #include "FrameWarpAligner.h"
 
 std::string realignmentTypeString(RealignmentType t)
@@ -28,6 +28,6 @@ std::unique_ptr<AbstractFrameAligner> AbstractFrameAligner::createFrameAligner(R
    case RealignmentType::Warp:
       return std::unique_ptr<AbstractFrameAligner>(new FrameWarpAligner(params));
    default: // handles both Translation and RigidBody
-      return std::unique_ptr<AbstractFrameAligner>(new TransformInterpolator(params));
+      return std::unique_ptr<AbstractFrameAligner>(new RigidFrameAligner(params));
    }
 }
