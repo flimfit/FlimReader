@@ -230,7 +230,7 @@ void AbstractFifoReader::alignFrames()
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames((int) frames.size());
    
-   max_idx = 0;
+   max_idx = 1;
    frame_aligner->setReference(max_idx, frames[max_idx]);
 
    realignment.clear();
