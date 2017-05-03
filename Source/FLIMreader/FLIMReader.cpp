@@ -89,3 +89,11 @@ TagMap FLIMReader::getReaderTags()
 
    return reader_tags;
 }
+
+ImageMap FLIMReader::getImageMap()
+{
+   ImageMap images;
+   if (!intensity_normalisation.empty())
+      images["IntensityNormalisation"] = intensity_normalisation;
+   return images;
+}

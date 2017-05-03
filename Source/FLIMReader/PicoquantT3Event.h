@@ -102,6 +102,8 @@ public:
       case TimeHarp260N_T3:
       case TimeHarp260P_T3:
          return TimeharpT3Event(evt, rec_type);
+	  default:
+		  throw std::runtime_error("Unsupported record type");
       }
    }
 

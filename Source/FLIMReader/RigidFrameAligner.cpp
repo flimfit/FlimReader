@@ -21,7 +21,7 @@ void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
    frame_transform.resize(n_frames+1);
 
-   reference = reference_;
+   reference_.copyTo(reference);
 
    auto size = reference.size();
    cv::createHanningWindow(window, reference.size(), CV_32F);

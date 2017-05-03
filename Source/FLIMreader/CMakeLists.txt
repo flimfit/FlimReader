@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.7)
 
 PROJECT(FLIMreader)
 
@@ -37,6 +37,7 @@ set(SOURCE
    AbstractFrameAligner.cpp
    RigidFrameAligner.cpp
    FrameWarpAligner.cpp
+   WriteMultipageTiff.cpp
 )
 
 set(HEADERS
@@ -61,6 +62,7 @@ set(HEADERS
    FlimCube.h
    FlimCubeWriter.h
    LinearInterpolation.h
+   WriteMultipageTiff.h
 )
 
 set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)

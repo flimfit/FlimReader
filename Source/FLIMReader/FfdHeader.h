@@ -48,6 +48,13 @@ public:
       READ(fs, dp);
       data_position = dp;
 
+      tags = readTags(fs);
+   }
+
+   TagMap readTags(std::ifstream& fs)
+   {
+      std::map<std::string, MetaDataTag> tags;
+
       char tag_name[255];
       uint32_t tag_name_length, tag_data_length;
       uint16_t tag_type;
@@ -90,8 +97,7 @@ public:
 
       } while (tag_type != TagEndHeader);
 
-      data_position = fs.tellg();
-
+      return tags;
    }
 
    FfdType type;

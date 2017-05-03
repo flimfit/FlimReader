@@ -10,6 +10,7 @@
 #include "FlimCube.h"
 
 typedef std::map<std::string, MetaDataTag> TagMap;
+typedef std::map<std::string, cv::Mat> ImageMap;
 
 class FLIMReader
 {
@@ -51,6 +52,8 @@ public:
    const std::string& getFilename() { return filename; }
    TagMap getTags() { return tags; }
    virtual TagMap getReaderTags();
+
+   ImageMap getImageMap();
 
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
    virtual void setBidirectionalPhase(double phase) {}

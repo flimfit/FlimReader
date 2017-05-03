@@ -85,7 +85,7 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    reference_.convertTo(reference, CV_32F);
 
    if (realign_params.smoothing > 0.0)
-      cv::GaussianBlur(reference, smoothed_reference, cv::Size(0, 0), realign_params.smoothing);
+      cv::GaussianBlur(reference, smoothed_reference, cv::Size(0, 0), realign_params.smoothing, 1);
    else
       smoothed_reference = reference;
 
@@ -220,6 +220,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    std::cout << "*";
 
+   cv::Mat warped_smoothed = model.getWarpedImage(x);
    cv::Mat warped = model.getWarpedRawImage(x);
    cv::Mat mask = model.getMask(x);
 
@@ -231,7 +232,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    r.frame = frame;
    r.realigned = warped;
    r.mask = mask;
-   r.correlation = correlation(warped, smoothed_reference, m);
+   r.correlation = correlation(warped_smoothed, smoothed_reference, m);
    r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
 
    results[frame_t] = r;
@@ -250,7 +251,7 @@ OptimisationModel::OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& r
    raw_frame.convertTo(f1, CV_32F);
 
    if (realign_params.smoothing > 0.0)
-      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing);
+      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing, 1);
    else
       frame = f1;
 }
@@ -264,7 +265,7 @@ double OptimisationModel::operator() (const column_vector& x) const
    // Get displacement matrix from warp parameters
    col2D(x, D);
 
-   aligner->warpImage(frame, warped_image, D);
+   aligner->warpImage(frame, warped_image, D, -1);
    double rms_error = aligner->computeErrorImage(warped_image, error_image);
    //std::cout << "f = " << rms_error << "\n";
    return rms_error;
@@ -278,7 +279,7 @@ void OptimisationModel::get_derivative_and_hessian(const column_vector& x, colum
    // Get displacement matrix from warp parameters
    col2D(x, D);
 
-   aligner->warpImage(frame, warped_image, D);
+   aligner->warpImage(frame, warped_image, D, -1);
    double rms_error = aligner->computeErrorImage(warped_image, error_image);
 
    aligner->computeJacobian(error_image, der);
@@ -299,13 +300,19 @@ cv::Mat OptimisationModel::getWarpedRawImage(const column_vector& x)
 {
    std::vector<cv::Point2d> D;
    col2D(x, D);
-
-   cv::Mat warped_image, error_image;
-   aligner->warpImage(frame, warped_image, D);
-   double rms_error = aligner->computeErrorImage(warped_image, error_image);
+   cv::Mat warped_image;
+   aligner->warpImage(raw_frame, warped_image, D);
    return warped_image;
 }
 
+cv::Mat OptimisationModel::getWarpedImage(const column_vector& x)
+{
+	std::vector<cv::Point2d> D;
+	col2D(x, D);
+	cv::Mat warped_image;
+	aligner->warpImage(frame, warped_image, D);
+	return warped_image;
+}
 
 double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
 {
@@ -543,14 +550,12 @@ void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& 
    }
 }
 
-void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D)
+void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D, int invalid_value)
 {
    auto size = img.size();
-   wimg = cv::Mat(size, CV_32F, cv::Scalar(-1));
+   wimg = cv::Mat(size, CV_32F, cv::Scalar(invalid_value));
    
    cv::Rect2i img_rect(cv::Point2i(0, 0), size);
-
-//   float* img_d = reinterpret_cast<float*>(img.data());
 
    for (int y = 0; y < size.height; y++)
       for (int x = 0; x < size.width; x++)

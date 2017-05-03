@@ -9,6 +9,10 @@ public:
       HistogramReader(filename)
    {
       readHeader();
+
+      auto it = images.find("IntensityNormalisation");
+      if (it != images.end())
+         intensity_normalisation = it->second;
    }
 
    void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData__(data, channels, n_chan_stride); };
@@ -28,6 +32,8 @@ protected:
 
       if (header.type != FfdHeader::histogram)
          throw std::runtime_error("Must be histogramed data");
+
+      uint64_t next_block_pos = 0;
 
       TagMap::iterator it;
 
@@ -51,7 +57,51 @@ protected:
       if (it != tags.end())
          data_type = it->second.getString();
 
+      it = tags.find("NextBlock");
+      if (it != tags.end())
+         next_block_pos = it->second.getValue<uint64_t>();
+
       n_timepoints = (int) timepoints_.size();
+
+      while(next_block_pos > 0)
+      {
+         fs.seekg(next_block_pos);
+         auto block_tags = header.readTags(fs);
+
+         std::string block_type;
+         it = block_tags.find("BlockType");
+         if (it != block_tags.end())
+            block_type = it->second.getString();
+
+         if (block_type == "Image")
+         {
+            int width = 0, height = 0, type = 0, data_length = 0;
+            std::string image_description;
+
+            it = block_tags.find("ImageFormat");
+            if (it != block_tags.end())
+               type = it->second.getValue<int32_t>();
+            it = block_tags.find("ImageWidth");
+            if (it != block_tags.end())
+               width = it->second.getValue<int32_t>();
+            it = block_tags.find("ImageHeight");
+            if (it != block_tags.end())
+               height = it->second.getValue<int32_t>();
+            it = block_tags.find("DataLength");
+            if (it != block_tags.end())
+               data_length = it->second.getValue<int32_t>();
+
+            cv::Mat im(width, height, type);
+            fs.read(reinterpret_cast<char*>(im.data), data_length);
+
+            images[image_description] = im;
+         }
+
+         next_block_pos = 0;
+         it = block_tags.find("NextBlock");
+         if (it != block_tags.end())
+            next_block_pos = it->second.getValue<uint64_t>();
+      }
 
       fs.close();
 
@@ -73,5 +123,7 @@ private:
       else
          throw std::runtime_error("Error reading FFD file: unknown data type");
    }
+
+   ImageMap images;
 
 };
