@@ -104,10 +104,4 @@ protected:
    cv::Mat raw_frame;
    cv::Mat frame;
    RealignmentParameters realign_params;
-
-   /*
-   std::vector<cv::Point2d> D;
-   cv::Mat warped_image;
-   cv::Mat error_image;
-   */
 };

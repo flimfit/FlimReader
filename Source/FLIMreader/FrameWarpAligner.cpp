@@ -645,6 +645,12 @@ void FrameWarpAligner::writeRealignmentInfo(std::string filename)
       return;
    
    std::ofstream os(filename);
+   
+   os << "Line Duration," << image_params.line_duration << "\n";
+   os << "Interline Duration," << image_params.interline_duration << "\n";
+   os << "Frame Duration," << image_params.frame_duration << "\n";
+   os << "Interframe Duration," << image_params.interframe_duration << "\n";
+   os << "Lines," << image_params.n_y << "\n";
 
    os << "Frame, Correlation, Coverage";
    for (int j = 0; j < Dstore[0].size(); j++)

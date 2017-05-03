@@ -41,8 +41,8 @@ public:
 class ImageScanParameters
 {
 public:
-   ImageScanParameters(double line_duration = 100, double interline_duration = 101, int n_x = 1, int n_y = 1, bool bidirectional = false) :
-      line_duration(line_duration), interline_duration(interline_duration), n_x(n_x), n_y(n_y)
+   ImageScanParameters(double line_duration = 100, double interline_duration = 101, double interframe_duration = 102, int n_x = 1, int n_y = 1, bool bidirectional = false) :
+      line_duration(line_duration), interline_duration(interline_duration), interframe_duration(interframe_duration), n_x(n_x), n_y(n_y)
    {
       n_x = std::max(n_x, 1);
       n_y = std::max(n_y, 1);
@@ -58,6 +58,7 @@ public:
    double interline_duration;
    double pixel_duration;
    double frame_duration;
+   double interframe_duration;
    int n_x;
    int n_y;
    bool bidirectional;
