@@ -9,7 +9,7 @@ if(MSVC)
 endif()
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
-find_package(OpenCV REQUIRED core imgproc)
+find_package(OpenCV REQUIRED core imgproc highgui)
 find_package(OpenMP REQUIRED)
 find_package(dlib REQUIRED)
 
