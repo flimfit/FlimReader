@@ -161,6 +161,46 @@ void mexFunction(int nlhs, mxArray *plhs[],
             double phase = mxGetScalar(prhs[2]);
             readers[idx]->setBidirectionalPhase(phase);
          }
+         else if (command == "GetMetadata")
+         {
+            AssertInputCondition(nlhs >= 1);
+            auto tags = readers[idx]->getTags();
+
+            int n_tags = tags.size();
+            std::vector<const char*> names;
+            names.reserve(n_tags);
+            for (auto p : tags)
+               names.push_back(p.first.data());
+
+            plhs[0] = mxCreateStructMatrix(1, 1, n_tags, names.data());
+
+            int i = 0;
+            for (auto p : tags)
+            {
+               mxArray* v; 
+               if (p.second.is_vector)
+               {
+                  v = mxCreateDoubleScalar(0); // TODO
+               }
+               else
+               {
+                  switch (p.second.type)
+                  {
+                  case MetaDataTag::TagBool:
+                  case MetaDataTag::TagDouble:
+                  case MetaDataTag::TagUInt64:
+                  case MetaDataTag::TagInt64:
+                     v = mxCreateDoubleScalar(p.second.getValue<double>());
+                     break;
+                  case MetaDataTag::TagString:
+                  case MetaDataTag::TagDate:
+                     v = mxCreateString(p.second.getString().c_str());
+                     break;
+                  }
+               }
+               mxSetFieldByNumber(plhs[0], 0, i++, v);
+            }
+         }
 
          else if (command == "Delete")
          {

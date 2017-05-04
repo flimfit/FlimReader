@@ -68,7 +68,7 @@ void PicoquantTTTRReader::readHeader()
    READ(fs, info.stop_on_overflow);
    READ(fs, info.restart);
 
-   fs.ignore(20); // display settings
+   fs.ignore(20); // display settings+
    fs.ignore(64); // curve display settings
    fs.ignore(3 * 3 * 4); // param settings
 
@@ -150,5 +150,45 @@ void PicoquantTTTRReader::readHeader()
    fs.seekg(info.spec_header_length * 4, ios_base::cur);
 
    data_position = fs.tellg();
+
+
+   typedef std::string s;
+   tags[s(s("ident"))] = s(info.ident);
+   tags[s("format_version")] = s(info.format_version);
+   tags[s("creator_name")] = s(info.creator_name);
+   tags[s("creator_version")] = s(info.creator_version);
+   tags[s("file_time")] = s(info.file_time);
+   tags[s("comment")] = s(info.comment);
+
+   tags[s("n_curves")] = info.n_curves;
+   tags[s("bits_per_record")] = info.bits_per_record;
+   tags[s("routing_channels")] = info.routing_channels;
+   tags[s("n_boards")] = info.n_boards;
+   tags[s("active_curve")] = info.active_curve;
+   tags[s("measurement_mode")] = info.measurement_mode;
+   tags[s("sub_mode")] = info.sub_mode;
+   tags[s("range_no")] = info.range_no;
+   tags[s("offset")] = info.offset;
+   tags[s("acq_time")] = info.acq_time;
+   tags[s("stop_at")] = info.stop_at;
+   tags[s("stop_on_overflow")] = info.stop_on_overflow;
+   tags[s("restart")] = info.restart;
+   tags[s("repeat_mode")] = info.repeat_mode;
+   tags[s("repeats_per_curve")] = info.repeats_per_curve;
+   tags[s("repeat_time")] = info.repeat_time;
+   tags[s("repeat_wait_time")] = info.repeat_wait_time;
+   tags[s("script_name")] = s(info.script_name);
+
+   tags[s("ident")] = s(hw_info.ident);
+   tags[s("version")] = s(hw_info.version);
+   tags[s("serial")] = hw_info.serial;
+   tags[s("sync_divider")] = hw_info.sync_divider;
+   tags[s("resolution")] = hw_info.resolution;
+   tags[s("input0_countrate")] = info.input0_countrate;
+   tags[s("input1_countrate")] = info.input1_countrate;
+   tags[s("stop_after")] = info.stop_after;
+   tags[s("stop_reason")] = info.stop_reason;
+   tags[s("n_records")] = info.n_records;
+
 }
 
