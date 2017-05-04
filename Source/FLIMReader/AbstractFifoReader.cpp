@@ -127,7 +127,7 @@ void AbstractFifoReader::determineDwellTime()
    }
    else if (markers.FrameMarker != 0x0)
    {
-      if (n_y != n_line)
+      if ((n_y * n_frame) != n_line)
          throw std::runtime_error("Error interpreting sync markers");
    }
 
