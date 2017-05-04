@@ -72,7 +72,10 @@ public:
       {
          if (p.mark & markers.FrameMarker)
          {
-            incrementFrame();
+            if (cur_line >= 0) // end of first frame (no initial marker)
+               incrementFrame();
+            else // start of first frame 
+               frame_started = true;
          }
          if (frame_started || markers.FrameMarker == 0x0)
          {

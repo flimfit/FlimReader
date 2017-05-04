@@ -46,6 +46,7 @@ void AbstractFifoReader::determineDwellTime()
    
    event_reader->setToStart();
    
+   uint64_t frame_start = 0;
    uint64_t sync_count_accum = 0;
    uint64_t sync_start_count = 0;
    double sync_count_per_line = 0;
@@ -69,8 +70,15 @@ void AbstractFifoReader::determineDwellTime()
       if (!p.valid)
          continue;
 
-      if ((p.mark & markers.FrameMarker) && n_line > 0) 
+      if ((p.mark & markers.FrameMarker) && n_line > 0)
+      {
+         if (n_frame == 0)
+            frame_start = macro_time;
+         else
+            sync.counts_interframe = macro_time - frame_start;
          n_frame++; // count full frames (i.e. ignore first start, if it's there)
+         
+      }
 
       if ((p.mark & markers.LineEndMarker) && line_active)
       {
@@ -103,7 +111,7 @@ void AbstractFifoReader::determineDwellTime()
       if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
 
-   } while (event_reader->hasMoreData() && (n_frame < 1 || line_active));
+   } while (event_reader->hasMoreData() && (n_frame < 2 || line_active));
    
    sync_count_per_line /= n_averaged;
    sync_count_interline /= (n_averaged-1);
@@ -113,9 +121,9 @@ void AbstractFifoReader::determineDwellTime()
    
    if (n_y == 0)
    {
-      n_y = n_line / line_averaging;
+     n_y = n_line / line_averaging / n_frame;
 	  if (n_x == 0)
-         n_x = n_line / line_averaging;
+         n_x = n_y;
    }
    else if (markers.FrameMarker != 0x0)
    {
@@ -224,13 +232,13 @@ void AbstractFifoReader::alignFrames()
       }
    }
 
-   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y, sync.bi_directional);
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames((int) frames.size());
    
-   max_idx = 1;
+   max_idx = 0;
    frame_aligner->setReference(max_idx, frames[max_idx]);
 
    realignment.clear();
