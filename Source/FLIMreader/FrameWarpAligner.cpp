@@ -88,7 +88,7 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
    RealignmentParameters rigid_params = params;
    params.type = RealignmentType::Translation;
    params.spatial_binning = 4;
-   rigid_aligner = std::make_unique<RigidFrameAligner>(params);
+   rigid_aligner = std::unique_ptr<RigidFrameAligner>(new RigidFrameAligner(params));
 }
 
 

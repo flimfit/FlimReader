@@ -1,6 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "tiffio.h"
-#include "stdio.h"
-#include "stdlib.h"
 #include <string>
 #include <vector>
 #include <opencv2/core/core.hpp>
