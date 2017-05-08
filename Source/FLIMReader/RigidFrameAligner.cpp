@@ -1,5 +1,5 @@
 #include "RigidFrameAligner.h"
-
+#include <opencv2/imgproc.hpp>
 
 RigidFrameAligner::RigidFrameAligner(RealignmentParameters params)
 {
@@ -63,11 +63,21 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    transform.shift = p * realign_params.spatial_binning;
 
+   cv::Mat m(2, 3, CV_32F, cv::Scalar(0));
+   m.at<float>(0, 0) = 1;
+   m.at<float>(1, 1) = 1;
+   m.at<float>(0, 2) = -p.x;
+   m.at<float>(1, 2) = -p.y;
+
+   cv::Mat shifted;
+   frame.copyTo(shifted);
+   cv::warpAffine(frame, shifted, m, frame.size());
+
    addTransform(frame_t,transform);
 
    RealignmentResult r;
    r.frame = frame;
-   r.realigned = frame;
+   r.realigned = shifted;
    r.correlation = response;
 
    return r; // TODO

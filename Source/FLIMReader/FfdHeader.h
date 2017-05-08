@@ -35,6 +35,9 @@ public:
 
       READ(fs, magic);
 
+      if (!fs.is_open())
+         throw std::runtime_error("Could not open file handle");
+
       if (magic == 0xF1F0)
          type = fifo;
       else if (magic == 0xC0BE)

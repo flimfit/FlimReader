@@ -3,6 +3,20 @@
 #include "LinearInterpolation.h"
 #include <fstream>
 
+cv::Mat downsample(const cv::Mat& im1, int factor)
+{
+   int w = im1.size().width;
+   int h = im1.size().height;
+
+   cv::Mat im2(w / factor, h / factor, im1.type(), cv::Scalar(0));
+
+   for (int y = 0; y < h; y++)
+      for (int x = 0; x < w; x++)
+         im2.at<float>(y / factor, x / factor) += im1.at<float>(y, x);
+
+   return im2;
+}
+
 double correlation(cv::Mat &image_1, cv::Mat &image_2, cv::Mat &mask)
 {
 
@@ -73,6 +87,7 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
    RealignmentParameters rigid_params = params;
    params.type = RealignmentType::Translation;
+   params.spatial_binning = 4;
    rigid_aligner = std::make_unique<RigidFrameAligner>(params);
 }
 
@@ -80,14 +95,16 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
    rigid_aligner->setNumberOfFrames(n_frames);
-   rigid_aligner->setReference(frame_t, reference_);
 
-   reference_.convertTo(reference, CV_32F);
+   reference_.copyTo(reference);
 
    if (realign_params.smoothing > 0.0)
       cv::GaussianBlur(reference, smoothed_reference, cv::Size(0, 0), realign_params.smoothing, 1);
    else
       smoothed_reference = reference;
+
+   cv::Mat f = downsample(reference, 4);
+   rigid_aligner->setReference(frame_t, f);
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
@@ -134,9 +151,16 @@ void col2D(const column_vector& col, std::vector<cv::Point2d> &D)
 }
 
 
-RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_frame)
 {
-   auto model = OptimisationModel(this, frame);
+   cv::Mat frame;
+   if (realign_params.smoothing > 0.0)
+	   cv::GaussianBlur(raw_frame, frame, cv::Size(0, 0), realign_params.smoothing, 1);
+   else
+	   raw_frame.copyTo(frame);
+
+
+   auto model = OptimisationModel(this, frame, raw_frame);
 
 
    std::vector<column_vector> starting_point(3, column_vector(2 * nD));
@@ -151,7 +175,8 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
    D2col(D, starting_point[1]);
 
    // rigid starting point
-   rigid_aligner->addFrame(frame_t, frame);
+   cv::Mat ff = downsample(frame, 4);
+   rigid_aligner->addFrame(frame_t, ff);
    cv::Point2d rigid_shift = rigid_aligner->getRigidShift(frame_t);
    std::vector<cv::Point2d> D_rigid(nD, rigid_shift);
    D2col(D_rigid, starting_point[2]);
@@ -194,11 +219,13 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
    try
    {
+	   
       find_min_trust_region(dlib::objective_delta_stop_strategy(1e-5),
          model,
          x,
          20 // initial trust region radius
       );
+	  
 
       /*
       find_min_using_approximate_derivatives(
@@ -229,7 +256,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
 
    RealignmentResult r;
-   r.frame = frame;
+   r.frame = raw_frame;
    r.realigned = warped;
    r.mask = mask;
    r.correlation = correlation(warped_smoothed, smoothed_reference, m);
@@ -242,18 +269,12 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& frame)
 
 }
 
-OptimisationModel::OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& raw_frame) :
+OptimisationModel::OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& frame, const cv::Mat& raw_frame) :
    aligner(aligner),
    raw_frame(raw_frame),
+   frame(frame),
    realign_params(aligner->realign_params)
 {
-   cv::Mat f1;
-   raw_frame.convertTo(f1, CV_32F);
-
-   if (realign_params.smoothing > 0.0)
-      cv::GaussianBlur(f1, frame, cv::Size(0, 0), realign_params.smoothing, 1);
-   else
-      frame = f1;
 }
 
 
@@ -416,8 +437,12 @@ void FrameWarpAligner::precomputeInterp()
 
    int max_interval = 0;
    for (int i = 0; i < nD; i++)
-      if (D_range[i].interval() > max_interval)
+   {
+      int interval = D_range[i].interval();
+      if (interval > max_interval)
          max_interval = D_range[i].interval();
+
+   }
 
    int max_VI_dW_dp = size.area(); //max_interval * 2;
 

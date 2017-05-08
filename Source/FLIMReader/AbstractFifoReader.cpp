@@ -263,7 +263,8 @@ void AbstractFifoReader::computeIntensityNormalisation()
       for (int i = 0; i < realignment.size(); i++)
       {
          if (realignment[i].correlation >= realign_params.coverage_threshold &&
-            realignment[i].coverage >= realign_params.coverage_threshold)
+            realignment[i].coverage >= realign_params.coverage_threshold &&
+            !realignment[i].mask.empty())
             intensity += realignment[i].mask;
       }
       intensity_normalisation = intensity;

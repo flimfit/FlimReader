@@ -89,7 +89,7 @@ public:
    typedef ::column_vector column_vector;
    typedef matrix<double> general_matrix;
 
-   OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& frame);
+   OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& frame, const cv::Mat& raw_frame);
 
    double operator() (const column_vector& x) const;
    void get_derivative_and_hessian(const column_vector& x, column_vector& der, general_matrix& hess) const;
