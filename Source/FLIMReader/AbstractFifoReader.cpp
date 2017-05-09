@@ -49,6 +49,7 @@ void AbstractFifoReader::determineDwellTime()
    uint64_t sync_count_accum = 0;
    uint64_t sync_start_count = 0;
    double sync_count_per_line = 0;
+   double sync_count_interline = 0;
    int n_averaged = 0;
    int n_frame = 0;
    int n_line = 0;
@@ -78,6 +79,12 @@ void AbstractFifoReader::determineDwellTime()
          }
          if (p.mark & markers.LineStartMarker)
          {
+            if (n_line > 0)
+            {
+               uint64_t diff = macro_time - sync_start_count;
+               sync_count_interline += (macro_time - sync_start_count);
+            }
+
             n_line++;
             sync_start_count = macro_time;
             line_started = true;
@@ -89,7 +96,8 @@ void AbstractFifoReader::determineDwellTime()
    } while (event_reader->hasMoreData());
    
    sync_count_per_line /= n_averaged;
-   
+   sync_count_interline /= (n_averaged-1);
+
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
    
@@ -103,12 +111,13 @@ void AbstractFifoReader::determineDwellTime()
       assert(n_y == n_line);
 
    sync.count_per_line = sync_count_per_line;
+   sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
 }
 
 void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 {
-   int native_resolution = ceil(log2(n_timebins_native));
+   int native_resolution = (int) ceil(log2(n_timebins_native));
    
    temporal_resolution = std::min(native_resolution, temporal_resolution__);
    temporal_resolution = std::max(0, temporal_resolution);
@@ -134,7 +143,9 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 
 void AbstractFifoReader::alignFrames()
 {
-   if (!realign_params.use_realignment)
+   frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
+
+   if (!realign_params.use_realignment())
       return;
 
    int sb = realign_params.spatial_binning;
@@ -165,51 +176,25 @@ void AbstractFifoReader::alignFrames()
          while (p.frame >= frames.size())
             frames.push_back(cv::Mat(n_x_binned, n_y_binned, CV_32F, cv::Scalar(0)));
 
+#ifdef _DEBUG
+         if (p.frame > 5)
+            break;
+#endif
          if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
             frames[p.frame].at<float>(p.y, p.x)++;
       }
    }
 
-
    cv::Mat window;
    cv::createHanningWindow(window, cv::Size(n_x_binned, n_y_binned), CV_32F);
 
-   transform_interpolator.clear();
-   transform_interpolator.setSize(n_x, n_y);
-   transform_interpolator.addTransform(Transform(fb*0.5));
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, n_x, n_y);
+
+   frame_aligner->setRealignmentParams(realign_params);
+   frame_aligner->setImageScanParams(image_params);
+   frame_aligner->setReference(0, frames[0]);
   
-   cv::Point2f centre_binned(n_x_binned / 2.0, n_y_binned / 2.0);
-   cv::Point2f centre(n_x / 2.0, n_y / 2.0);
-
-   cv::Mat log_polar0, log_polari, rotatedi;
-   cv::logPolar(frames[0], log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
-
-   bool use_rotation = true;
-
+   #pragma omp parallel for
    for (int i = 1; i < frames.size(); i++)
-   {
-      Transform transform(fb*(i+0.5));
-
-      if (realign_params.use_rotation)
-      {
-         cv::logPolar(frames[i], log_polari, centre, 1.0, CV_WARP_FILL_OUTLIERS);
-         auto p = cv::phaseCorrelate(log_polar0, log_polari, window);
-         double rotation = p.y * 90.0 / n_y_binned - 45.0;
-
-         cv::Mat t = cv::getRotationMatrix2D(centre_binned, rotation, 1);
-         cv::warpAffine(frames[i], rotatedi, t, frames[i].size());
-
-         transform.angle = rotation;
-      }
-      else
-      {
-         rotatedi = frames[i];
-      }
-
-      auto p = cv::phaseCorrelate(frames[0], rotatedi, window);
-     
-      transform.shift = p * sb;
-
-      transform_interpolator.addTransform(transform);
-   }
+      frame_aligner->addFrame(i, frames[i]);
 }

@@ -38,8 +38,10 @@ void FfdReader::readHeader()
       throw runtime_error("Wrong magic string, this is not a valid FFD file");
 
    READ(fs, version);
-   READ(fs, data_position);
 
+   uint32_t dp;
+   READ(fs, dp);
+   data_position = dp;
 
    char tag_name[255];
    uint32_t tag_name_length, tag_data_length;
@@ -79,9 +81,9 @@ void FfdReader::readHeader()
          std::cout << value;
 
          if (isTag("NumChannels"))
-            n_chan = value;
+            n_chan = (int) value;
          else if(isTag("NumTimeBins"))
-            n_timebins_native = value;
+            n_timebins_native = (int) value;
       }
       else if (tag_type == TagUInt64)
       {

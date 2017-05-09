@@ -72,6 +72,6 @@ protected:
 
    PicoquantTTRInfo info;
    PicoquantHardwareInfo hw_info;
-   int data_position;
+   std::streamoff data_position;
 };
 

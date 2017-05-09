@@ -24,7 +24,7 @@ AbstractFifoReader(filename)
    int n_bits = 14 - info.range_no;
    n_timebins_native = 1 << n_bits;
 
-   int n_timebins_useful = ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
+   int n_timebins_useful = (int) ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
 
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 

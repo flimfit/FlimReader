@@ -10,7 +10,6 @@ cmake_policy(SET CMP0043 NEW)
 
 include_directories(../FLIMreader)
 
-
 # Source Files
 #====================================
 set(SOURCE
