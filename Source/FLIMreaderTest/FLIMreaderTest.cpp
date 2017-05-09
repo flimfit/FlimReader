@@ -1,4 +1,4 @@
-#include "FLIMreader.h"
+#include "FlimReader.h"
 
 //#define CATCH_CONFIG_MAIN 
 #include "catch.hpp"
@@ -12,9 +12,9 @@ using namespace std;
 void test_load()
 {
    //std::string filename = "E:/User Data/James/JC280415/Plasmid=CC3 Ex=800 Em=624.pt3";
-   std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
+   std::string filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FlimReader/PTU Splitter/output/JNK Caspase FOV=0 t=-4.ptu";
    
-   //filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FLIMreader/PTU Splitter/james.pt3";
+   //filename = "/Users/sean/repositories/FLIMfit/FLIMfitLibrary/FlimReader/PTU Splitter/james.pt3";
    //filename = "/Users/sean/Documents/FLIMTestData/Frame marker test/1000hz 64 frames 1 line.ptu";
    filename = "C:/Users/sean/Downloads/16.11.15 bin files/VLDLR_mGFP parallel channel.bin";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/LeicaSP8_Picoquant_emilie_wientjes.pt3";
@@ -29,7 +29,7 @@ void test_load()
 
    auto start = chrono::high_resolution_clock::now();
 
-   unique_ptr<FLIMReader> reader(FLIMReader::createReader(filename));
+   unique_ptr<FlimReader> reader(FlimReader::createReader(filename));
    //reader->setTemporalResolution(4);
    reader->setSpatialBinning(1);
    
