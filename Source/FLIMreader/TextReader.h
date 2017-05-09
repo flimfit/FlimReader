@@ -1,12 +1,12 @@
 #pragma once
 
-#include "FLIMReader.h"
+#include "FlimReader.h"
 #include <vector>
 #include <map>
 
 typedef std::map<std::string, std::string> FLIMMetadata;
 
-class TextReader : public FLIMReader
+class TextReader : public FlimReader
 {
 public:
 

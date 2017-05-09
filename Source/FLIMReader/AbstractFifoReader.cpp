@@ -12,7 +12,7 @@
 using namespace std;
 
 AbstractFifoReader::AbstractFifoReader(const std::string& filename) :
-FLIMReader(filename)
+FlimReader(filename)
 {
    readSettings();
 }

@@ -8,7 +8,7 @@
 using namespace std;
 
 TextReader::TextReader(const std::string& filename) :
-   FLIMReader(filename)
+   FlimReader(filename)
 {
    if (extension == "txt")
       delim = '\t';

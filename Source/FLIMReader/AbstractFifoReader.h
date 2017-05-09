@@ -1,5 +1,5 @@
 #pragma once
-#include "FLIMReader.h"
+#include "FlimReader.h"
 
 #include <fstream>
 #include <vector>
@@ -113,7 +113,7 @@ protected:
 };
 
 
-class AbstractFifoReader : public FLIMReader
+class AbstractFifoReader : public FlimReader
 {
 public:
    

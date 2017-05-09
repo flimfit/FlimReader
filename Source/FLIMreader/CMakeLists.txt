@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
-PROJECT(FLIMreader)
+PROJECT(FlimReader)
 
 
 if(MSVC)
@@ -27,7 +27,7 @@ endif()
 
 
 set(SOURCE
-   FLIMreader.cpp
+   FlimReader.cpp
    AbstractFifoReader.cpp
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
@@ -41,7 +41,7 @@ set(SOURCE
 )
 
 set(HEADERS
-   FLIMreader.h
+   FlimReader.h
    AbstractFifoReader.h
    PicoquantTTRReader.h
    PicoquantPTUReader.h
@@ -65,7 +65,7 @@ set(HEADERS
    WriteMultipageTiff.h
 )
 
-set(FLIMreader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
-set(FLIMreader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
-add_library(FLIMreader OBJECT ${SOURCE} ${HEADERS})
+set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
+set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
+add_library(FlimReader OBJECT ${SOURCE} ${HEADERS})
 

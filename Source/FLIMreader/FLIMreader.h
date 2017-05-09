@@ -12,18 +12,18 @@
 typedef std::map<std::string, MetaDataTag> TagMap;
 typedef std::map<std::string, cv::Mat> ImageMap;
 
-class FLIMReader
+class FlimReader
 {
 public:
 
-   static FLIMReader* createReader(const std::string& filename);
+   static FlimReader* createReader(const std::string& filename);
 
-   FLIMReader(const std::string& filename_);
+   FlimReader(const std::string& filename_);
 
    static std::string determineExtension(const std::string& filename);
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
-   virtual ~FLIMReader() {};
+   virtual ~FlimReader() {};
 
    virtual void alignFrames() {};
 
@@ -89,7 +89,7 @@ protected:
 };
 
 template<typename T>
-void FLIMReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels)
+void FlimReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels)
 {
    int n_chan_stride = -1;
    std::vector<int> ch = validateChannels(channels, n_chan_stride);

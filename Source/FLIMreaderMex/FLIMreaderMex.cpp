@@ -13,7 +13,7 @@ using namespace std;
 
 void Cleanup();
 
-vector<unique_ptr<FLIMReader>> readers;
+vector<unique_ptr<FlimReader>> readers;
 
 void mexFunction(int nlhs, mxArray *plhs[],
    int nrhs, const mxArray *prhs[])
@@ -27,11 +27,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
       {
          string filename = getStringFromMatlab(prhs[0]);
 
-         auto reader = unique_ptr<FLIMReader>(FLIMReader::createReader(filename));
+         auto reader = unique_ptr<FlimReader>(FlimReader::createReader(filename));
 
          // Make sure we have an empty place
          if (readers.empty() || readers[readers.size()-1] != nullptr)
-            readers.push_back(unique_ptr<FLIMReader>(nullptr));
+            readers.push_back(unique_ptr<FlimReader>(nullptr));
 
          int i = 0;
          for (; i < readers.size(); i++)
@@ -47,14 +47,14 @@ void mexFunction(int nlhs, mxArray *plhs[],
       else if (nrhs >= 2)
       {
          if (!mxIsChar(prhs[1]))
-            mexErrMsgIdAndTxt("FLIMreaderMex:invalidInput",
+            mexErrMsgIdAndTxt("FlimReaderMex:invalidInput",
             "Second argument should be a command string");
 
          int idx = static_cast<int>(mxGetScalar(prhs[0]));
          string command = getStringFromMatlab(prhs[1]);
 
          if (idx >= readers.size() || readers[idx] == nullptr)
-            mexErrMsgIdAndTxt("FLIMreaderMex:invalidReader",
+            mexErrMsgIdAndTxt("FlimReaderMex:invalidReader",
             "Invalid reader index specified");
 
          if (command == "GetTimePoints")
@@ -210,12 +210,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
    }
    catch (std::runtime_error e)
    {
-      mexErrMsgIdAndTxt("FLIMreaderMex:exceptionOccurred",
+      mexErrMsgIdAndTxt("FlimReaderMex:exceptionOccurred",
          e.what());
    }
    catch (exception e)
    {
-      mexErrMsgIdAndTxt("FLIMreaderMex:exceptionOccurred",
+      mexErrMsgIdAndTxt("FlimReaderMex:exceptionOccurred",
          e.what());
    }
 }

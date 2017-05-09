@@ -1,14 +1,14 @@
 #pragma once
 
-#include "FLIMreader.h"
+#include "FlimReader.h"
 #include <fstream>
 
-class HistogramReader : public FLIMReader
+class HistogramReader : public FlimReader
 {
 public:
 
    HistogramReader(const std::string& filename) :
-      FLIMReader(filename)
+      FlimReader(filename)
    {}
 
 protected:

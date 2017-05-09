@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-project(FLIMreaderMex)
+project(FlimReaderMex)
 set(CMAKE_DEBUG_POSTFIX "")
 
 # Find MATLAB
@@ -30,20 +30,20 @@ find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 
-include_directories(${FLIMreader_INCLUDE_DIR})
+include_directories(${FlimReader_INCLUDE_DIR})
 
 set(SOURCE
-   FLIMreaderMex.cpp
+   FlimReaderMex.cpp
 )
 
 set(HEADERS
    MexUtils.h
 )
 
-matlab_add_mex(NAME FLIMreaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FLIMreader>)
+matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader>)
 
-target_link_libraries(FLIMreaderMex ${FLIMreader_LIBRARIES})
+target_link_libraries(FlimReaderMex ${FlimReader_LIBRARIES})
 
-if(FLIMreaderMEX_OUT_DIR)
-   add_custom_command(TARGET FLIMreaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FLIMreaderMex> ${FLIMreaderMEX_OUT_DIR})
+if(FlimReaderMEX_OUT_DIR)
+   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
 endif()

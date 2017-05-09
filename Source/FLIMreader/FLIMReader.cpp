@@ -1,4 +1,4 @@
-#include "FLIMReader.h"
+#include "FlimReader.h"
 #include "PicoquantTTRReader.h"
 #include "PicoquantPTUReader.h"
 #include "PicoquantBINReader.h"
@@ -6,7 +6,7 @@
 #include "FfhReader.h"
 #include "TextReader.h"
 
-FLIMReader* FLIMReader::createReader(const std::string& filename)
+FlimReader* FlimReader::createReader(const std::string& filename)
 {
    std::string extension = determineExtension(filename);
 
@@ -26,13 +26,13 @@ FLIMReader* FLIMReader::createReader(const std::string& filename)
    throw std::runtime_error("Unrecognised file format");
 }
 
-FLIMReader::FLIMReader(const std::string& filename_)
+FlimReader::FlimReader(const std::string& filename_)
 {
    filename = filename_;
    extension = determineExtension(filename);
 }
 
-std::string FLIMReader::determineExtension(const std::string& filename)
+std::string FlimReader::determineExtension(const std::string& filename)
 {
    size_t last_dot, pos = 0;
    while ((pos = filename.find('.', pos + 1)) != std::string::npos)
@@ -40,7 +40,7 @@ std::string FLIMReader::determineExtension(const std::string& filename)
    return filename.substr(last_dot);
 }
 
-std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_chan_stride)
+std::vector<int> FlimReader::validateChannels(std::vector<int> channels, int& n_chan_stride)
 {
    std::vector<int> validated_channels;
    validated_channels.reserve(n_chan);
@@ -63,19 +63,19 @@ std::vector<int> FLIMReader::validateChannels(std::vector<int> channels, int& n_
    return validated_channels;
 }
 
-int FLIMReader::dataSizePerChannel()
+int FlimReader::dataSizePerChannel()
 {
    int n_bin = (int) timepoints_.size();
    return n_bin * n_x * n_y / (spatial_binning * spatial_binning);
 }
 
-void FLIMReader::setSpatialBinning(int spatial_binning_)
+void FlimReader::setSpatialBinning(int spatial_binning_)
 {
    if (n_x > spatial_binning_ && n_y > spatial_binning_)
       spatial_binning = spatial_binning_;
 }
 
-TagMap FLIMReader::getReaderTags()
+TagMap FlimReader::getReaderTags()
 {
    TagMap reader_tags;
    reader_tags["SpatialBinning"] = spatial_binning;
@@ -90,7 +90,7 @@ TagMap FLIMReader::getReaderTags()
    return reader_tags;
 }
 
-ImageMap FLIMReader::getImageMap()
+ImageMap FlimReader::getImageMap()
 {
    ImageMap images;
    if (!intensity_normalisation.empty())
