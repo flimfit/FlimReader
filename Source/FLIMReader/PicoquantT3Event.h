@@ -9,10 +9,10 @@ enum PicoquantRecordType
    HydraHarpV1_T2 = 0x00010204,
    HydraHarpV2_T3 = 0x01010304,
    HydraHarpV2_T2 = 0x01010204,
-   TimeHarp260N_T2 = 0x01010205,
-   TimeHarp260N_T3 = 0x01010305,
-   TimeHarp260P_T2 = 0x01010206,
-   TimeHarp260P_T3 = 0x01010306
+   TimeHarp260N_T2 = 0x00010205,
+   TimeHarp260N_T3 = 0x00010305,
+   TimeHarp260P_T2 = 0x00010206,
+   TimeHarp260P_T3 = 0x00010306
 };
 
 class PicoharpT3Event : public TcspcEvent

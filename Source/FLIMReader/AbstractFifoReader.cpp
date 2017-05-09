@@ -77,7 +77,7 @@ void AbstractFifoReader::determineDwellTime()
          else
             sync.counts_interframe = macro_time - frame_start;
          n_frame++; // count full frames (i.e. ignore first start, if it's there)
-         
+
       }
 
       if ((p.mark & markers.LineEndMarker) && line_active)
@@ -118,7 +118,10 @@ void AbstractFifoReader::determineDwellTime()
 
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
-   
+
+   if (n_line == 0)
+      throw std::runtime_error("Error interpreting sync markers");
+
    if (n_y == 0)
    {
      n_y = n_line / line_averaging / n_frame;
@@ -127,8 +130,7 @@ void AbstractFifoReader::determineDwellTime()
    }
    else if (markers.FrameMarker != 0x0)
    {
-      if ((n_y * n_frame) != n_line)
-         throw std::runtime_error("Error interpreting sync markers");
+      assert(n_line == (n_y * n_frame));
    }
 
    sync.count_per_line = sync_count_per_line;
