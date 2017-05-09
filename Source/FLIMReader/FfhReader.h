@@ -68,16 +68,17 @@ protected:
          fs.seekg(next_block_pos);
          auto block_tags = header.readTags(fs);
 
-         std::string block_type;
+         std::string block_type, block_description;
          it = block_tags.find("BlockType");
          if (it != block_tags.end())
             block_type = it->second.getString();
+         it = block_tags.find("BlockDescription");
+         if (it != block_tags.end())
+            block_description = it->second.getString();
 
          if (block_type == "Image")
          {
             int width = 0, height = 0, type = 0, data_length = 0;
-            std::string image_description;
-
             it = block_tags.find("ImageFormat");
             if (it != block_tags.end())
                type = it->second.getValue<int32_t>();
@@ -87,14 +88,14 @@ protected:
             it = block_tags.find("ImageHeight");
             if (it != block_tags.end())
                height = it->second.getValue<int32_t>();
-            it = block_tags.find("DataLength");
+            it = block_tags.find("ImageDataLength");
             if (it != block_tags.end())
                data_length = it->second.getValue<int32_t>();
 
             cv::Mat im(width, height, type);
             fs.read(reinterpret_cast<char*>(im.data), data_length);
 
-            images[image_description] = im;
+            images[block_description] = im;
          }
 
          next_block_pos = 0;
