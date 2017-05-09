@@ -131,6 +131,8 @@ public:
 
    void alignFrames();
 
+   float getProgress() { return event_reader->getProgress(); }
+
    void setTemporalResolution(int temporal_resolution);
       
 protected:
