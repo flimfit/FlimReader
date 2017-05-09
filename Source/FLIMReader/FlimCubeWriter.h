@@ -111,7 +111,7 @@ public:
          writeTag("ImageFormat", im.type());
          writeTag("ImageWidth", im.size().width);
          writeTag("ImageHeight", im.size().height);
-         writeTag("ImageDataLength", data_length);
+         writeTag("ImageDataLength", (uint64_t) data_length);
          auto next_block_pos = writeTag("NextBlock", 0);
          next_block_pos_writer = FilePositionWriter<uint64_t>(of, next_block_pos);
 

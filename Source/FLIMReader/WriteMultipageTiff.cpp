@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "tiffio.h"
 #include <string>
 #include <vector>
 #include <opencv2/core/core.hpp>
 
+namespace tiff
+{
+   #include <tiffio.h>
+}
+
 void writeMultipageTiff(const std::string& filename, const std::vector<cv::Mat>& planes)
 {
-   TIFF *out = TIFFOpen(filename.c_str(), "w");
+   tiff::TIFF *out = tiff::TIFFOpen(filename.c_str(), "w");
 
    if (!out)
       throw std::runtime_error("Could not open file");
@@ -18,11 +22,11 @@ void writeMultipageTiff(const std::string& filename, const std::vector<cv::Mat>&
 
       auto& plane = planes[page];
 
-      uint32 imagelength = plane.size().height;
-      uint32 imagewidth = plane.size().width;
-      uint32 bytespersample = plane.elemSize1();
-      uint32 nsamples = plane.channels();
-      uint16 config = PLANARCONFIG_CONTIG;
+      uint32_t imagelength = plane.size().height;
+      uint32_t imagewidth = plane.size().width;
+      uint32_t bytespersample = plane.elemSize1();
+      uint32_t nsamples = plane.channels();
+      uint16_t config = PLANARCONFIG_CONTIG;
       int type = plane.type() & 0x7; // pull out channel format
 
       TIFFSetField(out, TIFFTAG_IMAGELENGTH, imagelength);

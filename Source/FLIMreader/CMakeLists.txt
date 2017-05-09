@@ -11,9 +11,9 @@ endif()
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV REQUIRED core imgproc highgui)
 find_package(OpenMP REQUIRED)
-find_package(dlib REQUIRED)
+find_package(dlib CONFIG REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${dlib_INCLUDE_DIRS})
 
 # Enable OpenMP support, disable for XCode
 #===================================================
@@ -65,7 +65,7 @@ set(HEADERS
    WriteMultipageTiff.h
 )
 
-set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
-set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} PARENT_SCOPE)
+set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS  } PARENT_SCOPE)
+set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${dlib_LIBRARIES} PARENT_SCOPE)
 add_library(FlimReader OBJECT ${SOURCE} ${HEADERS})
 

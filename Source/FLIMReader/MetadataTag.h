@@ -95,9 +95,10 @@ public:
             return getVector_<T, int64_t>();
          case TagUInt64:
             return getVector_<T, uint64_t>();
+        default:
+          return std::vector<T>();
          }
       }
-
       return std::vector<T>();
    }
 
