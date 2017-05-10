@@ -83,6 +83,8 @@ void PicoquantPTUReader::readHeader()
                measurement_mode = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
                n_chan = (int) tag_head.TagValue;
+            if (strcmp(tag_head.Ident, HW_InpChannels) == 0)
+               n_chan = ((int)tag_head.TagValue) - 1; // start is included in input count
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
                line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, TTResult_SyncRate) == 0)

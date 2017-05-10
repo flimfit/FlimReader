@@ -19,6 +19,7 @@
 #define ImgHdr_BiDirect "ImgHdr_BiDirect"
 #define ImgHdr_PixX "ImgHdr_PixX"
 #define ImgHdr_PixY "ImgHdr_PixY"
+#define HW_InpChannels "HW_InpChannels"
 
 
 #define Line_Averaging     "Line_Averaging"            // Inserted by PTU splitter
