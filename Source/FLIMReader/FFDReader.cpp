@@ -17,6 +17,7 @@ FfdReader::FfdReader(const std::string& filename) :
    markers.FrameMarker = 0x8;
    markers.LineEndMarker = 0x4;
    markers.LineStartMarker = 0x2;
+   markers.PixelMarker = 0x0; // no pixel marker
 
    event_reader = std::unique_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position));
 

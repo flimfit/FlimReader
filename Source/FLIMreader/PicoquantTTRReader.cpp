@@ -112,6 +112,7 @@ void PicoquantTTTRReader::readHeader()
          markers.FrameMarker = 0x4;
          markers.LineEndMarker = 0x2;
          markers.LineStartMarker = 0x1;
+         markers.PixelMarker = 0x0; // no pixel marker
          break;
       case 4: // KDT180-100-lm
          fs.ignore(6 * 4);
@@ -121,6 +122,7 @@ void PicoquantTTTRReader::readHeader()
          markers.FrameMarker = 0x4;
          markers.LineEndMarker = 0x2;
          markers.LineStartMarker = 0x1;
+         markers.PixelMarker = 0x0; // no pixel marker
          break;
       case 3: // LSM
          //fs.ignore(4 * 4);
@@ -132,6 +134,7 @@ void PicoquantTTTRReader::readHeader()
          markers.FrameMarker = 1 << (frame-1);
          markers.LineStartMarker = 1 << (linestart-1);
          markers.LineEndMarker = 1 << (linestop-1);
+         markers.PixelMarker = 0x0; // no pixel marker
          sync.bi_directional = (pattern == 1);
          READ(fs, info.n_x);
          READ(fs, info.n_y);

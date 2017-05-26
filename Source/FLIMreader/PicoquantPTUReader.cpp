@@ -27,6 +27,7 @@ AbstractFifoReader(filename)
       markers.FrameMarker = 0x4;
       markers.LineEndMarker = 0x2;
       markers.LineStartMarker = 0x1;
+      markers.PixelMarker = 0x0; // no pixel marker
    }
 
    setTemporalResolution(14);

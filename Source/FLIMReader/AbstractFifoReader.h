@@ -239,7 +239,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          int bin = p.bin;
          if (t_rep_resunit > 0)
          {
-            int bin = (bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
+            bin = (bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
             bin = bin < 0 ? bin + t_rep_resunit : bin;
          }
          bin = bin >> downsampling;

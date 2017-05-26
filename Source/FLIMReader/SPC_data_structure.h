@@ -1,4 +1,6 @@
-﻿/* This file contains defines and structure definitions which can be useful
+﻿#pragma once
+
+/* This file contains defines and structure definitions which can be useful
         in case of writing a program to analyze .set, .sdt and .spc files
         created using BH software
     valid for SPCM v.9.66 and newer
@@ -30,6 +32,8 @@ The data files ( extension .sdt ) consist of:
        they correspond
 
 */
+
+#pragma pack(push,1)
 
 #define BH_HEADER_CHKSUM      0x55aa
 #define BH_HEADER_NOT_VALID   0x1111
@@ -696,7 +700,7 @@ typedef struct{
 
 
 
-
+/*
 typedef struct{        // structure for MCS Image parameters
   int             active;             // MCS Image is calculated
   Window          mtwin;              // time windows for MCS images  
@@ -709,7 +713,7 @@ typedef struct{        // structure for MCS Image parameters
   float           offset;             // for MCS_TA: offset in percent  -100 .. +100
   float           tpp;                // time per point in [ms]
   }MIMGParam;
-
+  */
 
 
 
@@ -724,7 +728,7 @@ typedef struct  {
   }MOMtrace;  //
 
 
-
+/*
 typedef struct{        // structure for M0, M1, M2  histogram windows
   int                active;   // window visible
   unsigned short     mom_type; // additional parameters -  not used yet
@@ -739,7 +743,7 @@ typedef struct{        // structure for M0, M1, M2  histogram windows
   float              fpar_ext;  
   MOMtrace           htrace[MAX_NO_OF_TRACES];
   }MOMParam;
-  
+  */
   
 
 typedef struct{        // structure for extension of system parameters
@@ -799,6 +803,7 @@ typedef struct{             //  structure for Wide-field Image mode parameters
   }WFParam;
 
 
+/*
 typedef struct{             //  structure for layout of windows on the desktop
   int    desktop_width;
   int    desktop_heigth;
@@ -808,7 +813,7 @@ typedef struct{             //  structure for layout of windows on the desktop
   BHPanelData  pnldata[35]; //  10 more then MAX_PNL
   char   reserve[48];       // keep fixed size of the structure = 1600B
   }WndLayout;
-
+  */
 
 #define MAX_NO_OF_GR  8     // max number of graph windows
 #define TRPAR_VERSION 1     // current TrParExt version
@@ -832,7 +837,7 @@ typedef struct{         // structure for correction data for multichannel detect
 
 
 
-
+/*
 typedef struct{         // structure for parameters of 3D Lifetime traces
   char   tr_no;         //  no of 3D trace which uses this structure ( 0-7)
   char   reverse_col;   //  reverse color bar of lifetime
@@ -855,7 +860,7 @@ typedef struct{         // structure for parameters of 3D Lifetime traces
   U_LONG max_ph_no_bin;        //  when binning used - not binned value
   char   reserve[198];      // keep fixed size of the structure = 512B
   }LifeTrPar;
-
+  */
 
 
 #define MAX_NO_OF_COLORS   11 // max value for DI_COL_NO
@@ -1242,7 +1247,7 @@ typedef struct {
                                       //    corresponding to this data block
    unsigned long  lblock_no;       // long block_no - see remarks below 
    unsigned long  block_length;    // block( set ) length ( not compressed ) in bytes
-   }BHFileBlockHeader;
+   }BHFileBlockHeaderOld;
 
 // The data block header structure for bhfile_header.revision = 15 - current state 
 typedef struct _bhfile_block_header {
@@ -1974,3 +1979,4 @@ By using 'Convert FIFO files' feature user can create different histograms for t
   
 */
 
+#pragma pack(pop)
