@@ -94,7 +94,8 @@ void AbstractFifoReader::determineDwellTime()
 
          line_active = false;
       }
-      else if (p.mark & markers.LineStartMarker)
+      
+      if (p.mark & markers.LineStartMarker)
       {
          if (n_line > 0)
          {
@@ -111,7 +112,7 @@ void AbstractFifoReader::determineDwellTime()
       if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
 
-   } while (event_reader->hasMoreData() && (n_frame < 2 || line_active));
+   } while (event_reader->hasMoreData() && (n_frame < 2));
    
    sync_count_per_line /= n_averaged;
    sync_count_interline /= (n_averaged-1);
@@ -130,7 +131,7 @@ void AbstractFifoReader::determineDwellTime()
    }
    else if (markers.FrameMarker != 0x0)
    {
-      assert(n_line == (n_y * n_frame));
+      //assert(n_line == (n_y * n_frame));
    }
 
    sync.count_per_line = sync_count_per_line;
@@ -141,6 +142,10 @@ void AbstractFifoReader::determineDwellTime()
 
 void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 {
+   // These should be set before calling this function
+   assert(n_timebins_native > 0);
+   assert(time_resolution_native_ps > 0);
+
    int native_resolution = (int) ceil(log2(n_timebins_native));
    
    temporal_resolution = std::min(native_resolution, temporal_resolution__);
@@ -154,16 +159,20 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
   
    t_rep_resunit = (int)std::round(t_rep_ps / time_resolution_native_ps);
 
-   int n_t_rep = (int)floor(t_rep_ps / t_step);
    int n_t_native = 1 << temporal_resolution;
-   int n_t = std::min(n_t_rep, n_t_native);
+   int n_t = n_t_native;
+
+   if (t_rep_ps != 0)
+   {
+      int n_t_rep = (int)floor(t_rep_ps / t_step);
+      int n_t = std::min(n_t_rep, n_t);
+   }
+
 
    timepoints_.resize(n_t);
 
    for (int i = 0; i < n_t; i++)
       timepoints_[i] = t_0 + i * t_step;
-
-
 
    time_shifts_resunit.clear();
    for(auto shift : time_shifts_ps)

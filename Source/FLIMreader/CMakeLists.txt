@@ -32,7 +32,7 @@ set(SOURCE
    PicoquantTTRReader.cpp
    PicoquantPTUReader.cpp
    FfdReader.cpp
-   BhSPCReader.cpp
+   BhFifoReader.cpp
    TextReader.cpp
    AbstractFrameAligner.cpp
    RigidFrameAligner.cpp
@@ -51,7 +51,7 @@ set(HEADERS
    FfhReader.h
    FfdHeader.h
    HistogramReader.h
-   BhSPCReader.h
+   BhFifoReader.h
    TextReader.h
    PicoquantT3Event.h
    FifoProcessor.h

@@ -5,6 +5,7 @@
 #include "FfdReader.h"
 #include "FfhReader.h"
 #include "TextReader.h"
+#include "BhFifoReader.h"
 
 FlimReader* FlimReader::createReader(const std::string& filename)
 {
@@ -22,6 +23,8 @@ FlimReader* FlimReader::createReader(const std::string& filename)
       return new FfdReader(filename);
    else if (extension == "ffh")
       return new FfhReader(filename);
+   else if (extension == "spc")
+      return new BhFifoReader(filename);
 
    throw std::runtime_error("Unrecognised file format");
 }

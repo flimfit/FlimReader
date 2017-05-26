@@ -77,34 +77,36 @@ public:
             else // start of first frame 
                frame_started = true;
          }
-         if (frame_started || markers.FrameMarker == 0x0)
+         if ((p.mark & markers.LineEndMarker) && line_valid == true)
          {
-            if ((p.mark & markers.LineEndMarker) && line_valid == true)
-            {
-               line_valid = false;
-            }
-            else if (p.mark & markers.LineStartMarker)
-            {
-               if (markers.FrameMarker == 0x0 && ((cur_line + 1) == sync.n_line || cur_line == -1))
-                  incrementFrame();
-
-               line_valid = true;
-               sync_start = cur_sync;
-               cur_line++;
-
-               if (sync.bi_directional)
-                  cur_direction *= -1;
-            }
+            line_valid = false;
          }
-
-         if ((p.mark == markers.PhotonMarker) && line_valid && frame_started)
+         if (p.mark & markers.LineStartMarker)
          {
-            double cur_loc = ((cur_sync - sync_start) / sync.count_per_line) * (sync.n_x);
+            if (markers.FrameMarker == 0x0 && ((cur_line + 1) == sync.n_line || cur_line == -1))
+               incrementFrame();
+
+            line_valid = true;
+            sync_start = cur_sync;
+            cur_line++;
+            cur_px = -1;
+
+            if (sync.bi_directional)
+               cur_direction *= -1;
+         }
+         if (p.mark & markers.PixelMarker)
+            cur_px++;
+
+         if ((p.mark == markers.PhotonMarker) && line_valid)
+         {
+            double cur_loc = (markers.PixelMarker == 0) ?
+               ((cur_sync - sync_start) / sync.count_per_line) * (sync.n_x) :
+               cur_px;
 
             if (cur_direction == -1)
                cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
 
-            return Photon(frame_idx, (int) cur_loc, cur_line, p.channel, p.micro_time);
+            return Photon(frame_idx, (int)cur_loc, cur_line, p.channel, p.micro_time);
          }
       }
 
@@ -118,7 +120,7 @@ protected:
       frame_idx++;
       frame_started = true;
       cur_line = -1;
-      cur_direction = -1;
+      cur_direction = sync.bi_directional ? -1 : 1;
    }
 
    Markers markers;
@@ -129,6 +131,7 @@ protected:
    long long sync_count_accum = 0;
    long long sync_start = 0;
 
+   int cur_px = -1;
    int cur_line = -1;
    int cur_direction = 1;
    bool line_valid = false;

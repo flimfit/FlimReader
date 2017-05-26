@@ -153,9 +153,9 @@ protected:
    
    // Required Picoquant information
    int measurement_mode = 0;
-   double time_resolution_native_ps;
-   double t_rep_ps;
-   int n_timebins_native;
+   double time_resolution_native_ps = 0;
+   double t_rep_ps = 0;
+   int n_timebins_native = 0;
 
    SyncSettings sync;
 
@@ -236,8 +236,12 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          int x = (int) std::round(p.x);
          int y = (int) std::round(p.y);
 
-         int bin = (p.bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
-         bin = bin < 0 ? bin + t_rep_resunit : bin;
+         int bin = p.bin;
+         if (t_rep_resunit > 0)
+         {
+            int bin = (bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
+            bin = bin < 0 ? bin + t_rep_resunit : bin;
+         }
          bin = bin >> downsampling;
 
          if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
@@ -245,6 +249,5 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          else
             n_invalid++;
       }
-
    }
 }
