@@ -73,7 +73,7 @@ void PicoquantPTUReader::readHeader()
          case tyBool8:
             cout << (tag_head.TagValue != 0);
             if (strcmp(tag_head.Ident, ImgHdr_BiDirect) == 0)
-               sync.bi_directional = tag_head.TagValue;
+               sync.bi_directional = tag_head.TagValue != 0;
             break;
             
          case tyInt8:
@@ -90,8 +90,8 @@ void PicoquantPTUReader::readHeader()
                line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, TTResult_SyncRate) == 0)
             {
-               rep_rate_hz = tag_head.TagValue;
-               t_rep_ps = 1e12f / tag_head.TagValue;
+               rep_rate_hz = (double) tag_head.TagValue;
+               t_rep_ps = 1e12 / tag_head.TagValue;
             }
             if (strcmp(tag_head.Ident, MeasDesc_BinningFactor)==0)
                temporal_binning = (int) tag_head.TagValue;
@@ -102,11 +102,11 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, ImgHdr_Frame) == 0)
                markers.FrameMarker = 1 << (tag_head.TagValue - 1);
             if (strcmp(tag_head.Ident, ImgHdr_PixX) == 0)
-               n_x = tag_head.TagValue;
+               n_x = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, ImgHdr_PixY) == 0)
             {
                n_y = tag_head.TagValue;
-               sync.n_line = n_y;
+               sync.n_line = (int) n_y;
             }
             break;
             

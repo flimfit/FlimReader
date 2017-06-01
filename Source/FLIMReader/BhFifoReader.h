@@ -24,10 +24,10 @@ public:
       channel = evt & 0xF; evt >>= 4;
       micro_time = evt & 0xFFF; evt >>= 12;
 
-      bool is_mark = evt & 0x1;
-      bool gap = evt & 0x2;
-      bool mtov = evt & 0x4;
-      bool invalid = evt & 0x8;
+      bool is_mark = (evt & 0x1) != 0;
+      bool gap = (evt & 0x2) != 0;
+      bool mtov = (evt & 0x4) != 0;
+      bool invalid = (evt & 0x8) != 0;
 
       if (is_mark)
       {

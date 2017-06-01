@@ -75,7 +75,7 @@ public:
          READ(fs, tag_data_length);
 
          MetaDataTag tag;
-         tag.is_vector = tag_type & 0x80;
+         tag.is_vector = (tag_type & 0x80) != 0;
          tag.type = (MetaDataTag::TagType) (tag_type & 0x7F);
 
          if (tag.is_vector)

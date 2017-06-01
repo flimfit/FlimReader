@@ -36,7 +36,7 @@ public:
    void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {});
 
    virtual void stopReading() {};
-   virtual float getProgress() { return 0; }
+   virtual double getProgress() { return 0; }
 
    const std::vector<double>& getTimepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }
