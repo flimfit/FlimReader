@@ -223,18 +223,8 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
       find_min_trust_region(dlib::objective_delta_stop_strategy(1e-5),
          model,
          x,
-         20 // initial trust region radius
+         40 // initial trust region radius
       );
-	  
-
-      /*
-      find_min_using_approximate_derivatives(
-         bfgs_search_strategy(),
-         objective_delta_stop_strategy(1e-5),
-         f,
-         x,
-         -1);
-         */
    }
    catch (dlib::error e)
    {
@@ -253,14 +243,20 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
 
    cv::Mat m;
    cv::compare(mask, 0, m, cv::CMP_GT);
-
+   
 
    RealignmentResult r;
    r.frame = raw_frame;
    r.realigned = warped;
    r.mask = mask;
    r.correlation = correlation(warped_smoothed, smoothed_reference, m);
+   r.unaligned_correlation = correlation(frame, smoothed_reference, m);
    r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
+
+   cv::Mat intensity_preserving(frame.size(), CV_16U, cv::Scalar(0));
+   if (r.correlation >= realign_params.correlation_threshold && r.coverage >= realign_params.coverage_threshold)
+      warpImageIntensityPreserving(raw_frame, intensity_preserving, D);
+   r.realigned_preserving = intensity_preserving;
 
    results[frame_t] = r;
 
@@ -288,7 +284,6 @@ double OptimisationModel::operator() (const column_vector& x) const
 
    aligner->warpImage(frame, warped_image, D, -1);
    double rms_error = aligner->computeErrorImage(warped_image, error_image);
-   //std::cout << "f = " << rms_error << "\n";
    return rms_error;
 }
 
@@ -358,7 +353,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
       }
    }
 
-   return ms_error;// *n_px / n_include;
+   return ms_error;
 }
 
 void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
@@ -590,14 +585,10 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
          loc.x += x;
          loc.y += y;
 
-         //if (img_rect.contains(loc))
-         //   wimg.at<float>(y, x) = img.at<float>(loc);
-
          cv::Point loc0(floor(loc.x), floor(loc.y));
          cv::Point loc1 = loc0 + cv::Point(1, 1);
 
          cv::Point2d locf(loc.x - loc0.x, loc.y - loc0.y);
-
 
          if (img_rect.contains(loc0) && img_rect.contains(loc1))
          {
@@ -607,22 +598,30 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
                img.at<float>(loc0.y, loc1.x) * (1 - locf.y) * (    locf.x) + 
                img.at<float>(loc1.y, loc1.x) * (    locf.y) * (    locf.x);
          }
-         /*
-         
-         
+              
+      }
+}
+
+void FrameWarpAligner::warpImageIntensityPreserving(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D)
+{
+   auto size = img.size();
+   wimg = cv::Mat(size, CV_16U, cv::Scalar(0));
+
+   cv::Rect2i img_rect(cv::Point2i(0, 0), size);
+
+   for (int y = 0; y < size.height; y++)
+      for (int x = 0; x < size.width; x++)
+      {
+         cv::Point2d loc = warpPoint(D, x, y, realign_params.spatial_binning);
+
          loc.x = x - loc.x;
          loc.y = y - loc.y;
 
          if (img_rect.contains(loc))
-         {
-            if (wimg.at<float>(loc) == -1)
-               wimg.at<float>(loc) = img.at<float>(y, x);
-            else 
-               wimg.at<float>(loc) += img.at<float>(y, x);
-         }
-        */ 
+            wimg.at<uint16_t>(loc) += img.at<float>(y, x);
       }
 }
+
 
 void FrameWarpAligner::warpCoverage(cv::Mat& coverage, const std::vector<cv::Point2d>& D)
 {
@@ -677,13 +676,13 @@ void FrameWarpAligner::writeRealignmentInfo(std::string filename)
    os << "Interframe Duration," << image_params.interframe_duration << "\n";
    os << "Lines," << image_params.n_y << "\n";
 
-   os << "Frame, Correlation, Coverage";
+   os << "Frame, UnalignedCorrelation, Correlation, Coverage";
    for (int j = 0; j < Dstore[0].size(); j++)
       os << ", p_" << j;
    os << "\n";
    for (int i = 0; i < Dstore.size(); i++)
    {
-      os << i << "," << results[i].correlation << ", " << results[i].coverage;
+      os << i << "," << results[i].unaligned_correlation << "," << results[i].correlation << ", " << results[i].coverage;
       for (int j = 0; j < Dstore[i].size(); j++)
          os << ", " << Dstore[i][j].x << std::showpos << Dstore[i][j].y << std::noshowpos << "i";
       os << "\n";

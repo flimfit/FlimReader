@@ -46,6 +46,7 @@ protected:
    void computeHessian();
    void computeJacobian(const cv::Mat& error_img, column_vector& jac);
    void warpImage(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D, int invalid_value = 0);
+   void warpImageIntensityPreserving(const cv::Mat& img, cv::Mat& wimg, const std::vector<cv::Point2d>& D);
    void warpCoverage(cv::Mat& coverage, const std::vector<cv::Point2d>& D);
    cv::Point2d warpPoint(const std::vector<cv::Point2d>& D, int x, int y, int spatial_binning = 1);
    double computeErrorImage(cv::Mat& wimg, cv::Mat& error_img);

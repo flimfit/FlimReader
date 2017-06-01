@@ -17,6 +17,13 @@ FlimReader(filename)
    readSettings();
 }
 
+AbstractFifoReader::~AbstractFifoReader()
+{
+   terminate = true;
+   if (realignment_thread.joinable())
+      realignment_thread.join();
+}
+
 void AbstractFifoReader::readSettings()
 {
    using namespace boost;
@@ -187,6 +194,58 @@ void AbstractFifoReader::alignFrames()
    if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
       frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
 
+   getIntensityFrames();
+
+   if (frames.size() == 0)
+      return;
+
+   /*
+   double max_m = 0;
+   int max_idx = 0;
+   for (int i = 0; i < frames.size(); i++)
+   {
+      double new_v = cv::mean(frames[i])(0);
+      if (new_v > max_m)
+      {
+         max_m = new_v;
+         max_idx = i;
+      }
+   }
+   */
+ 
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
+
+   frame_aligner->setRealignmentParams(realign_params);
+   frame_aligner->setImageScanParams(image_params);
+   frame_aligner->setNumberOfFrames((int)frames.size());
+
+   int max_idx = 0;
+   frame_aligner->setReference(max_idx, frames[max_idx]);
+
+   realignment.clear();
+   realignment.resize(frames.size());
+
+   if (realignment_thread.joinable())
+      realignment_thread.join();
+
+   realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
+
+}
+
+void AbstractFifoReader::alignFramesImpl()
+{
+   #pragma omp parallel for schedule(dynamic)
+   for (int i = 0; i < frames.size(); i++)
+   {
+      if (terminate) break;
+      realignment[i] = frame_aligner->addFrame(i, frames[i]);
+      realignment[i].done = true;
+      realign_cv.notify_one();
+   }
+}
+
+void AbstractFifoReader::getIntensityFrames()
+{
    int sb = realign_params.spatial_binning;
    int fb = realign_params.frame_binning;
 
@@ -212,7 +271,7 @@ void AbstractFifoReader::alignFrames()
          if (p.frame > 10)
             break;
 #endif
-          
+
          if (p.valid)
          {
             p.x /= sb;
@@ -227,43 +286,8 @@ void AbstractFifoReader::alignFrames()
          }
       }
    }
-
-   if (frames.size() == 0)
-      return;
-
-   double max_m = 0;
-   int max_idx = 0;
-   for (int i = 0; i < frames.size(); i++)
-   {
-      double new_v = cv::mean(frames[i])(0);
-      if (new_v > max_m)
-      {
-         max_m = new_v;
-         max_idx = i;
-      }
-   }
-
-   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
-
-   frame_aligner->setRealignmentParams(realign_params);
-   frame_aligner->setImageScanParams(image_params);
-   frame_aligner->setNumberOfFrames((int) frames.size());
-   
-   max_idx = 0;
-   frame_aligner->setReference(max_idx, frames[max_idx]);
-
-   realignment.clear();
-   realignment.resize(frames.size());
-
-   #pragma omp parallel for schedule(dynamic)
-   for (int i = 0; i < frames.size(); i++)
-   {
-      if (terminate) continue;
-      realignment[i] = frame_aligner->addFrame(i, frames[i]);
-   }
-
-   //frame_aligner->reprocess();
 }
+
 
 void AbstractFifoReader::computeIntensityNormalisation()
 {

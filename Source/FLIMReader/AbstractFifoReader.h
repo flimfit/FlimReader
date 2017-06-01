@@ -13,6 +13,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <list>
+#include <chrono>
+using namespace std::chrono_literals;
 
 
 #include "FifoProcessor.h"
@@ -118,6 +120,7 @@ class AbstractFifoReader : public FlimReader
 public:
    
    AbstractFifoReader(const std::string& filename);
+   ~AbstractFifoReader();
    
    void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
@@ -141,6 +144,9 @@ protected:
 
    void computeIntensityNormalisation();
    
+   void getIntensityFrames();
+   void alignFramesImpl();
+
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    
@@ -163,6 +169,10 @@ protected:
    Markers markers;
    
    bool terminate = false;
+
+   std::thread realignment_thread;
+   std::mutex realign_mutex;
+   std::condition_variable realign_cv;
 
 private:
    
@@ -220,8 +230,17 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-         if (frame_aligner != nullptr)
+         if (frame_aligner != nullptr && (p.frame < realignment.size()))
          {
+            // Check that we have realigned this frame
+            if (!realignment[p.frame].done)
+            {
+               std::unique_lock<std::mutex> lk(realign_mutex);
+               realign_cv.wait_for(lk, 100ms,
+                  [&] { return realignment[p.frame].done || terminate; });
+            }
+            if (terminate) break;
+
             double correlation = frame_aligner->getFrameCorrelation(p.frame);
             double coverage = frame_aligner->getFrameCoverage(p.frame);
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)

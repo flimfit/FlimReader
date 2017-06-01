@@ -33,9 +33,12 @@ class RealignmentResult
 public:
    cv::Mat frame;
    cv::Mat realigned;
+   cv::Mat realigned_preserving;
    cv::Mat mask;
    double correlation = 0;
+   double unaligned_correlation = 0;
    double coverage = 0;
+   bool done = false;
 };
 
 class ImageScanParameters
