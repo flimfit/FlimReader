@@ -161,6 +161,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
             double phase = mxGetScalar(prhs[2]);
             readers[idx]->setBidirectionalPhase(phase);
          }
+         else if (command == "GetIntensityNormalisation")
+         {
+            AssertInputCondition(nlhs >= 1);
+            cv::Mat intensity_normalisation = readers[idx]->getIntensityNormalisation();
+            //cv::Mat norm_transpose;
+            //cv::transpose(intensity_normalisation, norm_transpose);
+            auto size = intensity_normalisation.size();
+            plhs[0] = mxCreateNumericMatrix(size.height, size.width, mxUINT16_CLASS, mxREAL);
+            uchar* out = (uchar*) mxGetData(plhs[0]);
+            copy_n((uchar*)intensity_normalisation.data, size.area() * sizeof(uint16_t), out);
+         }
          else if (command == "GetMetadata")
          {
             AssertInputCondition(nlhs >= 1);
