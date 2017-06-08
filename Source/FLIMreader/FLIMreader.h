@@ -65,6 +65,8 @@ public:
 
    cv::Mat getIntensityNormalisation() { return intensity_normalisation; }
 
+   void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
+
 protected:
 
    std::vector<double> timepoints_;

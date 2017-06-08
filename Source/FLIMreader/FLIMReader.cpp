@@ -89,6 +89,7 @@ TagMap FlimReader::getReaderTags()
    reader_tags["RealignmentSmoothing"] = realign_params.smoothing;
    reader_tags["RealignmentCorrelationThreshold"] = realign_params.correlation_threshold;
    reader_tags["RealignmentCoverageThreshold"] = realign_params.correlation_threshold;
+   reader_tags["RealignmentReferenceFrameIndex"] = reference_index;
 
    return reader_tags;
 }
