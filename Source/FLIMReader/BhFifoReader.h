@@ -23,11 +23,14 @@ public:
       macro_time = evt & 0xFFF; evt >>= 12;
       channel = evt & 0xF; evt >>= 4;
       micro_time = evt & 0xFFF; evt >>= 12;
+      micro_time = 4095 - micro_time; // Reverse start-stop
 
       bool is_mark = (evt & 0x1) != 0;
       bool gap = (evt & 0x2) != 0;
       bool mtov = (evt & 0x4) != 0;
       bool invalid = (evt & 0x8) != 0;
+
+      valid = true;
 
       if (is_mark)
       {
@@ -35,18 +38,16 @@ public:
          if (mark > 1)
             mark = mark;
       }
-
-      valid = true;
       if (mtov)
       {
-         if (invalid)
+         if (invalid && !is_mark)
          {
             valid = false;
-            macro_time_offset = 0xFFF;
+            macro_time_offset = 0xFFF * (evt0 & 0xFFFFFFF);
          }
          else
          {
-            macro_time_offset = 0xFFF * (evt0 & 0xFFFFFFFF);
+            macro_time_offset = 0xFFF;
          }
       }
    }

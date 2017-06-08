@@ -18,7 +18,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
    n_chan = 1; 
 
    n_timebins_native = 4096;
-   time_resolution_native_ps = 4;
+   time_resolution_native_ps = 50e3 / n_timebins_native / 4; // TODO; try and get TAC scaling from ini file
    setTemporalResolution(log2(n_timebins_native));
 
    markers.PixelMarker = 0x1;
@@ -31,6 +31,18 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
    determineDwellTime();
 }
 
+#pragma pack(1)
+struct HandheldScannerHeader
+{
+   uint32_t magic;
+   uint32_t header_size;
+   uint32_t format_version;
+   uint32_t n_x;
+   uint32_t n_y;
+   uint32_t spc_header;
+};
+#pragma pack(pop)
+
 void BhFifoReader::readHeader()
 {
    std::string set_filename = filename;
@@ -39,7 +51,25 @@ void BhFifoReader::readHeader()
    ifstream fs(set_filename, ios::binary);
 
    if (!fs.is_open())
-      throw std::runtime_error("Could not open set file");
+   {
+      // try reading header from file as saved by handheld scanner
+      ifstream fs(filename, ios::binary);
+
+      HandheldScannerHeader hdr;
+      READ(fs, hdr);
+
+      if (hdr.magic == 0xF1F0 && hdr.header_size == 4 && hdr.format_version == 1)
+      {
+         n_x = hdr.n_x - 1;
+         n_y = hdr.n_y;
+         data_position = fs.tellg();
+         return;
+      }
+      else
+      {
+         throw std::runtime_error("Could not open set file");
+      }
+   }
 
    // Read file header
    bhfile_header hdr;
