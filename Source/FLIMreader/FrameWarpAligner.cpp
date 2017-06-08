@@ -8,7 +8,10 @@ cv::Mat downsample(const cv::Mat& im1, int factor)
    int w = im1.size().width;
    int h = im1.size().height;
 
-   cv::Mat im2(w / factor, h / factor, im1.type(), cv::Scalar(0));
+   int nh = ceil(h / (double)factor);
+   int nw = ceil(w / (double)factor);
+
+   cv::Mat im2(nh, nw, im1.type(), cv::Scalar(0));
 
    for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++)

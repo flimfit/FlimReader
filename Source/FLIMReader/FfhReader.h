@@ -92,7 +92,7 @@ protected:
             if (it != block_tags.end())
                data_length = it->second.getValue<int32_t>();
 
-            cv::Mat im(width, height, type);
+            cv::Mat im(height, width, type);
             fs.read(reinterpret_cast<char*>(im.data), data_length);
 
             images[block_description] = im;
