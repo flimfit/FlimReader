@@ -199,20 +199,6 @@ void AbstractFifoReader::alignFrames()
    if (frames.size() == 0)
       return;
 
-   /*
-   double max_m = 0;
-   int max_idx = 0;
-   for (int i = 0; i < frames.size(); i++)
-   {
-      double new_v = cv::mean(frames[i])(0);
-      if (new_v > max_m)
-      {
-         max_m = new_v;
-         max_idx = i;
-      }
-   }
-   */
- 
    ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
 
    frame_aligner->setRealignmentParams(realign_params);
@@ -222,23 +208,41 @@ void AbstractFifoReader::alignFrames()
    int max_idx = reference_index;
    frame_aligner->setReference(max_idx, frames[max_idx]);
 
-   realignment.clear();
-   realignment.resize(frames.size());
+   realignment = std::vector<RealignmentResult>(frames.size());
+   realignment_complete = false;
+
+   intensity_normalisation = cv::Mat(frames[0].size(), CV_16U, cv::Scalar(1));
+
 
    if (realignment_thread.joinable())
       realignment_thread.join();
 
    realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
-
 }
 
 void AbstractFifoReader::alignFramesImpl()
 {
-   #pragma omp parallel for schedule(dynamic)
+   #pragma omp parallel for schedule(dynamic,1)
    for (int i = 0; i < frames.size(); i++)
    {
       if (terminate) break;
       realignment[i] = frame_aligner->addFrame(i, frames[i]);
+
+      {
+         std::lock_guard<std::mutex> lk(realign_mutex);
+         realignment[i].done = true;
+
+         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
+            (realignment[i].coverage >= realign_params.coverage_threshold))
+               intensity_normalisation += realignment[i].mask;
+      }
+
+      std::cout << "*";
+      realign_cv.notify_all();
+   }
+
+   realignment_complete = true;
+   realign_cv.notify_all();
       realignment[i].done = true;
       realign_cv.notify_one();
    }
@@ -294,12 +298,13 @@ void AbstractFifoReader::computeIntensityNormalisation()
    if (!realignment.empty())
    {
       // Get intensity
-      cv::Mat intensity(realignment[0].frame.size(), CV_16U, cv::Scalar(0));
+      cv::Mat intensity(realignment[0].frame.size(), CV_16U, cv::Scalar(1));
       for (int i = 0; i < realignment.size(); i++)
       {
-         if (realignment[i].correlation >= realign_params.coverage_threshold &&
-            realignment[i].coverage >= realign_params.coverage_threshold &&
-            !realignment[i].mask.empty())
+         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
+             (realignment[i].coverage >= realign_params.coverage_threshold) &&
+              realignment[i].done &&
+             (!realignment[i].mask.empty()))
             intensity += realignment[i].mask;
       }
       intensity_normalisation = intensity;

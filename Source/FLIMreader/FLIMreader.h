@@ -86,6 +86,7 @@ protected:
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
    std::vector<cv::Mat> frames;
    std::vector<RealignmentResult> realignment;
+   int reference_index = 0;
 
    cv::Mat intensity_normalisation;
 };

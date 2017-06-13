@@ -173,6 +173,7 @@ protected:
    std::thread realignment_thread;
    std::mutex realign_mutex;
    std::condition_variable realign_cv;
+   bool realignment_complete;
 
 private:
    
@@ -189,10 +190,11 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 {
    terminate = false;
 
+   if (realignment_complete) // we are reprocessing
+      computeIntensityNormalisation();
+
    assert(event_reader != nullptr);
    event_reader->setToStart();
-
-   computeIntensityNormalisation();
 
    auto channels = validateChannels(channels_, n_chan_stride);
 
@@ -222,7 +224,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    {
       TcspcEvent e = event_reader->getEvent();
       Photon p = processor.addEvent(e);
-   
+      int frame = p.frame;
+
       if (p.valid && p.channel < n_chan)
       {
          int mapped_channel = channel_map[p.channel];
@@ -230,23 +233,27 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-         if (frame_aligner != nullptr && (p.frame < realignment.size()))
+         if (frame_aligner != nullptr && (frame < realignment.size()))
          {
-            // Check that we have realigned this frame
-            if (!realignment[p.frame].done)
+            // Check that we have realigned this frame            
+            if (!(realignment[frame].done))
             {
                std::unique_lock<std::mutex> lk(realign_mutex);
-               realign_cv.wait_for(lk, 100ms,
-                  [&] { return realignment[p.frame].done || terminate; });
+               realign_cv.wait(lk, [this,frame] {
+                  return ((realignment[frame].done) || terminate);
+               });
+               lk.unlock();
             }
-            if (terminate) break;
 
-            double correlation = frame_aligner->getFrameCorrelation(p.frame);
-            double coverage = frame_aligner->getFrameCoverage(p.frame);
+            if (terminate) break;
+           
+
+            double correlation = frame_aligner->getFrameCorrelation(frame);
+            double coverage = frame_aligner->getFrameCoverage(frame);
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
 
-            frame_aligner->shiftPixel(p.frame, p.x, p.y);
+            frame_aligner->shiftPixel(frame, p.x, p.y);
          }
 
          p.x /= spatial_binning;

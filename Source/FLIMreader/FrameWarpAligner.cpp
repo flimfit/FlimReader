@@ -361,7 +361,7 @@ double FrameWarpAligner::computeErrorImage(cv::Mat& wimg, cv::Mat& error_img)
 
 void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
 {
-   if (!realign_params.use_realignment() || Dstore.count(frame_t) == 0)
+   if (!realign_params.use_realignment())
       return;
 
    auto& D = Dstore[frame_t];
