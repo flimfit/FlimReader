@@ -23,6 +23,8 @@ class FrameWarpAligner : public AbstractFrameAligner
 public:
 
    FrameWarpAligner(RealignmentParameters params);
+   
+   ~FrameWarpAligner() {}
 
    bool empty() { return false; };
    void clear() { Dstore.clear(); };

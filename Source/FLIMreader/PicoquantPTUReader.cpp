@@ -105,8 +105,8 @@ void PicoquantPTUReader::readHeader()
                n_x = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, ImgHdr_PixY) == 0)
             {
-               n_y = tag_head.TagValue;
-               sync.n_line = (int) n_y;
+               n_y = (int) tag_head.TagValue;
+               sync.n_line = n_y;
             }
             break;
             

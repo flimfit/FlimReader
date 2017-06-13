@@ -19,7 +19,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
 
    n_timebins_native = 4096;
    time_resolution_native_ps = 50e3 / n_timebins_native / 4; // TODO; try and get TAC scaling from ini file
-   setTemporalResolution(log2(n_timebins_native));
+   setTemporalResolution((int) log2(n_timebins_native));
 
    markers.PixelMarker = 0x1;
    markers.LineStartMarker = 0x2;
@@ -31,6 +31,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
    determineDwellTime();
 }
 
+#pragma pack(push)
 #pragma pack(1)
 struct HandheldScannerHeader
 {

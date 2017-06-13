@@ -82,7 +82,7 @@ void AbstractFifoReader::determineDwellTime()
          if (n_frame == 0)
             frame_start = macro_time;
          else
-            sync.counts_interframe = macro_time - frame_start;
+            sync.counts_interframe = (double) (macro_time - frame_start);
          n_frame++; // count full frames (i.e. ignore first start, if it's there)
 
       }
@@ -127,7 +127,7 @@ void AbstractFifoReader::determineDwellTime()
    if (line_averaging > 1)
        sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
 
-   if (n_line == 0)
+   if (n_line == 0 || n_frame == 0)
       throw std::runtime_error("Error interpreting sync markers");
 
    if (n_y == 0)
@@ -279,7 +279,7 @@ void AbstractFifoReader::getIntensityFrames()
             p.frame /= fb;
 
             while (p.frame >= frames.size())
-               frames.push_back(cv::Mat(n_x_binned, n_y_binned, CV_32F, cv::Scalar(0)));
+               frames.push_back(cv::Mat(n_y_binned, n_x_binned, CV_32F, cv::Scalar(0)));
 
             if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
                frames[p.frame].at<float>((int)p.y, (int)p.x)++;

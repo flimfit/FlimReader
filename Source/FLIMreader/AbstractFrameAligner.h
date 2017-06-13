@@ -71,6 +71,8 @@ class AbstractFrameAligner
 {
 public:
 
+   virtual ~AbstractFrameAligner() {};
+
    static std::unique_ptr<AbstractFrameAligner> createFrameAligner(RealignmentParameters params);
 
    virtual bool empty() = 0;

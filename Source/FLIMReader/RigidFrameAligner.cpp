@@ -66,8 +66,8 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
    cv::Mat m(2, 3, CV_32F, cv::Scalar(0));
    m.at<float>(0, 0) = 1;
    m.at<float>(1, 1) = 1;
-   m.at<float>(0, 2) = -p.x;
-   m.at<float>(1, 2) = -p.y;
+   m.at<float>(0, 2) = (float) -p.x;
+   m.at<float>(1, 2) = (float) -p.y;
 
    cv::Mat shifted;
    frame.copyTo(shifted);
