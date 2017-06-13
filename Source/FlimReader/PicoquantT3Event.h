@@ -76,8 +76,6 @@ public:
          }
 
       }
-
-      channel;
    }
 };
 

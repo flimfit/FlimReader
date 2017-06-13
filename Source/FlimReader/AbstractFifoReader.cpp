@@ -225,7 +225,7 @@ void AbstractFifoReader::alignFramesImpl()
    #pragma omp parallel for schedule(dynamic,1)
    for (int i = 0; i < frames.size(); i++)
    {
-      if (terminate) break;
+      if (terminate) continue; // can't break in a omp loop
       realignment[i] = frame_aligner->addFrame(i, frames[i]);
 
       {
@@ -243,9 +243,6 @@ void AbstractFifoReader::alignFramesImpl()
 
    realignment_complete = true;
    realign_cv.notify_all();
-      realignment[i].done = true;
-      realign_cv.notify_one();
-   }
 }
 
 void AbstractFifoReader::getIntensityFrames()
