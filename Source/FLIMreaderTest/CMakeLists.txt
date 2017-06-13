@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.3)
 
 PROJECT(FlimReaderTest)
 
-find_package(Boost CONFIG REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
 find_package(dlib REQUIRED)

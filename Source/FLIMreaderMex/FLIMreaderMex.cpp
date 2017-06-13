@@ -177,7 +177,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
             AssertInputCondition(nlhs >= 1);
             auto tags = readers[idx]->getTags();
 
-            int n_tags = tags.size();
+            size_t n_tags = tags.size();
             std::vector<const char*> names;
             names.reserve(n_tags);
             for (auto p : tags)

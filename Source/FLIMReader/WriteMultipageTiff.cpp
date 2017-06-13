@@ -16,15 +16,15 @@ void writeMultipageTiff(const std::string& filename, const std::vector<cv::Mat>&
    if (!out)
       throw std::runtime_error("Could not open file");
 
-   const int npages = planes.size();
-   int page;
+   const size_t npages = planes.size();
+   size_t page;
    for (page = 0; page < npages; page++) {
 
       auto& plane = planes[page];
 
       uint32_t imagelength = plane.size().height;
       uint32_t imagewidth = plane.size().width;
-      uint32_t bytespersample = plane.elemSize1();
+      uint32_t bytespersample = (int) plane.elemSize1();
       uint32_t nsamples = plane.channels();
       uint16_t config = PLANARCONFIG_CONTIG;
       int type = plane.type() & 0x7; // pull out channel format
