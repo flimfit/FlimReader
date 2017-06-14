@@ -183,6 +183,8 @@ private:
             length = (uint32_t)value.string_data.size();
             data = value.string_data.c_str();
             break;
+         default:
+            return of.tellp(); // unrecognised/invalid tag
          }
       }
 

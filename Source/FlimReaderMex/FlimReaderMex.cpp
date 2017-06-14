@@ -207,6 +207,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
                   case MetaDataTag::TagDate:
                      v = mxCreateString(p.second.getString().c_str());
                      break;
+                  default:
+                     return;
                   }
                }
                mxSetFieldByNumber(plhs[0], 0, i++, v);

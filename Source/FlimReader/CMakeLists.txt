@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-
-PROJECT(FlimReader)
-
+project(FlimReader)
 
 if(MSVC)
   set( Boost_USE_STATIC_LIBS ON )
@@ -13,18 +11,12 @@ find_package(OpenCV REQUIRED core imgproc highgui)
 find_package(OpenMP REQUIRED)
 find_package(dlib CONFIG REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${dlib_INCLUDE_DIRS})
-
-# Enable OpenMP support, disable for XCode
-#===================================================
-if (OPENMP_FOUND)
-   option(USE_OMP "Use OpenMP" ON)
-   if (USE_OMP)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DUSE_OMP")
-      message("Using OpenMP")
-   endif()
+if(APPLE)
+    set(EXTRA_LIBRARIES "-framework Accelerate") # for dlib
 endif()
 
+include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${dlib_INCLUDE_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 set(SOURCE
    FlimReader.cpp
@@ -66,6 +58,6 @@ set(HEADERS
 )
 
 set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} PARENT_SCOPE)
-set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${dlib_LIBRARIES} PARENT_SCOPE)
+set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${dlib_LIBRARIES} ${EXTRA_LIBRARIES} PARENT_SCOPE)
 add_library(FlimReader OBJECT ${SOURCE} ${HEADERS})
 
