@@ -189,7 +189,10 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
 void AbstractFifoReader::alignFrames()
 {
    if (!realign_params.use_realignment())
+   {
+      frame_aligner = nullptr;
       return;
+   }
 
    if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
       frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
