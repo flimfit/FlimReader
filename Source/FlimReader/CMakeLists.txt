@@ -7,7 +7,7 @@ if(MSVC)
 endif()
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
-find_package(OpenCV REQUIRED core imgproc highgui)
+find_package(OpenCV 3.1 REQUIRED core imgproc highgui )
 find_package(OpenMP REQUIRED)
 find_package(dlib CONFIG REQUIRED)
 
