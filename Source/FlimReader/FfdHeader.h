@@ -66,15 +66,18 @@ public:
 
       do
       {
-         READ(fs, tag_name_length);
+         READ(fs, tag_name_length);       
+        if (tag_name_length > 255)
+            throw(std::runtime_error("Unexpectedly large metadata tag name found, file is potentially corrupt."));
 
-         tag_name_length = std::min(tag_name_length, (uint32_t)255);
+         std::fill_n(tag_name, 255, 0);
          fs.read(tag_name, tag_name_length);
 
          READ(fs, tag_type);
          READ(fs, tag_data_length);
 
          MetaDataTag tag;
+
          tag.is_vector = (tag_type & 0x80) != 0;
          tag.type = (MetaDataTag::TagType) (tag_type & 0x7F);
 

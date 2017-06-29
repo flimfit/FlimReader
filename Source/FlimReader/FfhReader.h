@@ -40,22 +40,32 @@ protected:
       it = tags.find("NumX");
       if (it != tags.end())
          n_x = (int) it->second.getValue<int64_t>();
+      else
+         throw(std::runtime_error("NumX was not specified in data"));
 
       it = tags.find("NumY");
       if (it != tags.end())
          n_y = (int) it->second.getValue<int64_t>();
-
+      else
+         throw(std::runtime_error("NumY was not specified in data"));
+      
       it = tags.find("NumChannels");
       if (it != tags.end())
          n_chan = (int)it->second.getValue<int64_t>();
-
+      else
+         throw(std::runtime_error("NumChannels was not specified in data"));
+      
       it = tags.find("TimeBins");
       if (it != tags.end() && it->second.is_vector)
          timepoints_ = it->second.getVector<double>();
+      else
+         throw(std::runtime_error("TimeBins was not specified in data"));
 
       it = tags.find("DataType");
       if (it != tags.end())
          data_type = it->second.getString();
+      else
+         throw(std::runtime_error("DataType was not specified in data"));
 
       it = tags.find("NextBlock");
       if (it != tags.end())
