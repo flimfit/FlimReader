@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#define BHLONG int
+
 /* This file contains defines and structure definitions which can be useful
         in case of writing a program to analyze .set, .sdt and .spc files
         created using BH software
@@ -28,7 +30,7 @@ The data files ( extension .sdt ) consist of:
   4 - one or more measurement description blocks which contain 
        the system parameters corresponding to the particular data blocks
   5 - data blocks containing a set curve from one measurement each, 
-       along with information to which measurement description block 
+       aBHLONG with information to which measurement description block 
        they correspond
 
 */
@@ -48,7 +50,7 @@ The data files ( extension .sdt ) consist of:
 #define SOFTWARE_REV  15   // current software revision
 
  //  1 - File header
-typedef struct  {
+typedef struct  __attribute__((packed)) {
    short    revision;  // software revision & module identification
                        //   lowest bits 0-3 -   software revision ( >= 12(decimal))
                        //        current value = 15 - support for huge data blocks >128MB <= 2GB
@@ -59,29 +61,29 @@ typedef struct  {
                        //        0x26 -SPC-140, 0x27 - SPC-930, 0x28 - SPC-150,
                        //        0x29 -DPC-230, 0x2a - SPC-130EM
                        //   highest bits 15-12 - module subtype - not used yet
-   long     info_offs; // offset of the info part which contains general text 
+   BHLONG     info_offs; // offset of the info part which contains general text 
                        //   information (Title, date, time, contents etc.)
    short    info_length;  // length of the info part
-   long     setup_offs;   // offset of the setup text data 
+   BHLONG     setup_offs;   // offset of the setup text data 
                // (system parameters, display parameters, trace parameters etc.)
    short    setup_length;  // length of the setup data
-   long     data_block_offs;   // offset of the first data block 
+   BHLONG     data_block_offs;   // offset of the first data block 
    short    no_of_data_blocks; // no_of_data_blocks valid only when in 0 .. 0x7ffe range,
                                // if equal to 0x7fff  the  field 'reserved1' contains 
                                //     valid no_of_data_blocks
-   unsigned long     data_block_length;     // length of the longest block in the file  
+   unsigned BHLONG     data_block_length;     // length of the BHLONGest block in the file  
                                             //        ( not compressed ) in bytes
-   long     meas_desc_block_offs;  // offset to 1st. measurement description block 
+   BHLONG     meas_desc_block_offs;  // offset to 1st. measurement description block 
                                    //   (system parameters connected to data blocks)
    short    no_of_meas_desc_blocks;  // number of measurement description blocks
    short    meas_desc_block_length;  // length of the measurement description blocks
    unsigned short    header_valid;   // valid: 0x5555, not valid: 0x1111
-   unsigned long     reserved1;      // reserved1 now contains no_of_data_blocks
+   unsigned BHLONG     reserved1;      // reserved1 now contains no_of_data_blocks
      // reserved2 now contains length (in int words) of data block extension, normally 0,
      //   data block extension contains info data for histograms data blocks
    unsigned short    reserved2;
    unsigned short    chksum;            // checksum of file header
-   }bhfile_header;
+   } bhfile_header;
 
 
 /*
@@ -193,9 +195,9 @@ In order to reach binary part of the setup user should read the whole setup part
 
 
 typedef struct {
-   unsigned long     soft_rev;       // software revision
-   unsigned long     para_length;    // currently set to 0 
-   unsigned long     reserved1;
+   unsigned BHLONG     soft_rev;       // software revision
+   unsigned BHLONG     para_length;    // currently set to 0 
+   unsigned BHLONG     reserved1;
    unsigned short    reserved2;
    }BHBinHdr;
 
@@ -205,54 +207,54 @@ typedef struct {
 // all parts lengths are given in bytes
 
 typedef struct {
-  unsigned long     FCS_old_offs;    // offset of FCSParam structure for FCS parameters
-  unsigned long     FCS_old_size;    //  FCSParam structure size
+  unsigned BHLONG     FCS_old_offs;    // offset of FCSParam structure for FCS parameters
+  unsigned BHLONG     FCS_old_size;    //  FCSParam structure size
                     //  FCSParam is obsolete - needed only for compatibility
                     //  with software v. 8.1 - 8.2
                     //  from v.8.3 FCS parameters are included further in HSTParam 
-  unsigned long     gr1_offs;        // offset of GR_Param structure for main graph window
-  unsigned long     gr1_size;        //  GR_Param structure size                       
-  unsigned long     FCS_offs;        // offset of HSTParam structure for FCS parameters
-  unsigned long     FCS_size;        //  HSTParam structure size
-  unsigned long     FIDA_offs;       // offset of HSTParam structure for FIDA window parameters
-  unsigned long     FIDA_size;       //  HSTParam structure size 
-  unsigned long     FILDA_offs;      // offset of HSTParam structure for FILDA window parameters
-  unsigned long     FILDA_size;      //  HSTParam structure size
-  unsigned long     gr2_offs;        // offset of GR_Param structure for the 1st additional graph
+  unsigned BHLONG     gr1_offs;        // offset of GR_Param structure for main graph window
+  unsigned BHLONG     gr1_size;        //  GR_Param structure size                       
+  unsigned BHLONG     FCS_offs;        // offset of HSTParam structure for FCS parameters
+  unsigned BHLONG     FCS_size;        //  HSTParam structure size
+  unsigned BHLONG     FIDA_offs;       // offset of HSTParam structure for FIDA window parameters
+  unsigned BHLONG     FIDA_size;       //  HSTParam structure size 
+  unsigned BHLONG     FILDA_offs;      // offset of HSTParam structure for FILDA window parameters
+  unsigned BHLONG     FILDA_size;      //  HSTParam structure size
+  unsigned BHLONG     gr2_offs;        // offset of GR_Param structure for the 1st additional graph
   unsigned short    gr_no;           // number of additional GR_Param structures, ( size = gr1_size )
   unsigned short    hst_no;          // number of additional HSTParam structures, ( size = FCS_size )
-  unsigned long     hst_offs;        // offset of the 1st additional HSTParam structure
-  unsigned long     GVD_offs;        // offset of GVDParam structure for GVD parameters
+  unsigned BHLONG     hst_offs;        // offset of the 1st additional HSTParam structure
+  unsigned BHLONG     GVD_offs;        // offset of GVDParam structure for GVD parameters
   unsigned short    GVD_size;        //  GVDParam structure size
   unsigned short    FIT_offs;        // offset of FITSetup structure for FIT parameters
   unsigned short    FIT_size;        //  FITSetup structure size
   unsigned short    extdev_offs;     // offset of external devices setup structures
   unsigned short    extdev_size;     //  size of external devices setup structures
-  unsigned long     binhdrext_offs;  // offset SPCBinHdrExt - extension of SPCBinHdr
+  unsigned BHLONG     binhdrext_offs;  // offset SPCBinHdrExt - extension of SPCBinHdr
   unsigned short    binhdrext_size;
   }SPCBinHdr;
 
 typedef struct {     // extension of SPCBinHdr
-  unsigned long   MCS_img_offs;     // offset of MIMGParam structure for MCS Image parameters
-  unsigned long   MCS_img_size;     //  MIMGParam structure size
+  unsigned BHLONG   MCS_img_offs;     // offset of MIMGParam structure for MCS Image parameters
+  unsigned BHLONG   MCS_img_size;     //  MIMGParam structure size
   unsigned short  mom_no;           // number of MOMParam structures
   unsigned short  MOM_size;         //  MOMParam structure size
-  unsigned long   mom_offs;         // offset of the 1st MOMParam structure
-  unsigned long   syspar_ext_offs;  // offset of SysParExt structure for extension of system parameters
-  unsigned long   syspar_ext_size;  //  SysParExt structure size
-  unsigned long   mosaic_offs;      // offset of MosaicParam structure for extension of system parameters
-  unsigned long   mosaic_size;      //  MosaicParam structure size
-  unsigned long   WF_img_offs;      // offset of WFParam structure for Wide-field Image parameters
+  unsigned BHLONG   mom_offs;         // offset of the 1st MOMParam structure
+  unsigned BHLONG   syspar_ext_offs;  // offset of SysParExt structure for extension of system parameters
+  unsigned BHLONG   syspar_ext_size;  //  SysParExt structure size
+  unsigned BHLONG   mosaic_offs;      // offset of MosaicParam structure for extension of system parameters
+  unsigned BHLONG   mosaic_size;      //  MosaicParam structure size
+  unsigned BHLONG   WF_img_offs;      // offset of WFParam structure for Wide-field Image parameters
   unsigned short  WF_img_size;      //  WFParam structure size
-  unsigned long   WndLayout_offs;   // offset of WndLayout structure for Windows Layout parameters
+  unsigned BHLONG   WndLayout_offs;   // offset of WndLayout structure for Windows Layout parameters
   unsigned short  WndLayout_size;   //  WndLayout structure size
-  unsigned long   trpar_ext_offs;   // offset of TrParExt structure for extension of 3D Traces parameters
+  unsigned BHLONG   trpar_ext_offs;   // offset of TrParExt structure for extension of 3D Traces parameters
   unsigned short  trpar_ext_size;   //  TrParExt structure size
-  unsigned long   CorPar_offs;      // offset of 1st CorPar structure for multichannel detector correction
+  unsigned BHLONG   CorPar_offs;      // offset of 1st CorPar structure for multichannel detector correction
   unsigned short  CorPar_size;      //  CorPar structure size
   unsigned short  CorPar_number;    //  number of CorPar structures - max 4 ( 1 per SPC module)
                                     //      bit 8 = 1 - Detector Correction Enabled
-  unsigned long   LifeTrPar_offs;   // offset of 1st LifeTrPar structure for 3D Lifetime traces
+  unsigned BHLONG   LifeTrPar_offs;   // offset of 1st LifeTrPar structure for 3D Lifetime traces
   unsigned short  LifeTrPar_size;      //  LifeTrPar structure size
   unsigned short  LifeTrPar_number;    //  number of LifeTrPar structures - max 8 ( 1 per 3D trace)
   unsigned char   extension[176];   //  for future use, keep the size of SPCBinHdrExt = 240B
@@ -291,8 +293,8 @@ typedef union
   int             b;
   short           h;
   unsigned short  g;
-  long            l;
-  unsigned long   m;
+  BHLONG            l;
+  unsigned BHLONG   m;
   float           f;
   double          d;
   char            c;
@@ -522,8 +524,8 @@ typedef struct{        // structure for Z scan  Axio microscopes
   double             max_pos;
   double             curr_pos;
   BHPanelAttr        pnl_attr; 
-  unsigned long      no_of_Zplanes;
-  long               lreserve2;
+  unsigned BHLONG      no_of_Zplanes;
+  BHLONG               lreserve2;
   double             dreserve;
   }AxioParam;
 
@@ -665,7 +667,7 @@ typedef struct{        // structure for Ti:Sa Laser & AOM device
   unsigned char      AOM_status;       //  AOM status :bit 0 - used or not, b1 - present,
                                        //              b2 - modulation, b3 - remote, b4 - error
   unsigned char      AOM_power;        //  AOM power in %  0 - 100 
-  unsigned long      AOM_freq;         //  AOM frequency in Hz
+  unsigned BHLONG      AOM_freq;         //  AOM frequency in Hz
   char               AOM_ser_no[8];    // AOM serial number
   unsigned char      laser_type;       //  b0-3 - laser type 0-15, 0 - unknown
   unsigned short     laser_status;     //  laser status :bit 0 - used or not, b1 - present,
@@ -850,14 +852,14 @@ typedef struct{         // structure for parameters of 3D Lifetime traces
                         //    either calculated from ref_fpath file,
                         //            or typed in manually
   char   ref_fpath[260];    // file path of reference data file ( to calculate Ref. Lifetime)
-  U_LONG min_ph_no;            //
-  U_LONG max_ph_no;            //  when binning used - binned value 
+  U_BHLONG min_ph_no;            //
+  U_BHLONG max_ph_no;            //  when binning used - binned value 
   char   no_intens_overlay;    // = 1 do not use intensity overlay
   char   brightness;           //  0 .. 100 %
   char   contrast;             //  0 .. 100 %
   char   binning;              // use binning or not
-  U_LONG min_ph_no_bin;        //
-  U_LONG max_ph_no_bin;        //  when binning used - not binned value
+  U_BHLONG min_ph_no_bin;        //
+  U_BHLONG max_ph_no_bin;        //  when binning used - not binned value
   char   reserve[198];      // keep fixed size of the structure = 512B
   }LifeTrPar;
   */
@@ -931,12 +933,12 @@ typedef struct _Trace3d {
   unsigned char     twin;    /*  time interval no: bits 0-3 for type 0, bits 7-4 for type 1 */
   char   chan_mosaic;        /*  mosaic in use & sequence of routing channels different way of display */
   char   reserve[3];         /* for future use   */
-  long     low_offset;       /*  DI_BLINE */
-  long     max_count;        /*  DI_MAXCNT */
+  BHLONG     low_offset;       /*  DI_BLINE */
+  BHLONG     max_count;        /*  DI_MAXCNT */
   BHInterval * swin;           /*  pointer to ScanX(Y) window interval -  depending on
                                  display mode = DI_XWIN,DI_YWIN,DI_TWIN */
   BHInterval * swin_y;         /*  pointer to ScanY window interval  */
-  long no_of_blocks;         /*  for get3Dcurve */
+  BHLONG no_of_blocks;         /*  for get3Dcurve */
   } Trace3d;
 
 
@@ -1240,25 +1242,25 @@ typedef struct {
    short          block_no;   // number of the block in the file
                          // valid only  when in 0 .. 0x7ffe range, otherwise use lblock_no field
                          // obsolete now, lblock_no contains full block no information                         
-   long           data_offs;       // offset of the data block
-   long           next_block_offs; // offset to the data block header of the next data block
+   BHLONG           data_offs;       // offset of the data block
+   BHLONG           next_block_offs; // offset to the data block header of the next data block
    unsigned short block_type;      // see block_type defines below
    short          meas_desc_block_no; // Number of the measurement description block 
                                       //    corresponding to this data block
-   unsigned long  lblock_no;       // long block_no - see remarks below 
-   unsigned long  block_length;    // block( set ) length ( not compressed ) in bytes
+   unsigned BHLONG  lblock_no;       // BHLONG block_no - see remarks below 
+   unsigned BHLONG  block_length;    // block( set ) length ( not compressed ) in bytes
    }BHFileBlockHeaderOld;
 
 // The data block header structure for bhfile_header.revision = 15 - current state 
 typedef struct _bhfile_block_header {
    unsigned char  data_offs_ext;        // extension of data_offs field - address bits 32-39
    unsigned char  next_block_offs_ext;  // extension of next_block_offs field - address bits 32-39
-   unsigned long  data_offs;       // offset of the block's data, bits 0-31  
-   unsigned long  next_block_offs; // offset to the data block header of the next data block, bits 0-31 
+   unsigned BHLONG  data_offs;       // offset of the block's data, bits 0-31  
+   unsigned BHLONG  next_block_offs; // offset to the data block header of the next data block, bits 0-31 
    unsigned short block_type;      // see block_type defines above
    short          meas_desc_block_no;
-   unsigned long  lblock_no;       // long block_no - see remarks below
-   unsigned long  block_length;    // block( set ) length ( not compressed ) in bytes up to 2GB
+   unsigned BHLONG  lblock_no;       // BHLONG block_no - see remarks below
+   unsigned BHLONG  block_length;    // block( set ) length ( not compressed ) in bytes up to 2GB
    }BHFileBlockHeader;
 
 
@@ -1328,7 +1330,7 @@ typedef struct _bhfile_block_header {
 
 #define DATA_USHORT           0x0     // 16-bit unsigned short
                                       //   (it was the only type up to 20.08.04)
-#define DATA_ULONG            0x100   // 32-bit unsigned long, for FIFO decay curves                                 
+#define DATA_UBHLONG            0x100   // 32-bit unsigned BHLONG, for FIFO decay curves                                 
 #define DATA_DBL              0x200   // 64-bit double, for histogram data blocks 
 
 // bit 12 = 1 -   block contains compressed data      
@@ -1384,7 +1386,7 @@ The number of curves in the block is equal to
  Depending on bits 4 - 7  in block_type data block of type FIFO_DATA ( FIFO_DATA_FROM_FILE ) 
  can contain one decay curve or FCS, FIDA, FILDA histograms data. 
  For IMG_BLOCK it contains set of decay curves representing the image. 
- Decay curve contains adc_re points which are unsigned long integers ( 32-bit ).
+ Decay curve contains adc_re points which are unsigned BHLONG integers ( 32-bit ).
  
  FCS histogram data contain results of FCS (auto or cross ) calculation for photons 
     collected in one routing channel.
@@ -1413,7 +1415,7 @@ The number of curves in the block is equal to
     collected in one routing channel.
     Number of MCS curve points is defined in coresponding measurement description 
     block in the field HISTInfo.mcs_points. 
-    Each MCS data point is a 4 byte unsigned long integer value.
+    Each MCS data point is a 4 byte unsigned BHLONG integer value.
 
  IMG_BLOCK data contains set of decay curves representing the image built from photons
     collected in one routing channel.
@@ -1434,7 +1436,7 @@ The number of curves in the block is equal to
     
    Number of MCS curve points is defined in coresponding measurement description 
     block in the field HISTInfo.mcsta_points. 
-   Each MCSTA data point is a 4 byte unsigned long integer value.
+   Each MCSTA data point is a 4 byte unsigned BHLONG integer value.
 
  IMG_MCS_BLOCK data contains set of microsecond decay curves representing the image built from photons
     collected in one routing channel in Fifo Image mode with activated MCS FLIM option.
