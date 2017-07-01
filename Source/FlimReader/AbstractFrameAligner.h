@@ -44,8 +44,8 @@ public:
 class ImageScanParameters
 {
 public:
-   ImageScanParameters(double line_duration = 100, double interline_duration = 101, double interframe_duration = 102, int n_x = 1, int n_y = 1, bool bidirectional = false) :
-      line_duration(line_duration), interline_duration(interline_duration), interframe_duration(interframe_duration), n_x(n_x), n_y(n_y)
+   ImageScanParameters(double line_duration = 100, double interline_duration = 101, double interframe_duration = 102, int n_x = 1, int n_y = 1, int n_z = 1, bool bidirectional = false) :
+      line_duration(line_duration), interline_duration(interline_duration), interframe_duration(interframe_duration), n_x(n_x), n_y(n_y), n_z(n_z), bidirectional(bidirectional)
    {
       n_x = std::max(n_x, 1);
       n_y = std::max(n_y, 1);
@@ -62,9 +62,11 @@ public:
    double pixel_duration;
    double frame_duration;
    double interframe_duration;
+   bool bidirectional;
+
    int n_x;
    int n_y;
-   bool bidirectional;
+   int n_z;
 };
 
 class AbstractFrameAligner
@@ -84,7 +86,7 @@ public:
    void setImageScanParams(ImageScanParameters params_) { image_params = params_; }
    virtual void setReference(int frame_t, const cv::Mat& reference_) = 0;
    virtual RealignmentResult addFrame(int frame_t, const cv::Mat& frame) = 0; // shold return aligned frame
-   virtual void shiftPixel(int frame_t, double& x, double& y) = 0;
+   virtual void shiftPixel(int frame_t, double& x, double& y, double& z) = 0;
    virtual double getFrameCorrelation(int frame_t) { return 0.; }
    virtual double getFrameCoverage(int frame_t) { return 0.; }
    virtual void setNumberOfFrames(int n_frames_) { n_frames = n_frames_; }

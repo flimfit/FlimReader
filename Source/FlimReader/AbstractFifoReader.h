@@ -175,6 +175,8 @@ protected:
    std::condition_variable realign_cv;
    bool realignment_complete;
 
+   std::vector<int> dims;
+
 private:
    
    int t_rep_resunit;
@@ -253,7 +255,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
 
-            frame_aligner->shiftPixel(frame, p.x, p.y);
+            double z = 0;
+            frame_aligner->shiftPixel(frame, p.x, p.y, z);
          }
 
          p.x /= spatial_binning;

@@ -37,7 +37,7 @@ public:
 
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame); 
-   void shiftPixel(int frame, double& x, double& y);
+   void shiftPixel(int frame, double& x, double& y, double& z);
    
    cv::Point2d getRigidShift(int frame);
 

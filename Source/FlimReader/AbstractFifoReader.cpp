@@ -202,7 +202,14 @@ void AbstractFifoReader::alignFrames()
    if (frames.size() == 0)
       return;
 
-   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
+   int n_z = 1; // TODO
+
+   if (n_z > 1)
+      dims = {n_z, n_y, n_x}; 
+   else
+      dims = {n_y, n_x};
+
+   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
@@ -214,17 +221,21 @@ void AbstractFifoReader::alignFrames()
    realignment = std::vector<RealignmentResult>(frames.size());
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(frames[0].size(), CV_16U, cv::Scalar(1));
+   intensity_normalisation = cv::Mat(dims, CV_16U, cv::Scalar(1));
 
 
    if (realignment_thread.joinable())
       realignment_thread.join();
 
-   realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
+   alignFramesImpl();
+   //realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
 }
 
 void AbstractFifoReader::alignFramesImpl()
 {
+   try {
+
+
    #pragma omp parallel for schedule(dynamic,1)
    for (int i = 0; i < frames.size(); i++)
    {
@@ -246,6 +257,12 @@ void AbstractFifoReader::alignFramesImpl()
 
    realignment_complete = true;
    realign_cv.notify_all();
+
+   }
+   catch(cv::Exception e)
+   {
+      std::cout << e.what();
+   }
 }
 
 void AbstractFifoReader::getIntensityFrames()
@@ -271,13 +288,12 @@ void AbstractFifoReader::getIntensityFrames()
          TcspcEvent e = event_reader->getEvent();
          Photon p = processor.addEvent(e);
 
-#ifdef _DEBUG
-         if (p.frame > 10)
-            break;
-#endif
-
          if (p.valid)
          {
+#ifdef _DEBUG
+//            if (p.frame > 10)
+//               break;
+#endif
             p.x /= sb;
             p.y /= sb;
             p.frame /= fb;
