@@ -122,15 +122,8 @@ void FrameWarpAligner::smoothStack(const cv::Mat& in, cv::Mat& out)
    if (realign_params.smoothing > 0.0)
    {
       out = cv::Mat(dims, CV_32F);
-      cv::Range range[] = { cv::Range::all(), cv::Range::all(), cv::Range::all() };
       for(int i=0; i<dims[Z]; i++)
-      {
-         range[0] = cv::Range(i,i+1);
-         cv::Mat in_i = in(range).reshape(0, 2, &dims[1]);
-         cv::Mat out_i = out(range).reshape(0, 2, &dims[1]);
-         
-         cv::GaussianBlur(in_i, out_i, cv::Size(0, 0), realign_params.smoothing, 1);
-      }
+         cv::GaussianBlur(extractSlice(in,i), extractSlice(out,i), cv::Size(0, 0), realign_params.smoothing, 1);
    }
    else
    {
@@ -146,7 +139,9 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
+
    dims = {image_params.n_z, n_x_binned, n_y_binned};
+   n_dim = (image_params.n_z > 1) ? 3 : 2;
 
    reference_.copyTo(reference);
    
@@ -260,14 +255,14 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
       return model(x);
    };
 
-   /*
+   
    auto d1 = derivative(f, 4)(x);
    column_vector d2 = f_der(x);
    double l = length(d1 - d2);
 
    std::cout << "Difference between analytic derivative and numerical approximation of derivative: "
       << l << std::endl;
-      */
+      
 
    try
    {
@@ -303,7 +298,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    r.mask = reshapeForOutput(mask);
    r.correlation = correlation(warped_smoothed, smoothed_reference, m);
    r.unaligned_correlation = correlation(frame, smoothed_reference, m);
-   r.coverage = ((double)cv::countNonZero(mask)) / mask.size().area();
+   r.coverage = ((double)cv::countNonZero(mask)) / (dims[X] * dims[Y] * dims[Z]);
 
    cv::Mat intensity_preserving(frame.size(), CV_16U, cv::Scalar(0));
    if (r.correlation >= realign_params.correlation_threshold && r.coverage >= realign_params.coverage_threshold)
@@ -444,6 +439,7 @@ void FrameWarpAligner::precomputeInterp()
    double pixel_duration = image_params.pixel_duration * realign_params.spatial_binning;
    double frame_duration = image_params.frame_duration;
    double interline_duration = image_params.interline_duration * realign_params.spatial_binning;
+   double stack_duration = dims[Z] * frame_duration;
 
    D_range.resize(nD);
 
@@ -461,7 +457,7 @@ void FrameWarpAligner::precomputeInterp()
          for (int x = 0; x < dims[X]; x++)
          {
             double t = z * frame_duration + y * interline_duration + x * pixel_duration;
-            double f = modf(t / frame_duration * (nD - 1), &Di_xy);
+            double f = modf(t / stack_duration * (nD - 1), &Di_xy);
             i = (int)Di_xy;
 
             int x_true = x;
@@ -504,6 +500,14 @@ void FrameWarpAligner::precomputeInterp()
    VI_dW_dp_z.resize(nD, std::vector<double>(max_VI_dW_dp, 0.0));
 }
 
+cv::Mat FrameWarpAligner::extractSlice(const cv::Mat& m, int slice)
+{
+   size_t offset = slice * (n_x_binned + n_y_binned) * m.elemSize();
+   cv::Mat out(n_x_binned, n_y_binned, m.type(), m.data + offset);
+   return out;
+}
+
+
 void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
 {
    // Evaluate gradient of reference
@@ -511,17 +515,29 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
    cv::Mat nabla_Ty(dims, CV_64F);
    cv::Mat nabla_Tz(dims, CV_64F);
 
-
    cv::Range range[] = { cv::Range::all(), cv::Range::all(), cv::Range::all() };
    for(int i=0; i<dims[Z]; i++)
    {
       range[0] = cv::Range(i,i+1);
-      cv::Mat frame_i = frame(range).reshape(0, 2, &dims[1]);
-      cv::Mat nabla_Tx_i = nabla_Tx(range).reshape(0, 2, &dims[1]);
-      cv::Mat nabla_Ty_i = nabla_Ty(range).reshape(0, 2, &dims[1]);
+      cv::Mat frame_i = extractSlice(frame, i);
+
+      cv::Mat nabla_Tx_i = extractSlice(nabla_Tx,i);
+      cv::Mat nabla_Ty_i = extractSlice(nabla_Ty,i);
+      cv::Mat nabla_Tz_i = extractSlice(nabla_Tz,i);
 
       cv::Scharr(frame_i, nabla_Tx_i, CV_64F, 1, 0, 1.0 / 32.0);
       cv::Scharr(frame_i, nabla_Ty_i, CV_64F, 0, 1, 1.0 / 32.0);
+
+      if (i<(dims[Z]-1))
+      {
+         cv::Mat frame_i1 = extractSlice(frame, i+1);
+         nabla_Tz_i = frame_i1 - frame_i;
+      }
+      else
+      {
+         cv::Mat nabla_Tz_last = extractSlice(nabla_Tz, i-1);
+         nabla_Tz_last.copyTo(nabla_Tz_i);
+      }
    }   
 
    //#pragma omp parallel for
@@ -588,32 +604,33 @@ double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 }
 
 void FrameWarpAligner::computeHessian()
-{
-//   H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
-   
-   H.set_size(2 * nD, 2 * nD);
+{   
+   H.set_size(n_dim * nD, n_dim * nD);
    std::fill(H.begin(), H.end(), 0);
 
-  // #pragma omp parallel for
-   for (int pi = 0; pi < nD * 2; pi++)
+   // Diagonal elements
+   for (int pi = 0; pi < nD * n_dim; pi++)
       H(pi, pi) += computeHessianEntry(pi, pi);
 
-   //#pragma omp parallel for
-   for (int pi = 1; pi < nD * 2; pi++)
+   // Off diagonal elements
+   for (int pi = 1; pi < nD * n_dim; pi++)
    {
       double h = computeHessianEntry(pi, pi - 1);
       H(pi, pi - 1) = h;
       H(pi - 1, pi) = h;
    }
    
-  // #pragma omp parallel for
+   // Interactions between x,y,z
    for (int i = 0; i < nD; i++)
    {
       for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
       {
-         double h = computeHessianEntry(i, j + nD);
-         H(i, j + nD) += h;
-         H(j + nD, i) += h;
+         for (int d=1; d < n_dim; d++)
+         {
+            double h = computeHessianEntry(i, j + d * nD);
+            H(i, j + d * nD) += h;
+            H(j + d * nD, i) += h;
+         }
       }
    }
    
@@ -638,7 +655,7 @@ void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& 
          jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x 
          jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
          if (n_dim == 3)
-            jac(i+2*nD) += VI_dW_dp_z[i][p] * err_ptr[p]; // y         
+            jac(i+2*nD) += VI_dW_dp_z[i][p] * err_ptr[p]; // z        
       }
    }
    for (int i = 0; i < (nD - 1); i++)
@@ -650,7 +667,7 @@ void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& 
          jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x
          jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
          if (n_dim == 3)
-            jac(i+2*nD) += VI_dW_dp_z[i][p] * err_ptr[p]; // y
+            jac(i+2*nD) += VI_dW_dp_z[i][p] * err_ptr[p]; // z
          
       }
    }

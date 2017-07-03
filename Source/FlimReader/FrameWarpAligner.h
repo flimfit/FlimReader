@@ -61,6 +61,7 @@ protected:
    void smoothStack(const cv::Mat& in, cv::Mat& out);
    cv::Mat reshapeForOutput(cv::Mat& m);
    cv::Mat reshapeForProcessing(cv::Mat& m);
+   cv::Mat extractSlice(const cv::Mat&m, int slice);
 
    template <typename T>
    bool isValidPoint(const cv::Point3_<T>& pt)

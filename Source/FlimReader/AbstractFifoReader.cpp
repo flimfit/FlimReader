@@ -197,17 +197,15 @@ void AbstractFifoReader::alignFrames()
    if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
       frame_aligner = AbstractFrameAligner::createFrameAligner(realign_params);
 
-   getIntensityFrames();
-
-   if (frames.size() == 0)
-      return;
-
-   int n_z = 1; // TODO
-
    if (n_z > 1)
       dims = {n_z, n_y, n_x}; 
    else
       dims = {n_y, n_x};
+
+   getIntensityFrames();
+
+   if (frames.size() == 0)
+      return;
 
    ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
 
@@ -237,7 +235,7 @@ void AbstractFifoReader::alignFramesImpl()
 
 
    #pragma omp parallel for schedule(dynamic,1)
-   for (int i = 0; i < frames.size(); i++)
+   for (int i = 1; i < frames.size(); i++)
    {
       if (terminate) continue; // can't break in a omp loop
       realignment[i] = frame_aligner->addFrame(i, frames[i]);
@@ -267,17 +265,14 @@ void AbstractFifoReader::alignFramesImpl()
 
 void AbstractFifoReader::getIntensityFrames()
 {
-   int sb = realign_params.spatial_binning;
    int fb = realign_params.frame_binning;
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
 
-   int n_x_binned = n_x / sb;
-   int n_y_binned = n_y / sb;
    int n_invalid = 0;
 
-   if (!frames.empty() && (frames[1].size() != cv::Size(n_x_binned, n_y_binned)))
+   if (!frames.empty() && (frames[1].size() != cv::Size(n_x, n_y)))
       frames.clear();
 
    if (frames.empty())
@@ -291,18 +286,20 @@ void AbstractFifoReader::getIntensityFrames()
          if (p.valid)
          {
 #ifdef _DEBUG
-//            if (p.frame > 10)
-//               break;
+            //if (p.frame > 10)
+            //   break;
 #endif
-            p.x /= sb;
-            p.y /= sb;
             p.frame /= fb;
 
-            while (p.frame >= frames.size())
-               frames.push_back(cv::Mat(n_y_binned, n_x_binned, CV_32F, cv::Scalar(0)));
+            int z = p.frame % n_z;
+            p.frame /= n_z;
 
-            if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
-               frames[p.frame].at<float>((int)p.y, (int)p.x)++;
+
+            while (p.frame >= frames.size())
+               frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
+
+            if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
+               frames[p.frame].at<float>((z * n_y + (int)p.y) * n_x + (int)p.x)++;
          }
       }
    }
