@@ -50,7 +50,7 @@ The data files ( extension .sdt ) consist of:
 #define SOFTWARE_REV  15   // current software revision
 
  //  1 - File header
-typedef struct  __attribute__((packed)) {
+typedef struct {
    short    revision;  // software revision & module identification
                        //   lowest bits 0-3 -   software revision ( >= 12(decimal))
                        //        current value = 15 - support for huge data blocks >128MB <= 2GB
@@ -754,9 +754,13 @@ typedef struct{        // structure for extension of system parameters
   short  adc_bits_scan;    // no of ADC bits for scan   modes
   short  adc_bits_fimg;    // no of ADC bits for FifoImage modes
   short  adc_bits_norm;    // no of ADC bits for all other modes
-  short  img_ncx, img_ncy, img_x, img_y;  // Image size params for FifoImage mode
+  short  img_ncx;
+  short  img_ncy; 
+  short  img_x;
+  short  img_y;  // Image size params for FifoImage mode
   short  fifo_ncx;
-  short  norm_ncx, norm_ncy;
+  short  norm_ncx;
+  short  norm_ncy;
   short  wf_ncx, wf_x, wf_y;  // Image size params for Wide-Field Image mode
   int    adc_wf;
   short  flags;         // bit 0 - Repeat Time = Coll. Time, bit 1 - Display Time = Coll. Time,

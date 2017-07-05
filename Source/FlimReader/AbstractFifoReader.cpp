@@ -260,7 +260,7 @@ void AbstractFifoReader::getIntensityFrames()
    int n_y_binned = n_y / sb;
    int n_invalid = 0;
 
-   if (!frames.empty() && (frames[1].size() != cv::Size(n_x_binned, n_y_binned)))
+   if (!frames.empty() && (frames[0].size() != cv::Size(n_x_binned, n_y_binned)))
       frames.clear();
 
    if (frames.empty())
