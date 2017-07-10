@@ -13,9 +13,9 @@ using namespace std;
 BhFifoReader::BhFifoReader(const std::string& filename) :
    AbstractFifoReader(filename)
 {
-   readHeader();
+   n_chan = 1;
 
-   n_chan = 1; 
+   readHeader();
 
    n_timebins_native = 4096;
    time_resolution_native_ps = 50e3 / n_timebins_native / 4; // TODO; try and get TAC scaling from ini file
@@ -103,6 +103,7 @@ void BhFifoReader::readHeader()
 
    n_x = sys_par_ext.fifo_ncx;
    n_y = sys_par_ext.fifo_ncx; // maybe?
+   n_chan = sys_par_ext.img_x;
    sync.bi_directional = false; //(sys_par_ext.scan_type == 1);
    
    data_position = 0;
