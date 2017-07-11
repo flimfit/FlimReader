@@ -16,8 +16,8 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-
 #include "FifoProcessor.h"
+#include "WriteMultipageTiff.h"
 
 class AbstractEventReader
 {
@@ -143,7 +143,10 @@ protected:
    void readSettings();
 
    void computeIntensityNormalisation();
-   
+
+   template<typename T>
+   void computeMeanArrivalImage(const T* histogram);
+
    void getIntensityFrames();
    void alignFramesImpl();
 
@@ -179,6 +182,9 @@ private:
    
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
+
+   bool save_mean_arrival_images = false;
+   std::vector<cv::Mat> ma_image;
 };
 
 
@@ -208,6 +214,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
    int n_invalid = 0;
+   int last_frame_written = 0;
 
    FifoProcessor processor(markers, sync);
 
@@ -220,6 +227,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    cv::Mat affine;
    cv::Point2d shift;
 
+   ma_image.clear();
+
    while (event_reader->hasMoreData() && !terminate)
    {
       TcspcEvent e = event_reader->getEvent();
@@ -228,6 +237,13 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
       if (p.valid && p.channel < n_chan)
       {
+         if (save_mean_arrival_images && (p.frame > last_frame_written))
+         {
+            computeMeanArrivalImage(histogram);
+            last_frame_written = p.frame;
+         }
+
+
          int mapped_channel = channel_map[p.channel];
 
          if (mapped_channel == -1)
@@ -276,4 +292,31 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             n_invalid++;
       }
    }
+
+   computeMeanArrivalImage(histogram);
+//   writeMultipageTiff("c:/users/cimlab/documents/test/ma-image.tif", ma_image);
+}
+
+template<typename T>
+void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
+{
+   cv::Mat mean_arrival_time(n_x, n_y, CV_32F, cv::Scalar(0));
+
+   int n_px = n_x * n_y;
+   const T* data_ptr = histogram;
+   for (int p = 0; p < n_px; p++)
+   {
+      uint16_t I = 0;
+      float It = 0;
+      for (int c = 0; c < n_chan; c++)
+         for (int t = 0; t < this->timepoints_.size(); t++)
+         {
+            I += *data_ptr;
+            It += (*data_ptr) * timepoints_[t];
+
+            data_ptr++;
+         }
+      mean_arrival_time.at<float>(p) = It / I;
+   }
+   ma_image.push_back(mean_arrival_time);
 }
