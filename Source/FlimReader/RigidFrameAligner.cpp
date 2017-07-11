@@ -19,6 +19,7 @@ void RigidFrameAligner::clear()
 
 void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
+   frame_transform.clear();
    frame_transform.resize(n_frames+1);
 
    reference_.copyTo(reference);

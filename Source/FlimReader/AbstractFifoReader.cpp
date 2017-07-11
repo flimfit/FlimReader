@@ -210,6 +210,7 @@ void AbstractFifoReader::alignFrames()
 
    int max_idx = reference_index;
    frame_aligner->setReference(max_idx, frames[max_idx]);
+   frame_aligner->setNumberOfFrames(frames.size());
 
    realignment = std::vector<RealignmentResult>(frames.size());
    realignment_complete = false;

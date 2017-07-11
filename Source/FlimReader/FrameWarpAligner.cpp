@@ -97,8 +97,6 @@ FrameWarpAligner::FrameWarpAligner(RealignmentParameters params)
 
 void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
-   rigid_aligner->setNumberOfFrames(n_frames);
-
    reference_.copyTo(reference);
 
    if (realign_params.smoothing > 0.0)
@@ -153,9 +151,24 @@ void col2D(const column_vector& col, std::vector<cv::Point2d> &D)
    }
 }
 
+void FrameWarpAligner::setNumberOfFrames(int n_frames_)
+{
+   n_frames = n_frames_;
+
+   Dstore.clear();
+   results.clear();
+   
+   Dstore.resize(n_frames, std::vector<cv::Point2d>(nD));
+   results.resize(n_frames);
+
+   rigid_aligner->setNumberOfFrames(n_frames);
+}
 
 RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_frame)
 {
+   if (frame_t >= Dstore.size())
+      throw std::runtime_error("Frame index not valid");
+
    cv::Mat frame;
    if (realign_params.smoothing > 0.0)
 	   cv::GaussianBlur(raw_frame, frame, cv::Size(0, 0), realign_params.smoothing, 1);
@@ -173,17 +186,17 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
 
    // last starting point
    std::vector<cv::Point2d> D(nD, cv::Point2d(0,0));
-   if (Dstore.count(frame_t) == 1)
-      interpolatePoint2d(Dstore[frame_t], D);
+   interpolatePoint2d(Dstore[frame_t], D);
    D2col(D, starting_point[1]);
 
    // rigid starting point
+   
    cv::Mat ff = downsample(frame, 4);
    rigid_aligner->addFrame(frame_t, ff);
    cv::Point2d rigid_shift = rigid_aligner->getRigidShift(frame_t);
    std::vector<cv::Point2d> D_rigid(nD, rigid_shift);
    D2col(D_rigid, starting_point[2]);
-
+   
    double best = std::numeric_limits<double>::max();
    int best_start = 0;
    for (int i = 0; i < starting_point.size(); i++)
@@ -235,7 +248,12 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    }
 
    col2D(x, D);
-   Dstore[frame_t] = D;
+
+   {
+      std::lock_guard<std::mutex> lk(store_mutex);
+      std::copy(D.begin(), D.end(), Dstore[frame_t].begin());
+   }
+
    Dlast = *(D.end() - 2);
 
    std::cout << "*";
@@ -264,8 +282,6 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    results[frame_t] = r;
 
    return r;
-
-
 }
 
 OptimisationModel::OptimisationModel(FrameWarpAligner* aligner, const cv::Mat& frame, const cv::Mat& raw_frame) :
@@ -364,8 +380,7 @@ void FrameWarpAligner::shiftPixel(int frame_t, double& x, double& y)
    if (!realign_params.use_realignment())
       return;
 
-   auto& D = Dstore[frame_t];
-   cv::Point2d loc = warpPoint(D, x, y);
+   cv::Point2d loc = warpPoint(Dstore[frame_t], x, y);
 
    x -= loc.x;
    y -= loc.y;
@@ -414,6 +429,12 @@ void FrameWarpAligner::precomputeInterp()
          double f = modf(t / frame_duration * (nD - 1), &Di_xy);
          i = (int)Di_xy;
 
+         if (i >= (nD-1))
+         {
+            i = nD - 2;
+            f = 1;
+         }
+
          int x_true = x;
          if (image_params.bidirectional && ((y % 2) == 1))
             x_true = size.width - x - 1;
@@ -459,7 +480,6 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
    cv::Scharr(frame, nabla_Tx, CV_64F, 1, 0, 1.0 / 32.0);
    cv::Scharr(frame, nabla_Ty, CV_64F, 0, 1, 1.0 / 32.0);
 
-   //#pragma omp parallel for
    for (int i = 1; i < nD; i++)
    {
       int p0 = D_range[i - 1].begin;
@@ -472,7 +492,6 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
       }
    }
    
-   //#pragma omp parallel for
    for(int i = 0; i < (nD - 1); i++)
    {
       int p0 = D_range[i].begin;
@@ -510,17 +529,13 @@ double FrameWarpAligner::computeHessianEntry(int pi, int pj)
 }
 
 void FrameWarpAligner::computeHessian()
-{
-//   H = cv::Mat(2 * nD, 2 * nD, CV_64F, cv::Scalar(0));
-   
+{   
    H.set_size(2 * nD, 2 * nD);
    std::fill(H.begin(), H.end(), 0);
 
-  // #pragma omp parallel for
    for (int pi = 0; pi < nD * 2; pi++)
       H(pi, pi) += computeHessianEntry(pi, pi);
 
-   //#pragma omp parallel for
    for (int pi = 1; pi < nD * 2; pi++)
    {
       double h = computeHessianEntry(pi, pi - 1);
@@ -528,7 +543,6 @@ void FrameWarpAligner::computeHessian()
       H(pi - 1, pi) = h;
    }
    
-  // #pragma omp parallel for
    for (int i = 0; i < nD; i++)
    {
       for (int j = std::max(0, i - 1); j < std::min(nD, i + 1); j++)
@@ -538,8 +552,6 @@ void FrameWarpAligner::computeHessian()
          H(j + nD, i) += h;
       }
    }
-   
-
 }
 
 
@@ -548,17 +560,14 @@ void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& 
    jac.set_size(nD * 2);
    std::fill(jac.begin(), jac.end(), 0);
 
-   // we are ignoring stride here, ok as set up
-   float* err_ptr = reinterpret_cast<float*>(error_img.data);
-
    for (int i = 1; i < nD; i++)
    {
       int p0 = D_range[i - 1].begin;
       int p1 = D_range[i - 1].end;
       for (int p = p0; p < p1; p++)
       {
-         jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x 
-         jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
+         jac(i) += VI_dW_dp_x[i][p] * error_img.at<float>(p); // x 
+         jac(i+nD) += VI_dW_dp_y[i][p] * error_img.at<float>(p); // y
       }
    }
    for (int i = 0; i < (nD - 1); i++)
@@ -567,8 +576,8 @@ void FrameWarpAligner::computeJacobian(const cv::Mat& error_img, column_vector& 
       int p1 = D_range[i].end;
       for (int p = p0; p < p1; p++)
       {
-         jac(i) += VI_dW_dp_x[i][p] * err_ptr[p]; // x
-         jac(i+nD) += VI_dW_dp_y[i][p] * err_ptr[p]; // y
+         jac(i) += VI_dW_dp_x[i][p] * error_img.at<float>(p); // x
+         jac(i+nD) += VI_dW_dp_y[i][p] * error_img.at<float>(p); // y
       }
    }
 }
@@ -654,12 +663,9 @@ cv::Point2d FrameWarpAligner::warpPoint(const std::vector<cv::Point2d>& D, int x
    if ((xs < 0) || (xs >= n_x_binned) || (ys < 0) || (ys >= n_y_binned))
       return cv::Point(0,0);
 
-   double* Df_d = reinterpret_cast<double*>(Df.data);
-   uint16_t* Di_d = reinterpret_cast<uint16_t*>(Di.data);
-   int loc = xs + ys * nx;
+   double f = Df.at<double>(ys, xs);
+   int i = Di.at<uint16_t>(ys, xs);
 
-   double f = Df_d[loc];
-   int i = Di_d[loc];
    cv::Point2d p = f * D[i + 1] + (1 - f) * D[i];
    p *= factor;
 

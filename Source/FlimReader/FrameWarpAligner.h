@@ -2,6 +2,7 @@
 
 #include "RigidFrameAligner.h"
 #include <functional>
+#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <dlib/optimization.h>
 
@@ -31,6 +32,7 @@ public:
 
    RealignmentType getType() { return RealignmentType::Warp; };
 
+   void setNumberOfFrames(int n_frame);
    void setReference(int frame_t, const cv::Mat& reference_);
    RealignmentResult addFrame(int frame_t, const cv::Mat& frame);
    void shiftPixel(int frame_t, double& x, double& y);
@@ -62,14 +64,16 @@ protected:
 
    cv::Point2d Dlast;
 
-   std::map<int,std::vector<cv::Point2d>> Dstore;
-   std::map<int,RealignmentResult> results;
+   std::vector<std::vector<cv::Point2d>> Dstore;
+   std::vector<RealignmentResult> results;
 
    int nD = 10;
    int nx;
 
    int n_x_binned;
    int n_y_binned;
+
+   std::mutex store_mutex;
 
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
 

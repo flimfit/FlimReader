@@ -235,7 +235,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
          if (frame_aligner != nullptr && (frame < realignment.size()))
          {
-            // Check that we have realigned this frame            
+            // Check that we have realigned this frame
             if (!(realignment[frame].done))
             {
                std::unique_lock<std::mutex> lk(realign_mutex);
