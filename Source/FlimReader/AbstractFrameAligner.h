@@ -12,6 +12,8 @@ enum class RealignmentType
 
 std::string realignmentTypeString(RealignmentType t);
 
+cv::Mat downsample(const cv::Mat& im1, int factor);
+
 class RealignmentParameters
 {
 public:

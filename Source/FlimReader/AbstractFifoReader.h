@@ -126,7 +126,11 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
-   void stopReading() { terminate = true; }
+   void stopReading() 
+   { 
+      terminate = true; 
+      realign_cv.notify_all();
+   }
 
    bool supportsRealignment() { return true; }
    bool isBidirectional() { return sync.bi_directional; }
@@ -183,7 +187,7 @@ private:
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
-   bool save_mean_arrival_images = false;
+   bool save_mean_arrival_images = true;
    std::vector<cv::Mat> ma_image;
 };
 
@@ -237,7 +241,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
       if (p.valid && p.channel < n_chan)
       {
-         if (save_mean_arrival_images && (p.frame > last_frame_written))
+         if (p.frame > last_frame_written)
          {
             computeMeanArrivalImage(histogram);
             last_frame_written = p.frame;
@@ -293,22 +297,28 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       }
    }
 
-   computeMeanArrivalImage(histogram);
-//   writeMultipageTiff("c:/users/cimlab/documents/test/ma-image.tif", ma_image);
+   if (save_mean_arrival_images)
+   {
+      computeMeanArrivalImage(histogram);
+      writeMultipageTiff("c:/users/cimlab/documents/test/ma-image.tif", ma_image);
+   }
 }
 
 template<typename T>
 void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
 {
+   if (!save_mean_arrival_images)
+      return;
+
    cv::Mat mean_arrival_time(n_x, n_y, CV_32F, cv::Scalar(0));
 
    int n_px = n_x * n_y;
-   const T* data_ptr = histogram;
    for (int p = 0; p < n_px; p++)
    {
+      const T* data_ptr = histogram + p * (timepoints_.size() * n_chan);
       uint16_t I = 0;
       float It = 0;
-      for (int c = 0; c < n_chan; c++)
+      for (int c = 0; c < 1; c++)
          for (int t = 0; t < this->timepoints_.size(); t++)
          {
             I += *data_ptr;

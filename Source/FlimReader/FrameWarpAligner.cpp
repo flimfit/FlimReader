@@ -3,23 +3,6 @@
 #include "LinearInterpolation.h"
 #include <fstream>
 
-cv::Mat downsample(const cv::Mat& im1, int factor)
-{
-   int w = im1.size().width;
-   int h = im1.size().height;
-
-   int nh = ceil(h / (double)factor);
-   int nw = ceil(w / (double)factor);
-
-   cv::Mat im2(nh, nw, im1.type(), cv::Scalar(0));
-
-   for (int y = 0; y < h; y++)
-      for (int x = 0; x < w; x++)
-         im2.at<float>(y / factor, x / factor) += im1.at<float>(y, x);
-
-   return im2;
-}
-
 double correlation(cv::Mat &image_1, cv::Mat &image_2, cv::Mat &mask)
 {
 
@@ -104,8 +87,7 @@ void FrameWarpAligner::setReference(int frame_t, const cv::Mat& reference_)
    else
       smoothed_reference = reference;
 
-   cv::Mat f = downsample(reference, 4);
-   rigid_aligner->setReference(frame_t, f);
+   rigid_aligner->setReference(frame_t, reference);
 
    n_x_binned = image_params.n_x / realign_params.spatial_binning;
    n_y_binned = image_params.n_y / realign_params.spatial_binning;
@@ -190,9 +172,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    D2col(D, starting_point[1]);
 
    // rigid starting point
-   
-   cv::Mat ff = downsample(frame, 4);
-   rigid_aligner->addFrame(frame_t, ff);
+   rigid_aligner->addFrame(frame_t, frame);
    cv::Point2d rigid_shift = rigid_aligner->getRigidShift(frame_t);
    std::vector<cv::Point2d> D_rigid(nD, rigid_shift);
    D2col(D_rigid, starting_point[2]);

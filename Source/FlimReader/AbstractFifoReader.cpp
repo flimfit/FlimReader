@@ -215,7 +215,7 @@ void AbstractFifoReader::alignFrames()
    realignment = std::vector<RealignmentResult>(frames.size());
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(frames[0].size(), CV_16U, cv::Scalar(1));
+   intensity_normalisation = cv::Mat(n_x, n_y, CV_16U, cv::Scalar(1));
 
 
    if (realignment_thread.joinable())
@@ -251,17 +251,14 @@ void AbstractFifoReader::alignFramesImpl()
 
 void AbstractFifoReader::getIntensityFrames()
 {
-   int sb = realign_params.spatial_binning;
    int fb = realign_params.frame_binning;
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
 
-   int n_x_binned = n_x / sb;
-   int n_y_binned = n_y / sb;
    int n_invalid = 0;
 
-   if (!frames.empty() && (frames[0].size() != cv::Size(n_x_binned, n_y_binned)))
+   if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y)))
       frames.clear();
 
    if (frames.empty())
@@ -279,14 +276,12 @@ void AbstractFifoReader::getIntensityFrames()
 
          if (p.valid)
          {
-            p.x /= sb;
-            p.y /= sb;
             p.frame /= fb;
 
             while (p.frame >= frames.size())
-               frames.push_back(cv::Mat(n_y_binned, n_x_binned, CV_32F, cv::Scalar(0)));
+               frames.push_back(cv::Mat(n_y, n_x, CV_32F, cv::Scalar(0)));
 
-            if ((p.x < n_x_binned) && (p.x >= 0) && (p.y < n_y_binned) && (p.y >= 0))
+            if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
                frames[p.frame].at<float>((int)p.y, (int)p.x)++;
          }
       }

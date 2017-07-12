@@ -24,6 +24,9 @@ void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
 
    reference_.copyTo(reference);
 
+   if (realign_params.spatial_binning > 0)
+      reference = downsample(reference, realign_params.spatial_binning);
+
    auto size = reference.size();
    cv::createHanningWindow(window, reference.size(), CV_32F);
 
@@ -36,8 +39,14 @@ void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
    cv::logPolar(reference, log_polar0, centre, 1.0, CV_WARP_FILL_OUTLIERS);
 }
 
-RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
+RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame_)
 {
+   cv::Mat frame;
+   frame_.copyTo(frame);
+
+   if (realign_params.spatial_binning > 0)
+      frame = downsample(frame, realign_params.spatial_binning);
+
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
    cv::Mat log_polari, rotatedi, refi, rotatedm;
@@ -78,6 +87,9 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
    mask.copyTo(shiftedm);
    cv::warpAffine(rotatedi, shifted, m, frame.size());
    cv::warpAffine(rotatedm, shiftedm, m, frame.size());
+
+   if (realign_params.spatial_binning > 0)
+      cv::resize(shiftedm, shiftedm, cv::Size(), realign_params.spatial_binning, realign_params.spatial_binning);
 
    addTransform(frame_t,transform);
 
