@@ -40,7 +40,8 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
 {
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
-   cv::Mat log_polari, rotatedi, refi;
+   cv::Mat log_polari, rotatedi, refi, rotatedm;
+   cv::Mat mask(frame.size(), CV_16U, cv::Scalar(1));
 
    if (realign_params.use_rotation())
    {
@@ -50,12 +51,14 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
 
       cv::Mat t = cv::getRotationMatrix2D(centre_binned, rotation, 1);
       cv::warpAffine(frame, rotatedi, t, frame.size());
+      cv::warpAffine(mask, rotatedm, t, frame.size());
 
       transform.angle = rotation;
    }
    else
    {
       frame.copyTo(rotatedi);
+      mask.copyTo(rotatedm);
    }
 
    reference.copyTo(refi);
@@ -70,9 +73,11 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
    m.at<float>(0, 2) = (float) -p.x;
    m.at<float>(1, 2) = (float) -p.y;
 
-   cv::Mat shifted;
+   cv::Mat shifted, shiftedm;
    frame.copyTo(shifted);
-   cv::warpAffine(frame, shifted, m, frame.size());
+   mask.copyTo(shiftedm);
+   cv::warpAffine(rotatedi, shifted, m, frame.size());
+   cv::warpAffine(rotatedm, shiftedm, m, frame.size());
 
    addTransform(frame_t,transform);
 
@@ -80,6 +85,7 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame)
    r.frame = frame;
    r.realigned = shifted;
    r.correlation = response;
+   r.mask = shiftedm;
 
    return r; // TODO
 }
