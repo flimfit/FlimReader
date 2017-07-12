@@ -560,28 +560,35 @@ void FrameWarpAligner::warpImage(const cv::Mat& img, cv::Mat& wimg, const std::v
    auto size = img.size();
    wimg = cv::Mat(size, CV_32F, cv::Scalar(invalid_value));
    
-   cv::Rect2i img_rect(cv::Point2i(0, 0), size);
+   double* Dfd = &Df.at<double>(0);
+   uint16_t* Did = &Di.at<uint16_t>(0);
 
+   int idx = 0;
    for (int y = 0; y < size.height; y++)
       for (int x = 0; x < size.width; x++)
       {
-         cv::Point2d loc = warpPoint(D, x, y, realign_params.spatial_binning);
-         
+         // just slightly optimised warpPoint(...)
+         double f = Dfd[idx];
+         int i = Did[idx];
+         cv::Point2d loc = f * D[i + 1] + (1 - f) * D[i];
+         idx++;
+
          loc.x += x;
          loc.y += y;
 
          cv::Point loc0(floor(loc.x), floor(loc.y));
          cv::Point loc1 = loc0 + cv::Point(1, 1);
-
          cv::Point2d locf(loc.x - loc0.x, loc.y - loc0.y);
 
-         if (img_rect.contains(loc0) && img_rect.contains(loc1))
+         if ((loc0.x >= 0) && (loc0.y >= 0) && (loc1.x < size.width) && (loc1.y < size.height))
          {
             wimg.at<float>(y, x) =
-               img.at<float>(loc0.y, loc0.x) * (1 - locf.y) * (1 - locf.x) + 
-               img.at<float>(loc1.y, loc0.x) * (    locf.y) * (1 - locf.x) + 
-               img.at<float>(loc0.y, loc1.x) * (1 - locf.y) * (    locf.x) + 
-               img.at<float>(loc1.y, loc1.x) * (    locf.y) * (    locf.x);
+               (1 - locf.x) * (
+                  img.at<float>(loc0.y, loc0.x) * (1 - locf.y) + 
+                  img.at<float>(loc1.y, loc0.x) * locf.y) + 
+               locf.x * (
+                  img.at<float>(loc0.y, loc1.x) * (1 - locf.y) +
+                  img.at<float>(loc1.y, loc1.x) * locf.y);
          }
               
       }
