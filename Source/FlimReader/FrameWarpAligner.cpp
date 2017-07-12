@@ -248,15 +248,9 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    }
 
    col2D(x, D);
-
-   {
-      std::lock_guard<std::mutex> lk(store_mutex);
-      std::copy(D.begin(), D.end(), Dstore[frame_t].begin());
-   }
+   std::copy(D.begin(), D.end(), Dstore[frame_t].begin());
 
    Dlast = *(D.end() - 2);
-
-   std::cout << "*";
 
    cv::Mat warped_smoothed = model.getWarpedImage(x);
    cv::Mat warped = model.getWarpedRawImage(x);
@@ -415,8 +409,7 @@ void FrameWarpAligner::precomputeInterp()
 
    Di = cv::Mat(size, CV_16U);
    Df = cv::Mat(size, CV_64F);
-   nx = size.width;
-
+   
    double Di_xy;
    int i;
    int last_i = -1;

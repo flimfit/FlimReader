@@ -2,7 +2,6 @@
 
 #include "RigidFrameAligner.h"
 #include <functional>
-#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <dlib/optimization.h>
 
@@ -57,6 +56,7 @@ protected:
    std::vector<Range> D_range;
 
    cv::Mat smoothed_reference;
+   cv::Mat sum_1, sum_2;
 
    cv::Mat Di;
    cv::Mat Df;
@@ -68,16 +68,12 @@ protected:
    std::vector<RealignmentResult> results;
 
    int nD = 10;
-   int nx;
+//   int nx;
 
    int n_x_binned;
    int n_y_binned;
 
-   std::mutex store_mutex;
-
    std::vector<std::vector<double>> VI_dW_dp_x, VI_dW_dp_y;
-
-   cv::Mat sum_1, sum_2;
 
    std::unique_ptr<RigidFrameAligner> rigid_aligner;
 
