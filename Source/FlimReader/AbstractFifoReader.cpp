@@ -199,7 +199,7 @@ void AbstractFifoReader::alignFrames()
 
    getIntensityFrames();
 
-   if (frames.size() == 0)
+   if (frames.size() == 0 || terminate)
       return;
 
    ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, sync.bi_directional);
@@ -266,6 +266,8 @@ void AbstractFifoReader::getIntensityFrames()
       FifoProcessor processor(markers, sync);
       while (event_reader->hasMoreData())
       {
+         if (terminate) break;
+
          TcspcEvent e = event_reader->getEvent();
          Photon p = processor.addEvent(e);
 
@@ -286,6 +288,9 @@ void AbstractFifoReader::getIntensityFrames()
          }
       }
    }
+
+   if (terminate)
+      frames.clear();
 }
 
 

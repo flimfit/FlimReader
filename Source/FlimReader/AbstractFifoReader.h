@@ -132,6 +132,8 @@ public:
       realign_cv.notify_all();
    }
 
+   void clearStopSignal() { terminate = false; }
+
    bool supportsRealignment() { return true; }
    bool isBidirectional() { return sync.bi_directional; }
    void setBidirectionalPhase(double phase) { sync.phase = phase; }
@@ -187,7 +189,7 @@ private:
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
-   bool save_mean_arrival_images = true;
+   bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
 };
 
@@ -198,10 +200,13 @@ private:
 template<typename T>
 void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
 {
-   terminate = false;
+   if (terminate)
+      return;
 
    if (realignment_complete) // we are reprocessing
       computeIntensityNormalisation();
+   if (realign_params.type == RealignmentType::None)
+      intensity_normalisation = cv::Mat();
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
