@@ -210,18 +210,20 @@ void AbstractFifoReader::alignFrames()
 
    int max_idx = reference_index;
    frame_aligner->setReference(max_idx, frames[max_idx]);
-   frame_aligner->setNumberOfFrames(frames.size());
 
    realignment = std::vector<RealignmentResult>(frames.size());
    realignment_complete = false;
 
    intensity_normalisation = cv::Mat(n_x, n_y, CV_16U, cv::Scalar(1));
 
-
    if (realignment_thread.joinable())
       realignment_thread.join();
 
    realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
+
+   // Work around while parallel implementation of rigid frame aligner is not fully tested
+   if (realign_params.type != RealignmentType::Warp)
+      realignment_thread.join();
 }
 
 void AbstractFifoReader::alignFramesImpl()
@@ -258,7 +260,7 @@ void AbstractFifoReader::getIntensityFrames()
 
    int n_invalid = 0;
 
-   if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y)))
+   if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y)) || (fb != last_frame_binning))
       frames.clear();
 
    if (frames.empty())
@@ -288,6 +290,8 @@ void AbstractFifoReader::getIntensityFrames()
          }
       }
    }
+
+   fb = last_frame_binning;
 
    if (terminate)
       frames.clear();

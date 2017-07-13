@@ -189,6 +189,8 @@ private:
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
+   int last_frame_binning = -1;
+
    bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
 };

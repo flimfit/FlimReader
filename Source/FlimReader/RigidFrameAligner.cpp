@@ -44,6 +44,8 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame_
    cv::Mat frame;
    frame_.copyTo(frame);
 
+   assert(frame.size() == reference.size());
+
    if (realign_params.spatial_binning > 0)
       frame = downsample(frame, realign_params.spatial_binning);
 
