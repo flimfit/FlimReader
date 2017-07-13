@@ -4,6 +4,7 @@
 RigidFrameAligner::RigidFrameAligner(RealignmentParameters params)
 {
    realign_params = params;
+   frames_complete = 0;
    frame_transform.push_back(Transform(0.0));
 }
 

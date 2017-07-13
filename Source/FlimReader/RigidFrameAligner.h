@@ -67,5 +67,5 @@ private:
 
    cv::Mat log_polar0;
 
-   std::atomic<int> frames_complete = 0;
+   std::atomic<int> frames_complete;
 };
