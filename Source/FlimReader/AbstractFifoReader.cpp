@@ -303,7 +303,7 @@ void AbstractFifoReader::computeIntensityNormalisation()
    if (!realignment.empty())
    {
       // Get intensity
-      cv::Mat intensity(realignment[0].frame.size(), CV_16U, cv::Scalar(1));
+      cv::Mat intensity(n_x, n_y, CV_16U, cv::Scalar(1));
       for (int i = 0; i < realignment.size(); i++)
       {
          if ((realignment[i].correlation >= realign_params.correlation_threshold) &&

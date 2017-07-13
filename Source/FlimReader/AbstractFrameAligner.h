@@ -80,6 +80,9 @@ public:
    virtual bool empty() = 0;
    virtual void clear() = 0;
 
+   bool frameValid(int frame) { return true; } // worse case will just use last
+   virtual bool frameReady(int frame) = 0;
+
    virtual RealignmentType getType() = 0;
 
    void setRealignmentParams(RealignmentParameters params_) { realign_params = params_; }

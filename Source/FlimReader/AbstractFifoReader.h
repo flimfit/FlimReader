@@ -260,14 +260,14 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
-         if (frame_aligner != nullptr && (frame < realignment.size()))
+         if (frame_aligner != nullptr && frame_aligner->frameValid(frame))
          {
             // Check that we have realigned this frame
-            if (!(realignment[frame].done))
+            if (!frame_aligner->frameReady(frame))
             {
                std::unique_lock<std::mutex> lk(realign_mutex);
                realign_cv.wait(lk, [this,frame] {
-                  return ((realignment[frame].done) || terminate);
+                  return (frame_aligner->frameReady(frame) || terminate);
                });
                lk.unlock();
             }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractFrameAligner.h"
+#include <atomic>
 
 class Transform
 {
@@ -33,6 +34,11 @@ public:
    bool empty();
    void clear();
 
+   bool frameReady(int frame)
+   {
+      return frames_complete == n_frames;
+   }
+
    RealignmentType getType() { return realign_params.use_rotation() ? RealignmentType::RigidBody : RealignmentType::Translation; };
 
    void setReference(int frame_t, const cv::Mat& reference_);
@@ -60,4 +66,6 @@ private:
    cv::Mat window;
 
    cv::Mat log_polar0;
+
+   std::atomic<int> frames_complete = 0;
 };

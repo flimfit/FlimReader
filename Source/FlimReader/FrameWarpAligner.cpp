@@ -109,6 +109,13 @@ void FrameWarpAligner::reprocess()
 //      addFrame(iter.first, iter.second.frame);
 }
 
+bool FrameWarpAligner::frameReady(int frame)
+{
+   if (frame >= n_frames) return false;
+   return (results[frame].done);
+}
+
+
 void D2col(const std::vector<cv::Point2d> &D, column_vector& col)
 {
    int nD = D.size();
@@ -252,6 +259,7 @@ RealignmentResult FrameWarpAligner::addFrame(int frame_t, const cv::Mat& raw_fra
    if (r.correlation >= realign_params.correlation_threshold && r.coverage >= realign_params.coverage_threshold)
       warpImageIntensityPreserving(raw_frame, intensity_preserving, D);
    r.realigned_preserving = intensity_preserving;
+   r.done = true;
 
    results[frame_t] = r;
 

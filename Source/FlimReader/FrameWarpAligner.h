@@ -39,6 +39,8 @@ public:
    double getFrameCoverage(int frame_t) { return results[frame_t].coverage; };
    void reprocess();
 
+   bool frameReady(int frame);
+
    void writeRealignmentInfo(std::string filename);
 
 protected:

@@ -21,6 +21,7 @@ void RigidFrameAligner::setReference(int frame_t, const cv::Mat& reference_)
 {
    frame_transform.clear();
    frame_transform.resize(n_frames+1);
+   frames_complete = 0;
 
    reference_.copyTo(reference);
 
@@ -44,10 +45,10 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame_
    cv::Mat frame;
    frame_.copyTo(frame);
 
-   assert(frame.size() == reference.size());
-
    if (realign_params.spatial_binning > 0)
       frame = downsample(frame, realign_params.spatial_binning);
+
+   assert(frame.size() == reference.size());
 
    Transform transform(realign_params.frame_binning*(frame_t+0.5));
 
@@ -100,6 +101,8 @@ RealignmentResult RigidFrameAligner::addFrame(int frame_t, const cv::Mat& frame_
    r.realigned = shifted;
    r.correlation = response;
    r.mask = shiftedm;
+
+   frames_complete++;
 
    return r; // TODO
 }
