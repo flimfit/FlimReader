@@ -30,7 +30,7 @@ void TextReader::readHeader()
    bool is_data = false;
    int data_row = 0;
 
-   for (string row; getline(fs, row, row_delim);) 
+   for (std::string row; getline(fs, row, row_delim);) 
    {
       istringstream ss(row);
 
@@ -46,10 +46,10 @@ void TextReader::readHeader()
 
          // Read in data line
          int chan = 0;
-         for (string field; getline(ss, field, delim);)
+         for (std::string field; getline(ss, field, delim);)
          {
             if (data.size() <= chan)
-               data.resize(chan + 1, vector<float>(data_row, 0));
+               data.resize(chan + 1, std::vector<float>(data_row, 0));
 
             try
             {
@@ -69,7 +69,7 @@ void TextReader::readHeader()
          // Read in header line
 
          int chan = 0;
-         for (string field; getline(ss, field, delim);)
+         for (std::string field; getline(ss, field, delim);)
          {
             if (metadata.size() <= chan)
                metadata.resize(chan + 1);

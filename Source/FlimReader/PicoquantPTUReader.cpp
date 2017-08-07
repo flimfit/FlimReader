@@ -48,7 +48,7 @@ void PicoquantPTUReader::readHeader()
 
    fs.read(magic, sizeof(magic));
    
-   if (string("PQTTTR") != magic)
+   if (std::string("PQTTTR") != magic)
       throw runtime_error("Wrong magic string, this is not a PTU file");
 
    n_chan = 1;
