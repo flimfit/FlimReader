@@ -1,0 +1,3 @@
+[submodule "frame-aligner"]
+	path = frame-aligner
+	url = https://github.com/flimfit/frame-aligner
