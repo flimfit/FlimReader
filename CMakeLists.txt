@@ -24,7 +24,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${PLATFORM_FLAGS_RELEASE
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${PLATFORM_FLAGS_DEBUG}")
 
 # CMakeLists.txt
-add_subdirectory(FrameAligner)
+add_subdirectory(frame-aligner/FrameAligner)
 add_subdirectory(FlimReader)
 add_subdirectory(FlimReaderTest)
 
