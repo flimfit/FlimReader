@@ -40,7 +40,7 @@ set(HEADERS
    MexUtils.h
 )
 
-matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader>)
+matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader> $<TARGET_OBJECTS:FrameAligner>)
 
 target_link_libraries(FlimReaderMex ${FlimReader_LIBRARIES})
 
