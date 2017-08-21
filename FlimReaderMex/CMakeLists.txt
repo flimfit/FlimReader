@@ -1,14 +1,6 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9)
 
 project(FlimReaderMex)
-
-# Find MATLAB
-set(MATLAB_ADDITIONAL_VERSIONS
-    "R2016b=9.1"
-    "R2016a=9.0"
-    "R2015b=8.6"
-    "R2015a=8.5"
-    "R2014b=8.4")
 
 if(DEFINED ENV{MATLAB_VER})
 	if(UNIX)
