@@ -58,6 +58,15 @@ void FfdReader::readHeader()
    if (it != tags.end())
       sync.bi_directional = it->second.getValue<bool>();
 
+   it = tags.find("NumX");
+   if (it != tags.end())
+	   n_x = it->second.getValue<int>();
+
+   it = tags.find("NumY");
+   if (it != tags.end())
+	   n_y = it->second.getValue<int>();
+
+
    // Fix error in PLIM files
    it = tags.find("UsingPixelMarkers");
    if (it != tags.end())
