@@ -165,10 +165,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
          {
             AssertInputCondition(nlhs >= 1);
             cv::Mat intensity_normalisation = readers[idx]->getIntensityNormalisation();
-            //cv::Mat norm_transpose;
-            //cv::transpose(intensity_normalisation, norm_transpose);
             auto size = intensity_normalisation.size();
-            plhs[0] = mxCreateNumericMatrix(size.height, size.width, mxUINT16_CLASS, mxREAL);
+            plhs[0] = mxCreateNumericMatrix(size.width, size.height, mxUINT16_CLASS, mxREAL);
             uchar* out = (uchar*) mxGetData(plhs[0]);
             copy_n((uchar*)intensity_normalisation.data, size.area() * sizeof(uint16_t), out);
          }
