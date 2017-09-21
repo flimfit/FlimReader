@@ -159,6 +159,8 @@ protected:
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    
+   bool useFrame(int frame) { return true; }
+
    void determineDwellTime();
       
    int line_averaging = 1;
@@ -248,12 +250,14 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
       if (p.valid && p.channel < n_chan)
       {
+         if (!useFrame(p.frame))
+            continue;
+
          if (p.frame > last_frame_written)
          {
             computeMeanArrivalImage(histogram);
             last_frame_written = p.frame;
          }
-
 
          int mapped_channel = channel_map[p.channel];
 
@@ -317,7 +321,7 @@ void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
    if (!save_mean_arrival_images)
       return;
 
-   cv::Mat mean_arrival_time(n_x, n_y, CV_32F, cv::Scalar(0));
+   cv::Mat mean_arrival_time(n_y, n_x, CV_32F, cv::Scalar(0));
 
    int n_px = n_x * n_y;
    for (int p = 0; p < n_px; p++)

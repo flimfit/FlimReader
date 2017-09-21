@@ -214,7 +214,7 @@ void AbstractFifoReader::alignFrames()
    realignment = std::vector<RealignmentResult>(frames.size());
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(n_x, n_y, CV_16U, cv::Scalar(1));
+   intensity_normalisation = cv::Mat(n_y, n_x, CV_16U, cv::Scalar(1));
 
    if (realignment_thread.joinable())
       realignment_thread.join();
@@ -239,7 +239,7 @@ void AbstractFifoReader::alignFramesImpl()
          realignment[i].done = true;
 
          if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
-            (realignment[i].coverage >= realign_params.coverage_threshold))
+            (realignment[i].coverage >= realign_params.coverage_threshold) && useFrame(i))
                intensity_normalisation += realignment[i].mask;
       }
 
@@ -309,7 +309,8 @@ void AbstractFifoReader::computeIntensityNormalisation()
          if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
              (realignment[i].coverage >= realign_params.coverage_threshold) &&
               realignment[i].done &&
-             (!realignment[i].mask.empty()))
+             (!realignment[i].mask.empty()) &&
+              useFrame(i))
             intensity += realignment[i].mask;
       }
       intensity_normalisation = intensity;
