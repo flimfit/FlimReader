@@ -27,7 +27,8 @@ void test_load()
    //filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Imspector.msr";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/hetero-FRET ptu/D1.ptu";
    filename = "E:/151116_JB_Lifetime_tests_p2.sptw/151116_mFlex_seFRET/151116_mFlex_seFRET 4.ptu";
-
+   filename = "/Users/sean/repositories/FLIMfit/FLIMfitFrontEnd/test.ffh";
+   
    auto start = chrono::high_resolution_clock::now();
 
    unique_ptr<FlimReader> reader(FlimReader::createReader(filename));

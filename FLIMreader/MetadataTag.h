@@ -54,6 +54,7 @@ public:
       static_assert(sizeof(T) == sizeof(uint64_t), "Vector data size must equal sizeof(uint64_t)");
       type = type_;
       is_vector = true;
+      
       vector_data.resize(v.size());
       std::copy_n((uint64_t*)v.data(), v.size(), vector_data.data());
    }

@@ -21,5 +21,5 @@ set(HEADERS
    catch.hpp
 )
 
-add_executable(FlimReaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader>)
+add_executable(FlimReaderTest ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader> $<TARGET_OBJECTS:FrameAligner>)
 target_link_libraries(FlimReaderTest ${FlimReader_LIBRARIES})
