@@ -60,7 +60,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          if (command == "GetTimePoints")
          {
             AssertInputCondition(nlhs >= 1);
-            const vector<double>& timepoints = readers[idx]->getTimepoints();
+            const std::vector<double>& timepoints = readers[idx]->getTimepoints();
 
             plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
             double* t = mxGetPr(plhs[0]);
@@ -87,7 +87,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
             AssertInputCondition(nlhs >= 1);
             AssertInputCondition(nrhs >= 3);
 
-            vector<int> channels = getVector<int>(prhs[2]);
+            std::vector<int> channels = getVector<int>(prhs[2]);
 
             mwSize n_t = readers[idx]->getTimepoints().size();
             mwSize n_chan = channels.size();

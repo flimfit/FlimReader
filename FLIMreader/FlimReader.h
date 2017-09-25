@@ -36,6 +36,7 @@ public:
    void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {});
 
    virtual void stopReading() {};
+   virtual void clearStopSignal() {};
    virtual double getProgress() { return 0; }
 
    const std::vector<double>& getTimepoints() { return timepoints_; };
