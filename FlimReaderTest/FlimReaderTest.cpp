@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "FrameWarpAligner.h"
+#include <opencv2/highgui.hpp>
 
 using namespace std;
 
@@ -54,7 +55,37 @@ void test_load()
 
 }
 
+void test_flimreader()
+{
+   std::string file = "test_stack.tif";
+   std::vector<cv::Mat> stack;
+   cv::imreadmulti(file, stack, cv::IMREAD_GRAYSCALE);
 
+   int n_z = 10;
+
+   std::vector<cv::Mat> frames;
+
+   cv::Size imsz = stack[0].size();
+
+   std::vector<int> dims = {n_z, imsz.height, imsz.width};
+
+   for(int i=0; i<stack.size(); i++)
+   {
+      int z = i % n_z;
+      int f = i / n_z;
+
+      if (frames.size() <= f)
+         frames.push_back( cv::Mat(dims, CV_32F) );
+
+      cv::Mat fz(imsz, CV_32F, frames[f].data + z * imsz.area() * sizeof(float));
+      stack[i].convertTo(fz, CV_32F);
+   }
+
+   RealignmentParameters params;
+   params.type = RealignmentType::Warp;
+   FrameWarpAligner aligner(params);
+
+}
 
 int main()
 {
