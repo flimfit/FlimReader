@@ -515,10 +515,8 @@ void FrameWarpAligner::computeSteepestDecentImages(const cv::Mat& frame)
    cv::Mat nabla_Ty(dims, CV_64F);
    cv::Mat nabla_Tz(dims, CV_64F);
 
-   cv::Range range[] = { cv::Range::all(), cv::Range::all(), cv::Range::all() };
    for(int i=0; i<dims[Z]; i++)
    {
-      range[0] = cv::Range(i,i+1);
       cv::Mat frame_i = extractSlice(frame, i);
 
       cv::Mat nabla_Tx_i = extractSlice(nabla_Tx,i);

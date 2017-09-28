@@ -138,23 +138,22 @@ public:
    bool isBidirectional() { return sync.bi_directional; }
    void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
-   void alignFrames();
-
    double getProgress() { return event_reader->getProgress(); }
 
    void setTemporalResolution(int temporal_resolution);
       
 protected:
-   
-   void readSettings();
 
-   void computeIntensityNormalisation();
+   ImageScanParameters getImageScanParameters() {
+      return ImageScanParameters(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
+   }
+   
+   void getIntensityFrames();
+
+   void readSettings();
 
    template<typename T>
    void computeMeanArrivalImage(const T* histogram);
-
-   void getIntensityFrames();
-   void alignFramesImpl();
 
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
@@ -177,15 +176,6 @@ protected:
    std::unique_ptr<AbstractEventReader> event_reader;
    Markers markers;
    
-   bool terminate = false;
-
-   std::thread realignment_thread;
-   std::mutex realign_mutex;
-   std::condition_variable realign_cv;
-   bool realignment_complete;
-
-   std::vector<int> dims;
-
 private:
    
    int n_z = 1; // TODO

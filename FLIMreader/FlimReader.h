@@ -5,14 +5,15 @@
 #include <cstdint>
 #include <memory>
 
-#include "AbstractFrameAligner.h"
+#include "AligningReader.h"
 #include "MetadataTag.h"
 #include "FlimCube.h"
 
 typedef std::map<std::string, MetaDataTag> TagMap;
 typedef std::map<std::string, cv::Mat> ImageMap;
 
-class FlimReader
+
+class FlimReader : public AligningReader
 {
 public:
 
@@ -24,8 +25,6 @@ public:
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);
 
    virtual ~FlimReader() {};
-
-   virtual void alignFrames() {};
 
    virtual int getNumChannels() { return n_chan; };
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
@@ -58,15 +57,7 @@ public:
 
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
    virtual void setBidirectionalPhase(double phase) {}
-   void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }
    void setSpatialBinning(int spatial_binning_);
-
-   const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
-   const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
-
-   cv::Mat getIntensityNormalisation() { return intensity_normalisation; }
-
-   void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
 
 protected:
 
@@ -82,14 +73,6 @@ protected:
    double rep_rate_hz = std::numeric_limits<double>::quiet_NaN(); // when we don't know 
 
    TagMap tags;
-
-   RealignmentParameters realign_params;
-   std::unique_ptr<AbstractFrameAligner> frame_aligner;
-   std::vector<cv::Mat> frames;
-   std::vector<RealignmentResult> realignment;
-   int reference_index = 0;
-
-   cv::Mat intensity_normalisation;
 };
 
 template<typename T>

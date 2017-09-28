@@ -186,80 +186,6 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
       time_shifts_resunit.push_back((int) std::round(shift / time_resolution_native_ps));
 };
 
-void AbstractFifoReader::alignFrames()
-{
-   if (!realign_params.use_realignment())
-   {
-      frame_aligner = nullptr;
-      return;
-   }
-
-   if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
-      frame_aligner = std::unique_ptr<AbstractFrameAligner>(AbstractFrameAligner::createFrameAligner(realign_params));
-
-   if (n_z > 1)
-      dims = {n_z, n_y, n_x}; 
-   else
-      dims = {n_y, n_x};
-
-   getIntensityFrames();
-
-   if (frames.size() == 0 || terminate)
-      return;
-
-   ImageScanParameters image_params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
-
-   frame_aligner->setRealignmentParams(realign_params);
-   frame_aligner->setImageScanParams(image_params);
-   frame_aligner->setNumberOfFrames((int)frames.size());
-
-   int max_idx = reference_index;
-   frame_aligner->setReference(max_idx, frames[max_idx]);
-
-   realignment = std::vector<RealignmentResult>(frames.size());
-   realignment_complete = false;
-
-   intensity_normalisation = cv::Mat(dims, CV_16U, cv::Scalar(1));
-
-
-   if (realignment_thread.joinable())
-      realignment_thread.join();
-
-   realignment_thread = std::thread(&AbstractFifoReader::alignFramesImpl, this);
-}
-
-void AbstractFifoReader::alignFramesImpl()
-{
-   try {
-
-
-   #pragma omp parallel for schedule(dynamic,1)
-   for (int i = 0; i < frames.size(); i++)
-   {
-      if (terminate) continue; // can't break in a omp loop
-      realignment[i] = frame_aligner->addFrame(i, frames[i]);
-
-      {
-         std::lock_guard<std::mutex> lk(realign_mutex);
-         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
-            (realignment[i].coverage >= realign_params.coverage_threshold))
-               intensity_normalisation += realignment[i].mask;
-      }
-
-      std::cout << "*";
-      realign_cv.notify_all();
-   }
-
-   realignment_complete = true;
-   realign_cv.notify_all();
-
-   }
-   catch(cv::Exception e)
-   {
-      std::cout << e.what();
-   }
-}
-
 void AbstractFifoReader::getIntensityFrames()
 {
    int fb = realign_params.frame_binning;
@@ -271,6 +197,8 @@ void AbstractFifoReader::getIntensityFrames()
 
    if (!frames.empty() && (frames[1].size() != cv::Size(n_x, n_y)))
       frames.clear();
+
+   std::vector<int> dims = {n_z, n_y, n_x}; 
 
    if (frames.empty())
    {
@@ -299,7 +227,7 @@ void AbstractFifoReader::getIntensityFrames()
                frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
 
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
-               frames[p.frame].at<float>((int)p.y, (int)p.x)++;
+               frames[p.frame].at<float>(z, (int)p.y, (int)p.x)++;
          }
       }
    }
@@ -310,21 +238,3 @@ void AbstractFifoReader::getIntensityFrames()
       frames.clear();
 }
 
-
-void AbstractFifoReader::computeIntensityNormalisation()
-{
-   if (!realignment.empty())
-   {
-      // Get intensity
-      cv::Mat intensity(n_x, n_y, CV_16U, cv::Scalar(1));
-      for (int i = 0; i < realignment.size(); i++)
-      {
-         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
-             (realignment[i].coverage >= realign_params.coverage_threshold) &&
-              realignment[i].done &&
-             (!realignment[i].mask.empty()))
-            intensity += realignment[i].mask;
-      }
-      intensity_normalisation = intensity;
-   }
-}

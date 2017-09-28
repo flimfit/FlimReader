@@ -21,6 +21,7 @@ set(SOURCE
    FfdReader.cpp
    BhFifoReader.cpp
    TextReader.cpp
+   AligningReader.cpp
 )
 
 set(HEADERS
@@ -41,6 +42,7 @@ set(HEADERS
    MetadataTag.h
    FlimCube.h
    FlimCubeWriter.h
+   AligningReader.h
 )
 
 set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} ${FrameAligner_INCLUDE_DIRS} PARENT_SCOPE)
