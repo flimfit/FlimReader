@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(FlimReader)
 
-if(MSVC)
-  set( Boost_USE_STATIC_LIBS ON )
-  add_definitions(-DBOOST_ALL_NO_LIB=1)
-endif()
-
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV 3.1 REQUIRED core imgproc highgui )
 find_package(OpenMP REQUIRED)

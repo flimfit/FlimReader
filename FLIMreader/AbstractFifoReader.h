@@ -145,7 +145,8 @@ public:
 protected:
 
    ImageScanParameters getImageScanParameters() {
-      return ImageScanParameters(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
+      ImageScanParameters params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
+      return params;
    }
    
    void getIntensityFrames();
