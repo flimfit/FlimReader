@@ -16,6 +16,7 @@ public:
    void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
    
    void alignFrames();   
+   void waitForAlignmentComplete();
 
 protected:
 

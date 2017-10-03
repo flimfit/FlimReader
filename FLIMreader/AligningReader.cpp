@@ -37,6 +37,13 @@ void AligningReader::alignFrames()
    realignment_thread = std::thread(&AligningReader::alignFramesImpl, this);
 }
 
+void AligningReader::waitForAlignmentComplete()
+{
+   if (realignment_thread.joinable())
+      realignment_thread.join();
+}
+
+
 
 void AligningReader::alignFramesImpl()
 {
