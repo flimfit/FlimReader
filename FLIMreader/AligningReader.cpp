@@ -13,8 +13,10 @@ void AligningReader::alignFrames()
 
    getIntensityFrames();
 
-   if (frames.size() == 0 || terminate)
-      return;
+   if (frames.empty())
+      throw(std::runtime_error("No intensity frames found"));
+
+   if (terminate) return;
 
    ImageScanParameters image_params = getImageScanParameters();
    
