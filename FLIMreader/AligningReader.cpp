@@ -1,10 +1,14 @@
 #include "AligningReader.h"
+//#ifdef __APPLE__
+//#import <Foundation/Foundation.h>
+//#endif
 
 void AligningReader::alignFrames()
 {
    if (!realign_params.use_realignment())
    {
       frame_aligner = nullptr;
+      std::cout << "No realigmment requested\n";
       return;
    }
 
@@ -13,8 +17,12 @@ void AligningReader::alignFrames()
 
    getIntensityFrames();
 
-   if (frames.size() == 0 || terminate)
-      return;
+   if ((frames.size() == 0) || terminate)
+   {
+      std::cout << "No frames\n";
+      return;      
+   }
+
 
    ImageScanParameters image_params = getImageScanParameters();
    
@@ -50,10 +58,9 @@ void AligningReader::alignFramesImpl()
    try {
 
 
-   #pragma omp parallel for schedule(dynamic,1)
-   for (int i = 0; i < frames.size(); i++)
+   auto fcn = [this](int i)
    {
-      if (terminate) continue; // can't break in a omp loop
+      if (terminate) return;
       realignment[i] = frame_aligner->addFrame(i, frames[i]);
 
       {
@@ -65,7 +72,20 @@ void AligningReader::alignFramesImpl()
 
       std::cout << "*";
       realign_cv.notify_all();
-   }
+   };
+
+
+#ifdef __APPLE__
+   //dispatch_queue_t c_queue = dispatch_queue_create("Frame queue", DISPATCH_QUEUE_CONCURRENT);
+   //dispatch_apply(I, c_queue, ^fcn);
+   for (int i = 0; i < frames.size(); i++)
+      fcn(i);
+#else
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int i = 0; i < frames.size(); i++)
+      fcn(i);
+#endif
+
 
    realignment_complete = true;
    realign_cv.notify_all();
@@ -73,7 +93,7 @@ void AligningReader::alignFramesImpl()
    }
    catch(cv::Exception e)
    {
-      std::cout << e.what();
+      std::cout << "Error during realignment: " << e.what();
    }
 }
 
