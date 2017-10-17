@@ -1,7 +1,29 @@
 #include "AligningReader.h"
-//#ifdef __APPLE__
-//#import <Foundation/Foundation.h>
-//#endif
+#include <future>
+
+template <class F>
+void par_for(int begin, int end, F fn) {
+  std::atomic<int> idx;
+  idx = begin;
+
+  int num_cpus = std::thread::hardware_concurrency();
+  std::vector<std::future<void>> futures(num_cpus);
+  for (int cpu = 0; cpu != num_cpus; ++cpu) {
+    futures[cpu] = std::async(
+      std::launch::async,
+      [cpu, &idx, end, &fn]() {
+        for (;;) {
+          int i = idx++;
+          if (i >= end) break;
+          fn(i, cpu);
+        }
+      }
+    );
+  }
+  for (int cpu = 0; cpu != num_cpus; ++cpu) {
+    futures[cpu].get();
+  }
+};
 
 void AligningReader::alignFrames()
 {
@@ -57,8 +79,7 @@ void AligningReader::alignFramesImpl()
 {
    try {
 
-
-   auto fcn = [this](int i)
+   par_for(0, frames.size(), [this](int i, int thread)
    {
       if (terminate) return;
       realignment[i] = frame_aligner->addFrame(i, frames[i]);
@@ -72,20 +93,7 @@ void AligningReader::alignFramesImpl()
 
       std::cout << "*";
       realign_cv.notify_all();
-   };
-
-
-#ifdef __APPLE__
-   //dispatch_queue_t c_queue = dispatch_queue_create("Frame queue", DISPATCH_QUEUE_CONCURRENT);
-   //dispatch_apply(I, c_queue, ^fcn);
-   for (int i = 0; i < frames.size(); i++)
-      fcn(i);
-#else
-   #pragma omp parallel for schedule(dynamic,1)
-   for (int i = 0; i < frames.size(); i++)
-      fcn(i);
-#endif
-
+   });
 
    realignment_complete = true;
    realign_cv.notify_all();
