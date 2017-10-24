@@ -77,12 +77,19 @@ void AligningReader::waitForAlignmentComplete()
 
 void AligningReader::alignFramesImpl()
 {
-   try {
 
    par_for(0, frames.size(), [this](int i, int thread)
    {
       if (terminate) return;
-      realignment[i] = frame_aligner->addFrame(i, frames[i]);
+
+      try 
+      {
+         realignment[i] = frame_aligner->addFrame(i, frames[i]);
+      }
+      catch (cv::Exception e)
+      {
+         std::cout << "Error during realignment: " << e.what();
+      }
 
       {
          std::lock_guard<std::mutex> lk(realign_mutex);
@@ -98,11 +105,6 @@ void AligningReader::alignFramesImpl()
    realignment_complete = true;
    realign_cv.notify_all();
 
-   }
-   catch(cv::Exception e)
-   {
-      std::cout << "Error during realignment: " << e.what();
-   }
 }
 
 void AligningReader::computeIntensityNormalisation()
