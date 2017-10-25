@@ -1,5 +1,6 @@
 #include "AligningReader.h"
 #include <future>
+#include "Cv3dUtils.h"
 
 template <class F>
 void par_for(int begin, int end, F fn) {
@@ -7,6 +8,7 @@ void par_for(int begin, int end, F fn) {
   idx = begin;
 
   int num_cpus = std::thread::hardware_concurrency();
+  num_cpus = std::min(num_cpus, end - begin);
   std::vector<std::future<void>> futures(num_cpus);
   for (int cpu = 0; cpu != num_cpus; ++cpu) {
     futures[cpu] = std::async(
@@ -25,6 +27,28 @@ void par_for(int begin, int end, F fn) {
   }
 };
 
+void AligningReader::loadIntensityFrames()
+{
+   std::lock_guard<std::mutex> lk(frame_mutex);
+
+   if (!frames.empty() || frame_thread.joinable())
+      return;
+
+   frame_thread = std::thread(&AligningReader::loadIntensityFramesImpl, this);
+}
+
+cv::Mat AligningReader::getIntensityFrame(int frame)
+{
+   if (frame >= getNumIntensityFrames())
+      throw std::runtime_error("Invalid frame index");
+
+   std::unique_lock<std::mutex> lk(frame_mutex);
+   frame_cv.wait(lk, [&] { return ((frame < frames.size()) && (area(frames[frame]) > 0)); });
+   return frames[frame];
+}
+
+
+
 void AligningReader::alignFrames()
 {
    if (!realign_params.use_realignment())
@@ -37,29 +61,30 @@ void AligningReader::alignFrames()
    if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
       frame_aligner = std::unique_ptr<AbstractFrameAligner>(AbstractFrameAligner::createFrameAligner(realign_params));
 
-   getIntensityFrames();
+   loadIntensityFrames();
 
-   if ((frames.size() == 0) || terminate)
+   int n_frames = getNumIntensityFrames();
+   reference_index = n_frames / 2;
+   
+   if ((n_frames == 0) || terminate)
    {
       std::cout << "No frames\n";
       return;      
    }
 
-
    ImageScanParameters image_params = getImageScanParameters();
    
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
-   frame_aligner->setNumberOfFrames((int)frames.size());
+   frame_aligner->setNumberOfFrames(n_frames);
 
-   int max_idx = reference_index;
-   frame_aligner->setReference(max_idx, frames[max_idx]);
+   cv::Mat ref_frame = getIntensityFrame(reference_index);
+   frame_aligner->setReference(reference_index, ref_frame);
 
-   realignment = std::vector<RealignmentResult>(frames.size());
+   realignment = std::vector<RealignmentResult>(n_frames);
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(frames[0].dims, frames[0].size.p, CV_16U, cv::Scalar(1));
-
+   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_16U, cv::Scalar(1));
 
    if (realignment_thread.joinable())
       realignment_thread.join();
@@ -77,14 +102,14 @@ void AligningReader::waitForAlignmentComplete()
 
 void AligningReader::alignFramesImpl()
 {
-
-   par_for(0, frames.size(), [this](int i, int thread)
+   int n_frames = getNumIntensityFrames();
+   par_for(0, n_frames, [this](int i, int thread)
    {
       if (terminate) return;
 
       try 
       {
-         realignment[i] = frame_aligner->addFrame(i, frames[i]);
+         realignment[i] = frame_aligner->addFrame(i, getIntensityFrame(i));
       }
       catch (cv::Exception e)
       {

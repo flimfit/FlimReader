@@ -149,7 +149,8 @@ protected:
       return params;
    }
    
-   void getIntensityFrames();
+   void loadIntensityFramesImpl();
+   int getNumIntensityFrames() { return frames.size(); };
 
    void readSettings();
 

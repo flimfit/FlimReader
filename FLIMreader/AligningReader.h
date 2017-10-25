@@ -20,7 +20,12 @@ public:
 
 protected:
 
-   virtual void getIntensityFrames() {};
+   void loadIntensityFrames();
+   cv::Mat getIntensityFrame(int frame);
+   virtual cv::Mat getIntensityFrameImmediately(int frame) { return getIntensityFrame(frame); };
+
+   virtual void loadIntensityFramesImpl() {};
+   virtual int getNumIntensityFrames() { return 0; };
    virtual ImageScanParameters getImageScanParameters() { return ImageScanParameters(); }
 
    void computeIntensityNormalisation();
@@ -34,9 +39,13 @@ protected:
 
    RealignmentParameters realign_params;
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
-   std::vector<cv::Mat> frames;
    std::vector<RealignmentResult> realignment;
    int reference_index = 0;
 
    cv::Mat intensity_normalisation;
+
+   std::thread frame_thread;
+   std::mutex frame_mutex;
+   std::condition_variable frame_cv;
+   std::vector<cv::Mat> frames;
 };

@@ -186,7 +186,7 @@ void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
       time_shifts_resunit.push_back((int) std::round(shift / time_resolution_native_ps));
 };
 
-void AbstractFifoReader::getIntensityFrames()
+void AbstractFifoReader::loadIntensityFramesImpl()
 {
    int fb = realign_params.frame_binning;
 
@@ -195,10 +195,14 @@ void AbstractFifoReader::getIntensityFrames()
 
    int n_invalid = 0;
 
-   if (!frames.empty() && (frames[1].size() != cv::Size(n_x, n_y)))
-      frames.clear();
+   {
+      std::lock_guard<std::mutex> lk(frame_mutex);
+      if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y)))
+         frames.clear();
+   }
 
    std::vector<int> dims = {n_z, n_y, n_x}; 
+   cv::Mat cur_frame(dims, CV_32F, cv::Scalar(0));
 
    if (frames.empty())
    {
@@ -222,12 +226,24 @@ void AbstractFifoReader::getIntensityFrames()
             int z = p.frame % n_z;
             p.frame /= n_z;
 
+            bool started_new_frame = false;
+            {
+               std::lock_guard<std::mutex> lk(frame_mutex);
+               while (p.frame >= frames.size())
+               {
+                  cv::Mat frame_cpy;
+                  cur_frame.copyTo(frame_cpy);
+                  frames.push_back(frame_cpy);
+                  cur_frame.setTo(cv::Scalar(0));
+                  started_new_frame = true;
+               }
+            }
 
-            while (p.frame >= frames.size())
-               frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
+            if (started_new_frame)
+               frame_cv.notify_all();
 
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
-               frames[p.frame].at<float>(z, (int)p.y, (int)p.x)++;
+               cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
          }
       }
    }
