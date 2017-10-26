@@ -78,7 +78,7 @@ void AligningReader::alignFrames()
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames(n_frames);
 
-   cv::Mat ref_frame = getIntensityFrame(reference_index);
+   cv::Mat ref_frame = getIntensityFrameImmediately(reference_index);
    frame_aligner->setReference(reference_index, ref_frame);
 
    realignment = std::vector<RealignmentResult>(n_frames);
