@@ -150,7 +150,7 @@ protected:
    }
    
    void loadIntensityFramesImpl();
-   int getNumIntensityFrames() { return frames.size(); };
+   int getNumIntensityFrames() { return (int) frames.size(); };
 
    void readSettings();
 
@@ -188,6 +188,8 @@ private:
 
    bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
+   
+   bool finished_loading_intensity_frames = false;
 };
 
 

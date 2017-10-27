@@ -27,14 +27,25 @@ void par_for(int begin, int end, F fn) {
   }
 };
 
+AligningReader::~AligningReader()
+{
+   if (frame_thread.joinable())
+      frame_thread.join();
+}
+
 void AligningReader::loadIntensityFrames()
 {
-   std::lock_guard<std::mutex> lk(frame_mutex);
+   {
+      std::lock_guard<std::mutex> lk(frame_mutex);
 
-   if (!frames.empty() || frame_thread.joinable())
-      return;
+      if (!frames.empty() || frame_thread.joinable())
+         return;
+   }
 
-   frame_thread = std::thread(&AligningReader::loadIntensityFramesImpl, this);
+   if (async_load_intensity_frames)
+      frame_thread = std::thread(&AligningReader::loadIntensityFramesImpl, this);
+   else
+      loadIntensityFramesImpl();
 }
 
 cv::Mat AligningReader::getIntensityFrame(int frame)
@@ -64,7 +75,7 @@ void AligningReader::alignFrames()
    loadIntensityFrames();
 
    int n_frames = getNumIntensityFrames();
-   reference_index = n_frames / 2;
+   //reference_index = n_frames / 2;
    
    if ((n_frames == 0) || terminate)
    {
@@ -123,7 +134,6 @@ void AligningReader::alignFramesImpl()
                intensity_normalisation += realignment[i].mask;
       }
 
-      std::cout << "*";
       realign_cv.notify_all();
    });
 

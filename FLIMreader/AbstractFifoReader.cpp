@@ -202,7 +202,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    }
 
    std::vector<int> dims = {n_z, n_y, n_x}; 
-   cv::Mat cur_frame(dims, CV_32F, cv::Scalar(0));
+   cv::Mat cur_frame;// (dims, CV_32F, cv::Scalar(0));
 
    if (frames.empty())
    {
@@ -226,24 +226,11 @@ void AbstractFifoReader::loadIntensityFramesImpl()
             int z = p.frame % n_z;
             p.frame /= n_z;
 
-            bool started_new_frame = false;
-            {
-               std::lock_guard<std::mutex> lk(frame_mutex);
-               while (p.frame >= frames.size())
-               {
-                  cv::Mat frame_cpy;
-                  cur_frame.copyTo(frame_cpy);
-                  frames.push_back(frame_cpy);
-                  cur_frame.setTo(cv::Scalar(0));
-                  started_new_frame = true;
-               }
-            }
-
-            if (started_new_frame)
-               frame_cv.notify_all();
+            while (p.frame >= frames.size())
+               frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
 
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
-               cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
+               frames[p.frame].at<float>(z, (int)p.y, (int)p.x)++;
          }
       }
    }
@@ -252,5 +239,6 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
    if (terminate)
       frames.clear();
+
 }
 

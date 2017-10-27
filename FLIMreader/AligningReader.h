@@ -8,6 +8,8 @@ class AligningReader
 {
 public:
 
+   ~AligningReader();
+
    const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
    const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
 
@@ -48,4 +50,6 @@ protected:
    std::mutex frame_mutex;
    std::condition_variable frame_cv;
    std::vector<cv::Mat> frames;
+
+   bool async_load_intensity_frames = false;
 };
