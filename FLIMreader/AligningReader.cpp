@@ -137,6 +137,8 @@ void AligningReader::alignFramesImpl()
       realign_cv.notify_all();
    });
 
+   frame_aligner->clearTemp();
+
    realignment_complete = true;
    realign_cv.notify_all();
 
