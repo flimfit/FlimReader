@@ -326,8 +326,8 @@ void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
       for (int c = 0; c < 1; c++)
          for (int t = 0; t < this->timepoints_.size(); t++)
          {
-            I += *data_ptr;
-            It += (*data_ptr) * timepoints_[t];
+            I += static_cast<uint16_t>(*data_ptr);
+            It += static_cast<float>((*data_ptr) * timepoints_[t]);
 
             data_ptr++;
          }
