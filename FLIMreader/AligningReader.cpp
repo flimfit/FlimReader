@@ -33,6 +33,18 @@ AligningReader::~AligningReader()
       frame_thread.join();
 }
 
+void AligningReader::setUseAllChannels()
+{
+   use_channel = std::vector<bool>(getNumChannels(), true);
+}
+
+void AligningReader::setChannelsToUse(const std::vector<bool>& use_channel_)
+{
+   setUseAllChannels();
+   for(int i=0; i<std::min((size_t) getNumChannels(), use_channel_.size()); i++)
+      use_channel[i] = use_channel_[i];
+}
+
 void AligningReader::loadIntensityFrames()
 {
    {
@@ -75,7 +87,7 @@ void AligningReader::alignFrames()
    loadIntensityFrames();
 
    int n_frames = getNumIntensityFrames();
-   //reference_index = n_frames / 2;
+   reference_index = n_frames / 2;
    
    if ((n_frames == 0) || terminate)
    {

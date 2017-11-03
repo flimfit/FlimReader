@@ -144,7 +144,8 @@ void AbstractFifoReader::determineDwellTime()
    sync.count_per_line = sync_count_per_line;
    sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
-   
+
+   setUseAllChannels();   
 }
 
 void AbstractFifoReader::setTemporalResolution(int temporal_resolution__)
@@ -229,7 +230,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
             while (p.frame >= frames.size())
                frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
 
-            if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0))
+            if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
                frames[p.frame].at<float>(z, (int)p.y, (int)p.x)++;
          }
       }
