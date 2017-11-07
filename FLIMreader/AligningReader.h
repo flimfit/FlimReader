@@ -46,7 +46,7 @@ protected:
    RealignmentParameters realign_params;
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
    std::vector<RealignmentResult> realignment;
-   int reference_index = 0;
+   int reference_index = -1;
 
    cv::Mat intensity_normalisation;
 

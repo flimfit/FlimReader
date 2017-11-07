@@ -87,7 +87,22 @@ void AligningReader::alignFrames()
    loadIntensityFrames();
 
    int n_frames = getNumIntensityFrames();
-   reference_index = n_frames / 2;
+
+   if (reference_index == -1)
+   {
+      switch(realign_params.default_reference_frame)
+      {
+         case DefaultReferenceFrame::FirstFrame: 
+            reference_index = 0;
+            break;
+         case DefaultReferenceFrame::MiddleFrame:
+            reference_index = n_frames / 2;
+            break;
+         case DefaultReferenceFrame::LastFrame:
+            reference_index = n_frames - 1;
+            break;
+      }
+   }
    
    if ((n_frames == 0) || terminate)
    {
