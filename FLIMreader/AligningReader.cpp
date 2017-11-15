@@ -148,6 +148,7 @@ void AligningReader::alignFramesImpl()
       try 
       {
          realignment[i] = frame_aligner->addFrame(i, getIntensityFrame(i));
+         frames[i] = cv::Mat(); // clear frame after alignment
       }
       catch (cv::Exception e)
       {
