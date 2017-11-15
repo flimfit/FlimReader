@@ -1,17 +1,11 @@
 cmake_minimum_required(VERSION 3.7)
 project(FlimReader)
 
-if(MSVC)
-  set( Boost_USE_STATIC_LIBS ON )
-  add_definitions(-DBOOST_ALL_NO_LIB=1)
-endif()
-
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(OpenCV 3.1 REQUIRED core imgproc highgui )
-find_package(OpenMP REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${dlib_INCLUDE_DIRS} ${FrameAligner_INCLUDE_DIRS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+include_directories(${Boost_INCLUDE_DIR} ${FrameAligner_INCLUDE_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 set(SOURCE
    FlimReader.cpp
@@ -21,6 +15,7 @@ set(SOURCE
    FfdReader.cpp
    BhFifoReader.cpp
    TextReader.cpp
+   AligningReader.cpp
 )
 
 set(HEADERS
@@ -41,9 +36,10 @@ set(HEADERS
    MetadataTag.h
    FlimCube.h
    FlimCubeWriter.h
+   AligningReader.h
 )
 
-set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} ${FrameAligner_INCLUDE_DIRS} PARENT_SCOPE)
-set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${FrameAligner_LIBRARIES} ${EXTRA_LIBRARIES} PARENT_SCOPE)
+set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${FrameAligner_INCLUDE_DIRS} PARENT_SCOPE)
+set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${FrameAligner_LIBRARIES} FrameAligner ${EXTRA_LIBRARIES} PARENT_SCOPE)
 add_library(FlimReader OBJECT ${SOURCE} ${HEADERS})
 

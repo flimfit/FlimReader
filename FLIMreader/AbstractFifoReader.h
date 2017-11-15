@@ -138,23 +138,24 @@ public:
    bool isBidirectional() { return sync.bi_directional; }
    void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
-   void alignFrames();
-
    double getProgress() { return event_reader->getProgress(); }
 
    void setTemporalResolution(int temporal_resolution);
       
 protected:
-   
-   void readSettings();
 
-   void computeIntensityNormalisation();
+   ImageScanParameters getImageScanParameters() {
+      ImageScanParameters params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
+      return params;
+   }
+   
+   void loadIntensityFramesImpl();
+   int getNumIntensityFrames() { return (int) frames.size(); };
+
+   void readSettings();
 
    template<typename T>
    void computeMeanArrivalImage(const T* histogram);
-
-   void getIntensityFrames();
-   void alignFramesImpl();
 
    template<typename T>
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
@@ -179,15 +180,9 @@ protected:
    std::unique_ptr<AbstractEventReader> event_reader;
    Markers markers;
    
-   bool terminate = false;
-
-   std::thread realignment_thread;
-   std::mutex realign_mutex;
-   std::condition_variable realign_cv;
-   bool realignment_complete;
-
 private:
    
+   int n_z = 1; // TODO
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
@@ -195,6 +190,8 @@ private:
 
    bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
+   
+   bool finished_loading_intensity_frames = false;
 };
 
 
@@ -284,7 +281,8 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
 
-            frame_aligner->shiftPixel(frame, p.x, p.y);
+            double z = 0;
+            frame_aligner->shiftPixel(frame, p.x, p.y, z);
          }
 
          p.x /= spatial_binning;
@@ -332,8 +330,8 @@ void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
       for (int c = 0; c < 1; c++)
          for (int t = 0; t < this->timepoints_.size(); t++)
          {
-            I += *data_ptr;
-            It += (*data_ptr) * timepoints_[t];
+            I += static_cast<uint16_t>(*data_ptr);
+            It += static_cast<float>((*data_ptr) * timepoints_[t]);
 
             data_ptr++;
          }
