@@ -50,14 +50,20 @@ void AligningReader::loadIntensityFrames()
    {
       std::lock_guard<std::mutex> lk(frame_mutex);
 
-      if (!frames.empty() || frame_thread.joinable())
+      if (!frames.empty())
          return;
    }
 
    if (async_load_intensity_frames)
+   {
+      if (frame_thread.joinable())
+         frame_thread.join();
       frame_thread = std::thread(&AligningReader::loadIntensityFramesImpl, this);
+   }
    else
+   {
       loadIntensityFramesImpl();
+   }
 }
 
 cv::Mat AligningReader::getIntensityFrame(int frame)
@@ -170,6 +176,7 @@ void AligningReader::alignFramesImpl()
       realign_cv.notify_all();
    });
 
+   frames.clear();
    frame_aligner->clearTemp();
 
    realignment_complete = true;
