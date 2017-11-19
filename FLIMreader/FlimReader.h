@@ -85,6 +85,6 @@ void FlimReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<i
    int n_chan_stride = -1;
    std::vector<int> ch = validateChannels(channels, n_chan_stride);
 
-   cube->init(timepoints_, (int)ch.size(), numX(), numY());
+   cube->init(timepoints_, (int)ch.size(), numX(), numY(), numZ());
    readData(cube->getDataPtr(), ch);
 }

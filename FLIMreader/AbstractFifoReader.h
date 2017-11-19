@@ -260,6 +260,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if (mapped_channel == -1)
             continue;
 
+         p.z = p.frame % n_z;
+         frame /= n_z;
+
          if (frame_aligner != nullptr && frame_aligner->frameValid(frame))
          {
             // Check that we have realigned this frame
@@ -274,14 +277,12 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
             if (terminate) break;
            
-
             double correlation = frame_aligner->getFrameCorrelation(frame);
             double coverage = frame_aligner->getFrameCoverage(frame);
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
-
-            double z = 0;
-            frame_aligner->shiftPixel(frame, p.x, p.y, z);
+            
+            frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
          }
 
          p.x /= spatial_binning;
@@ -289,6 +290,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
          int x = (int) std::round(p.x);
          int y = (int) std::round(p.y);
+         int z = (int) std::round(p.z);
 
          int bin = p.bin;
          if (t_rep_resunit > 0)
@@ -298,10 +300,17 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          }
          bin = bin >> downsampling;
 
-         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) && (y < n_y_binned) && (y >= 0))
-            histogram[bin + n_bin * (mapped_channel + n_chan_stride * (x + n_x_binned * y))]++;
+         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) 
+                           && (y < n_y_binned) && (y >= 0)
+                           && (z < n_z) && (z >= 0))
+         {
+            int idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
+            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;            
+         }
          else
-            n_invalid++;
+         {
+            n_invalid++;            
+         }
       }
    }
 

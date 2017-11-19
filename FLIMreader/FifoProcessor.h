@@ -42,12 +42,13 @@ public:
    {}
 
    Photon(int frame, int x, int y, int channel, int bin) :
-      frame(frame), x(x), y(y), channel(channel), bin(bin), valid(true)
+      frame(frame), x(x), y(y), z(0), channel(channel), bin(bin), valid(true)
    {}
 
    int frame;
    double x;
    double y;
+   double z;
    int channel;
    int bin;
    bool valid;
