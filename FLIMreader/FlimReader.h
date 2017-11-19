@@ -38,9 +38,12 @@ public:
    virtual void clearStopSignal() {};
    virtual double getProgress() { return 0; }
 
+   void setNumZ(int n_z_) { n_z = n_z_; }
+
    const std::vector<double>& getTimepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }
    int numY() { return n_y / spatial_binning; }
+   int numZ() { return n_z; }
    int dataSizePerChannel();
 
    virtual bool isBidirectional() { return false; }
@@ -69,6 +72,7 @@ protected:
    int spatial_binning = 1;
    int n_x = 0;
    int n_y = 0;
+   int n_z = 1;
    int n_chan = 0;
    double rep_rate_hz = std::numeric_limits<double>::quiet_NaN(); // when we don't know 
 

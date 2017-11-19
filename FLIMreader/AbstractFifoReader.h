@@ -182,7 +182,6 @@ protected:
    
 private:
    
-   int n_z = 1; // TODO
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 

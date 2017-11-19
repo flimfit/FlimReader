@@ -203,7 +203,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    }
 
    std::vector<int> dims = {n_z, n_y, n_x}; 
-   cv::Mat cur_frame;// (dims, CV_32F, cv::Scalar(0));
+   cv::Mat cur_frame;
 
    if (frames.empty())
    {
