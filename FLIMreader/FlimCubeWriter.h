@@ -2,6 +2,7 @@
 
 #include "MetadataTag.h"
 #include "FlimCube.h"
+#include "Cv3dUtils.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -49,7 +50,7 @@ class FlimCubeWriter
 {
 public:
 
-   FlimCubeWriter(const std::string& filename, std::shared_ptr<FlimCube<T>> cube, const TagMap& tags, const TagMap& reader_tags, const ImageMap& images) :
+   FlimCubeWriter(const std::string& filename, std::shared_ptr<FlimCube<T>> cube, int z, const TagMap& tags, const TagMap& reader_tags, const ImageMap& images) :
       filename(filename)
    {
 
@@ -96,14 +97,16 @@ public:
       data_pos_writer.writeCurrentPos();
 
       // Write data
-      uint64_t data_size = cube->getDataSize();
-      of.write((char*) cube->getDataPtr(), data_size);
+      uint64_t data_size = cube->getFrameSize();
+      of.write((char*) cube->getDataPtr(z), data_size);
 
       for(auto pair : images)
       {
          next_block_pos_writer.writeCurrentPos();
 
          auto im = pair.second; 
+         im = extractSlice(im, z);
+
          size_t data_length = im.size().area() * im.elemSize();
 
          writeTag("BlockType", std::string("Image"));

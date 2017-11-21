@@ -128,7 +128,7 @@ void AligningReader::alignFrames()
    realignment = std::vector<RealignmentResult>(n_frames);
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_16U, cv::Scalar(1));
+   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_16U, cv::Scalar(0));
 
    if (realignment_thread.joinable())
       realignment_thread.join();

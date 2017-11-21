@@ -23,10 +23,12 @@ public:
       ready = true;
    }
 
-   T* getDataPtr()
+   T* getDataPtr(int z = 0)
    {
-      assert(ready);
-      return data.data();
+      if (!ready) throw std::runtime_error("Cube not initalized");
+      if (z >= n_z) throw std::runtime_error("Invalid z frame requested");
+
+      return data.data() + getFrameSize() * z;
    }
 
    uint64_t getDataSize()
@@ -34,11 +36,17 @@ public:
       return n_t * n_chan * n_y * n_x * n_z * sizeof(T);
    }
 
+   uint64_t getFrameSize()
+   {
+      return n_t * n_chan * n_y * n_x * sizeof(T);
+   }
+
    uint64_t n_t = 1;
    uint64_t n_chan = 1;
    uint64_t n_x = 1;
    uint64_t n_y = 1;
    uint64_t n_z = 1;
+   
    std::vector<double> timepoints;
    bool isReady() { return ready; }
 

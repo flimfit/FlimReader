@@ -288,9 +288,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          p.x /= spatial_binning;
          p.y /= spatial_binning;
 
-         int x = (int) std::round(p.x);
-         int y = (int) std::round(p.y);
-         int z = (int) std::round(p.z);
+         int64_t x = (int64_t) std::round(p.x);
+         int64_t y = (int64_t) std::round(p.y);
+         int64_t z = (int64_t) std::round(p.z);
 
          int bin = p.bin;
          if (t_rep_resunit > 0)
@@ -304,7 +304,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
                            && (y < n_y_binned) && (y >= 0)
                            && (z < n_z) && (z >= 0))
          {
-            int idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
+            size_t idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
             histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;            
          }
          else
