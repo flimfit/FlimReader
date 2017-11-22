@@ -71,27 +71,24 @@ void AbstractFifoReader::determineDwellTime()
    {
       TcspcEvent p = event_reader->getEvent();
 
-      sync_count_accum += p.macro_time_offset;
-      uint64_t macro_time = sync_count_accum + p.macro_time;
-
       if (!p.valid)
          continue;
 
       if ((p.mark & markers.FrameMarker) && n_line > 0)
       {
          if (n_frame == 0)
-            frame_start = macro_time;
+            frame_start = p.macro_time;
          else
-            sync.counts_interframe = (double) (macro_time - frame_start);
+            sync.counts_interframe = (double) (p.macro_time - frame_start);
          n_frame++; // count full frames (i.e. ignore first start, if it's there)
 
       }
 
       if ((p.mark & markers.LineEndMarker) && line_active)
       {
-         if (macro_time >= sync_start_count) // not sure why this is sometimes violated
+         if (p.macro_time >= sync_start_count) // not sure why this is sometimes violated
          {
-            uint64_t diff = macro_time - sync_start_count;
+            uint64_t diff = p.macro_time - sync_start_count;
             sync_count_per_line += diff;
 
             sync_counts.push_back(diff);
@@ -106,12 +103,12 @@ void AbstractFifoReader::determineDwellTime()
       {
          if (n_line > 0)
          {
-            uint64_t diff = macro_time - sync_start_count;
-            sync_count_interline += (macro_time - sync_start_count);
+            uint64_t diff = p.macro_time - sync_start_count;
+            sync_count_interline += (p.macro_time - sync_start_count);
          }
 
          n_line++;
-         sync_start_count = macro_time;
+         sync_start_count = p.macro_time;
          line_active = true;
       }
 
@@ -217,15 +214,15 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
          if (p.valid)
          {
-            //#ifdef _DEBUG
-            //if (p.frame > 10)
-            //   break;
-            //#endif
-
+          
             p.frame /= fb;
 
             int z = p.frame % n_z;
             p.frame /= n_z;
+
+            if (p.frame > 2)
+               break;
+
 
             while (p.frame >= frames.size())
                frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));

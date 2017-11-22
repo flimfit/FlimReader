@@ -57,4 +57,5 @@ protected:
    std::vector<bool> use_channel;
 
    bool async_load_intensity_frames = false;
+   bool clear_frames_after_alignment = false;   
 };

@@ -17,42 +17,6 @@ struct ffd_evt
    uint16_t micro_time;
 };
 
-class FfdEvent : public TcspcEvent
-{
-public:
-   FfdEvent(ffd_evt_v1 evt)
-   {
-      micro_time = evt.micro_time;
-      macro_time = evt.macro_time;
-      channel = evt.channel;
-      mark = evt.mark;
-   }
-   
-   FfdEvent(ffd_evt evt)
-   {
-      macro_time = evt.macro_time;
-      channel = evt.micro_time & 0xF;
-
-      if (channel == 0xF)
-      {
-         if (evt.micro_time == 0xF)
-         {
-            macro_time_offset = ((macro_time == 0) ? 1 : macro_time) * 0xFFFF;
-            valid = false;
-         }
-         else
-         {
-            mark = evt.micro_time >> 4;
-         }
-      }
-      else
-      {
-         mark = 0;
-         micro_time = evt.micro_time >> 4;
-      }
-   }
-};
-
 
 class FfdEventReader : public AbstractEventReader
 {
@@ -64,21 +28,63 @@ public:
    {
    }
 
-   TcspcEvent getEvent()
+   std::tuple<TcspcEvent, uint64_t> getRawEvent()
    {
       if (version == 1)
       {
          ffd_evt_v1 evt = *reinterpret_cast<const ffd_evt_v1*>(getPacket());
-         return FfdEvent(evt);
+         return getFfdEvent(evt);
       }
       else
       {
          ffd_evt evt = *reinterpret_cast<const ffd_evt*>(getPacket());
-         return FfdEvent(evt);
+         return getFfdEvent(evt);
       }
 
       assert(fs.good());
 
+   }
+
+   std::tuple<TcspcEvent, uint64_t> getFfdEvent(ffd_evt_v1 evt)
+   {
+      TcspcEvent e;
+      uint64_t macro_time_offset = 0;
+
+      e.micro_time = evt.micro_time;
+      e.macro_time = evt.macro_time;
+      e.channel = evt.channel;
+      e.mark = evt.mark;
+
+      return std::tuple<TcspcEvent, uint64_t>(e, macro_time_offset);
+   }
+
+   std::tuple<TcspcEvent, uint64_t> getFfdEvent(ffd_evt evt)
+   {
+      TcspcEvent e;
+      uint64_t macro_time_offset = 0;
+
+      e.macro_time = evt.macro_time;
+      e.channel = evt.micro_time & 0xF;
+
+      if (e.channel == 0xF)
+      {
+         if (evt.micro_time == 0xF)
+         {
+            macro_time_offset = ((e.macro_time == 0) ? 1 : e.macro_time) * 0xFFFF;
+            e.valid = false;
+         }
+         else
+         {
+            e.mark = evt.micro_time >> 4;
+         }
+      }
+      else
+      {
+         e.mark = 0;
+         e.micro_time = evt.micro_time >> 4;
+      }
+
+      return std::tuple<TcspcEvent, uint64_t>(e, macro_time_offset);
    }
 
 protected: 

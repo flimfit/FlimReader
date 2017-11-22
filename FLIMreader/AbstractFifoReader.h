@@ -14,105 +14,14 @@
 #include <condition_variable>
 #include <list>
 #include <chrono>
+#include <tuple>
+
 using namespace std::chrono_literals;
 
 #include "FifoProcessor.h"
 #include "WriteMultipageTiff.h"
+#include "AbstractEventReader.h"
 
-class AbstractEventReader
-{
-public:
-   AbstractEventReader(const std::string& filename, std::streamoff data_position, uint packet_size) :
-   data_position(data_position), packet_size(packet_size)
-   {
-      fs = std::ifstream(filename, std::ifstream::in | std::ifstream::binary);
-      
-      fs.seekg(0, fs.end);
-      length = fs.tellg() - data_position;
-      n_packet = length / packet_size;
-      uint64_t n_block = n_packet / block_size + 1;
-      data.reserve(n_block);
-      
-      reader_thread = std::thread(&AbstractEventReader::read, this);
-      
-      setToStart();
-   }
-   
-   ~AbstractEventReader()
-   {
-      terminate = true;
-      if (reader_thread.joinable())
-         reader_thread.join();
-   }
-
-
-   void read()
-   {
-      uint64_t sz = block_size * packet_size;
-      
-      fs.seekg(data_position);
-
-      size_t n_read = 0;
-      do
-      {
-         std::vector<char> block(sz);
-         fs.read(&block[0], sz);
-         n_read = fs.gcount();
-
-         std::unique_lock<std::mutex> lk(m);
-         data.push_back(block);
-         cv.notify_one();
-      } while (n_read > 0 && !terminate);
-   }
-
-   double getProgress()
-   {
-      return ((double) cur_pos) / n_packet;
-   }
-
-   void setToStart()
-   {
-      cur_pos = 0;
-   }
-
-   bool hasMoreData()
-   {
-      return cur_pos < n_packet;
-   }
-
-   virtual TcspcEvent getEvent() = 0;
-
-   const char* getPacket()
-   {
-      uint64_t block = cur_pos / block_size;
-      uint64_t packet = cur_pos % block_size;
-      
-      std::unique_lock<std::mutex> lk(m);
-      cv.wait(lk, [&]() { return block < data.size(); });
-  
-      cur_pos++;
-      return &(data[block][packet*packet_size]);
-   }
-   
-protected:
-   
-   std::ifstream fs;
-   std::streamoff data_position;
-   uint64_t packet_size;
-   uint64_t length = 0;
-   uint64_t n_packet = 0;
-   std::vector<std::vector<char>> data;
-
-   uint64_t block_size = 1024;
-
-   uint64_t cur_pos = 0;
-
-   std::thread reader_thread;
-   std::mutex m;
-   std::condition_variable cv;
-
-   bool terminate = false;
-};
 
 
 class AbstractFifoReader : public FlimReader

@@ -16,6 +16,8 @@ set(SOURCE
    BhFifoReader.cpp
    TextReader.cpp
    AligningReader.cpp
+   AbstractEventReader.cpp
+   FifoProcessor.cpp
 )
 
 set(HEADERS
@@ -37,6 +39,7 @@ set(HEADERS
    FlimCube.h
    FlimCubeWriter.h
    AligningReader.h
+   AbstractEventReader.h
 )
 
 set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${FrameAligner_INCLUDE_DIRS} PARENT_SCOPE)
