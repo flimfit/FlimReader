@@ -35,6 +35,9 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
+   void setNumZ(int n_z_) { n_z = n_z_; }
+
+
    void stopReading() 
    { 
       terminate = true; 
@@ -86,7 +89,7 @@ protected:
 
    SyncSettings sync;
 
-   std::unique_ptr<AbstractEventReader> event_reader;
+   std::shared_ptr<AbstractEventReader> event_reader;
    Markers markers;
    
 private:
@@ -149,7 +152,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    while (event_reader->hasMoreData() && !terminate)
    {
-      TcspcEvent e = event_reader->getEvent();
+      FifoEvent e = event_reader->getEvent();
       Photon p = processor.addEvent(e);
       int frame = p.frame;
 

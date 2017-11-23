@@ -53,6 +53,7 @@ void AbstractFifoReader::determineDwellTime()
    
    event_reader->setToStart();
    
+
    uint64_t frame_start = 0;
    uint64_t sync_count_accum = 0;
    uint64_t sync_start_count = 0;
@@ -69,7 +70,7 @@ void AbstractFifoReader::determineDwellTime()
    bool line_active = false;
    do
    {
-      TcspcEvent p = event_reader->getEvent();
+      FifoEvent p = event_reader->getEvent();
 
       if (!p.valid)
          continue;
@@ -81,6 +82,7 @@ void AbstractFifoReader::determineDwellTime()
          else
             sync.counts_interframe = (double) (p.macro_time - frame_start);
          n_frame++; // count full frames (i.e. ignore first start, if it's there)
+         line_active = false;
 
       }
 
@@ -141,6 +143,7 @@ void AbstractFifoReader::determineDwellTime()
    sync.count_per_line = sync_count_per_line;
    sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
+   sync.n_line = n_y;
 
    setUseAllChannels();   
 }
@@ -191,6 +194,9 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    assert(event_reader != nullptr);
    event_reader->setToStart();
 
+
+   event_reader->setToStart();
+
    int n_invalid = 0;
 
    {
@@ -199,39 +205,51 @@ void AbstractFifoReader::loadIntensityFramesImpl()
          frames.clear();
    }
 
-   std::vector<int> dims = {n_z, n_y, n_x}; 
-   cv::Mat cur_frame;
-
    if (frames.empty())
    {
+      auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
+      fifo_frame->loadNext();
+
+      int idx = 0;
+      int frame = 0;
+      int z = 0;
+
+      std::vector<int> dims = { n_z, n_y, n_x };
+      int cur_frame_idx = 0;
+      cv::Mat cur_frame = cv::Mat(dims, CV_32F, cv::Scalar(0));
+
       FifoProcessor processor(markers, sync);
       while (event_reader->hasMoreData())
       {
          if (terminate) break;
 
-         TcspcEvent e = event_reader->getEvent();
-         Photon p = processor.addEvent(e);
+         fifo_frame->loadNext();
+         FifoProcessor2 processor2(markers, sync);
+         processor2.setFrame(fifo_frame);
 
-         if (p.valid)
-         {
-          
-            p.frame /= fb;
-
-            int z = p.frame % n_z;
-            p.frame /= n_z;
-
-            if (p.frame > 2)
-               break;
-
-
-            while (p.frame >= frames.size())
-               frames.push_back(cv::Mat(dims, CV_32F, cv::Scalar(0)));
-
+         Photon p;
+         while (p = processor2.getNextPhoton())
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
-               frames[p.frame].at<float>(z, (int)p.y, (int)p.x)++;
+               cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
+
+         idx++;
+         frame = idx / n_z;
+         z = idx % n_z;
+
+         if (frame > cur_frame_idx)
+         {
+            setIntensityFrame(cur_frame_idx, cur_frame);
+          
+            cur_frame.setTo(0);
+            cur_frame_idx = frame;
          }
       }
+
+      // last frame
+      if (z > 0)
+         setIntensityFrame(cur_frame_idx, cur_frame);
    }
+
 
    fb = last_frame_binning;
 

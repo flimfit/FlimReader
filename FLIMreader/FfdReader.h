@@ -28,64 +28,9 @@ public:
    {
    }
 
-   std::tuple<TcspcEvent, uint64_t> getRawEvent()
-   {
-      if (version == 1)
-      {
-         ffd_evt_v1 evt = *reinterpret_cast<const ffd_evt_v1*>(getPacket());
-         return getFfdEvent(evt);
-      }
-      else
-      {
-         ffd_evt evt = *reinterpret_cast<const ffd_evt*>(getPacket());
-         return getFfdEvent(evt);
-      }
-
-      assert(fs.good());
-
-   }
-
-   std::tuple<TcspcEvent, uint64_t> getFfdEvent(ffd_evt_v1 evt)
-   {
-      TcspcEvent e;
-      uint64_t macro_time_offset = 0;
-
-      e.micro_time = evt.micro_time;
-      e.macro_time = evt.macro_time;
-      e.channel = evt.channel;
-      e.mark = evt.mark;
-
-      return std::tuple<TcspcEvent, uint64_t>(e, macro_time_offset);
-   }
-
-   std::tuple<TcspcEvent, uint64_t> getFfdEvent(ffd_evt evt)
-   {
-      TcspcEvent e;
-      uint64_t macro_time_offset = 0;
-
-      e.macro_time = evt.macro_time;
-      e.channel = evt.micro_time & 0xF;
-
-      if (e.channel == 0xF)
-      {
-         if (evt.micro_time == 0xF)
-         {
-            macro_time_offset = ((e.macro_time == 0) ? 1 : e.macro_time) * 0xFFFF;
-            e.valid = false;
-         }
-         else
-         {
-            e.mark = evt.micro_time >> 4;
-         }
-      }
-      else
-      {
-         e.mark = 0;
-         e.micro_time = evt.micro_time >> 4;
-      }
-
-      return std::tuple<TcspcEvent, uint64_t>(e, macro_time_offset);
-   }
+   std::tuple<FifoEvent, uint64_t> getRawEvent();
+   std::tuple<FifoEvent, uint64_t> getFfdEvent(ffd_evt_v1 evt);
+   std::tuple<FifoEvent, uint64_t> getFfdEvent(ffd_evt evt);
 
 protected: 
 

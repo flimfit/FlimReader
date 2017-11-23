@@ -38,7 +38,7 @@ public:
    virtual void clearStopSignal() {};
    virtual double getProgress() { return 0; }
 
-   void setNumZ(int n_z_) { n_z = n_z_; }
+   virtual void setNumZ(int n_z_) { std::cout << "Setting n_z not supported\n"; }
 
    const std::vector<double>& getTimepoints() { return timepoints_; };
    int numX() { return n_x / spatial_binning; }

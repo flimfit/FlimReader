@@ -26,7 +26,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
    markers.LineEndMarker = 0x2;
    markers.FrameMarker = 0x4;
 
-   event_reader = std::unique_ptr<AbstractEventReader>(new BhEventReader(filename, data_position));
+   event_reader = std::shared_ptr<AbstractEventReader>(new BhEventReader(filename, data_position));
 
    determineDwellTime();
 }
@@ -102,9 +102,57 @@ void BhFifoReader::readHeader()
    READ(fs, sys_par_ext);
 
    n_x = sys_par_ext.fifo_ncx;
-   n_y = sys_par_ext.fifo_ncx; // maybe?
+   n_y = sys_par_ext.norm_ncx; // maybe?
    n_chan = sys_par_ext.img_x;
    sync.bi_directional = false; //(sys_par_ext.scan_type == 1);
    
    data_position = 0;
+}
+
+
+
+std::tuple<FifoEvent, uint64_t> BhEventReader::getRawEvent()
+{
+   uint32_t evt = getPacket<uint32_t>();
+   return getBhEvent(evt);
+}
+
+std::tuple<FifoEvent, uint64_t> BhEventReader::getBhEvent(uint32_t evt0)
+{
+   FifoEvent e;
+   uint64_t macro_time_offset = 0;
+
+   uint32_t evt = evt0;
+   e.macro_time = evt & 0xFFF; evt >>= 12;
+   e.channel = evt & 0xF; evt >>= 4;
+   e.micro_time = evt & 0xFFF; evt >>= 12;
+   e.micro_time = 4095 - e.micro_time; // Reverse start-stop
+
+   bool is_mark = (evt & 0x1) != 0;
+   bool gap = (evt & 0x2) != 0;
+   bool mtov = (evt & 0x4) != 0;
+   bool invalid = (evt & 0x8) != 0;
+
+   e.valid = true;
+   e.gap = gap;
+
+
+   if (is_mark)
+   {
+      e.mark = e.channel;
+   }
+   if (mtov)
+   {
+      if (invalid && !is_mark)
+      {
+         e.valid = false;
+         macro_time_offset = 0xFFF * (evt0 & 0xFFFFFFF);
+      }
+      else
+      {
+         macro_time_offset = 0xFFF;
+      }
+   }
+
+   return std::tuple<FifoEvent, uint64_t>(e, macro_time_offset);
 }

@@ -1,39 +1,8 @@
 #pragma once
 #include <cstdint>
-
-class Markers
-{
-public:
-   uint8_t PhotonMarker = 0x0;
-   uint8_t PixelMarker = 0x1;
-   uint8_t LineStartMarker = 0x2;
-   uint8_t LineEndMarker = 0x4;
-   uint8_t FrameMarker = 0x8;
-   uint8_t Invalid = 0x80;
-};
-
-class TcspcEvent
-{
-public:
-   uint64_t macro_time = 0;
-   uint32_t micro_time = 0;
-   uint8_t channel = 0;
-   uint8_t mark = 0;
-   bool valid = true;
-};
-
-class SyncSettings
-{
-public:
-   double count_per_line;
-   double counts_interline;
-   double counts_interframe;
-   int n_x;
-   bool bi_directional = false;
-   double phase = 0;
-
-   int n_line = -1; // used if we don't have frame markers
-};
+#include <memory>
+#include <vector>
+#include "AbstractEventReader.h"
 
 class Photon {
 public:
@@ -44,6 +13,8 @@ public:
    Photon(int frame, int x, int y, int channel, int bin) :
       frame(frame), x(x), y(y), z(0), channel(channel), bin(bin), valid(true)
    {}
+
+   explicit operator bool() const { return valid; }
 
    int frame;
    double x;
@@ -57,40 +28,61 @@ public:
 class FifoFrame
 {
 public:
-   FifoFrame(std::shared_ptr<AbstractEventReader> reader)
-      reader(reader)
+   FifoFrame(std::shared_ptr<AbstractEventReader> reader, Markers markers) :
+      reader(reader), markers(markers)
    {
 
    }
 
-   void loadNextFrame()
-   {
-      events.clear();
-      marker_events.clear();
-      
-      while (event_reader->hasMoreData())
-      {
-         TcspcEvent p = event_reader->getEvent();
+   void loadNext();
 
-         if (p.valid && (p.mark & markers.FrameMarker))
-         {
-            last_frame_event = p;
-            break;
-         }   
-         else
-         {
-            if (p.mark)
-               marker_events.push_back(p);
-            events.push_back(p);
-         }
-      }
-   }
+   std::vector<FifoEvent> events;
+   std::vector<FifoEvent> marker_events;
+   FifoEvent next_frame_event;
+   FifoEvent frame_start_event;
 
 protected:
-   std::vector<TcspcEvent> events;
-   std::vector<TcspcEvent> marker_events;
+
    std::shared_ptr<AbstractEventReader> reader;
-   TcspcEvent last_frame_event;
+   Markers markers;
+};
+
+
+class FifoProcessor2
+{
+public:
+   FifoProcessor2(Markers markers, SyncSettings sync);
+
+   void setFrame(std::shared_ptr<FifoFrame> frame_)
+   {
+      frame = frame_;
+      determineLineStartTimes();
+      idx = 0;
+      line_idx = 0;
+      cur_line = -1;
+   }
+
+   void determineLineStartTimes();
+   Photon getNextPhoton();
+
+
+protected:
+   std::shared_ptr<FifoFrame> frame;
+   Markers markers;
+   SyncSettings sync;
+   size_t idx;
+   size_t line_idx;
+
+   std::vector<uint64_t> real_line_time;
+
+private:
+
+   long long sync_start = 0;
+
+   int cur_px = -1;
+   int cur_line = -1;
+   int cur_direction = 1;
+   bool line_valid = false;
 };
 
 
@@ -99,7 +91,7 @@ class FifoProcessor
 public:
 
    FifoProcessor(Markers markers, SyncSettings sync);
-   Photon addEvent(TcspcEvent p);
+   Photon addEvent(FifoEvent p);
 
 protected:
 
@@ -119,3 +111,4 @@ protected:
    bool line_valid = false;
    bool frame_started = false;
 };
+

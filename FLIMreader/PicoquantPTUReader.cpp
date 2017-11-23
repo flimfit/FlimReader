@@ -33,7 +33,7 @@ AbstractFifoReader(filename)
    setTemporalResolution(14);
    assert(measurement_mode == 3);
 
-   event_reader = std::unique_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
+   event_reader = std::shared_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
       
    determineDwellTime();
 }
@@ -143,4 +143,91 @@ void PicoquantPTUReader::readHeader()
    } while (strncmp(tag_head.Ident, FileTagEnd, sizeof(FileTagEnd)));
    
    data_position = fs.tellg();
+}
+
+
+
+
+PicoquantEventReader::PicoquantEventReader(const std::string& filename, std::streamoff data_position, PicoquantRecordType rec_type)
+   : AbstractEventReader(filename, data_position, sizeof(uint32_t)), rec_type(rec_type)
+{}
+
+std::tuple<FifoEvent, uint64_t>  PicoquantEventReader::getRawEvent()
+{
+   uint32_t evt = getPacket<uint32_t>();
+
+   switch (rec_type)
+   {
+   case PicoHarp_T3:
+      return getPicoharpT3Event(evt);
+   case HydraHarpV1_T3:
+   case HydraHarpV2_T3:
+   case TimeHarp260N_T3:
+   case TimeHarp260P_T3:
+      return getTimeharpT3Event(evt, rec_type);
+   default:
+      throw std::runtime_error("Unsupported record type");
+   }
+}
+
+std::tuple<FifoEvent, uint64_t> PicoquantEventReader::getPicoharpT3Event(uint32_t evt)
+{
+   FifoEvent e;
+   uint64_t macro_time_offset = 0;
+
+   int nsync = evt & 0xFFFF; evt >>= 16;
+   int dtime = evt & 0xFFF; evt >>= 12;
+   e.channel = evt & 0xF;
+
+   e.micro_time = dtime;
+   e.macro_time = nsync;
+
+   if (e.channel == 15) // special
+   {
+      if (dtime == 0) // macro time overflow
+      {
+         macro_time_offset = 0xFFFF;
+         e.mark = 0x80;
+         e.valid = false;
+      }
+      else
+      {
+         e.mark = dtime;
+      }
+   }
+
+   e.channel--; // 1-indexing -> 0-indexing
+
+   return std::tuple<FifoEvent, uint64_t>(e, macro_time_offset);
+}
+
+std::tuple<FifoEvent, uint64_t> PicoquantEventReader::getTimeharpT3Event(uint32_t evt, PicoquantRecordType rec_type)
+{
+   FifoEvent e;
+   uint64_t macro_time_offset = 0;
+
+   int nsync = evt & 0x3FF; evt >>= 10;
+   int dtime = evt & 0x7FFF; evt >>= 15;
+   e.channel = evt & 0x3F; evt >>= 6;
+   bool special = evt & 0x1;
+
+   e.micro_time = dtime;
+   e.macro_time = nsync;
+
+   if (special) // special
+   {
+      if (e.channel == 0x3F) // macro time overflow
+      {
+         int n_overflow = (rec_type == HydraHarpV1_T3) ? 1 : nsync;
+         macro_time_offset = 0x3FF * n_overflow;
+         e.mark = 0x80;
+         e.valid = false;
+      }
+      else
+      {
+         e.mark = e.channel;
+      }
+   }
+
+   return std::tuple<FifoEvent, uint64_t>(e, macro_time_offset);
 }

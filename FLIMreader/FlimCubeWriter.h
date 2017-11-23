@@ -1,24 +1,24 @@
 #pragma once
 
-#include "MetadataTag.h"
-#include "FlimCube.h"
-#include "Cv3dUtils.h"
-#include <map>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-#include <typeinfo>
+#include "MetadataTag.h" 
+#include "FlimCube.h" 
+#include "Cv3dUtils.h" 
+#include <map> 
+#include <vector> 
+#include <string> 
+#include <fstream> 
+#include <iostream> 
+#include <iomanip> 
+#include <ctime> 
+#include <typeinfo> 
 
-#define WRITE(fs, x) (fs).write(reinterpret_cast<char *>(&x), sizeof(x))
+#define WRITE(fs, x) (fs).write(reinterpret_cast<char *>(&x), sizeof(x)) 
 
 template<typename T>
 class FilePositionWriter
 {
 public:
-   FilePositionWriter(std::ofstream& of_) : 
+   FilePositionWriter(std::ofstream& of_) :
       of(&of_)
    {
       T data_pos = 0;
@@ -54,7 +54,7 @@ public:
       filename(filename)
    {
 
-      // Write header
+      // Write header 
       uint32_t magic_number = 0xC0BE;
       uint32_t format_version = 2;
       uint32_t data_pos = 0;
@@ -69,7 +69,7 @@ public:
 
       FilePositionWriter<uint32_t> data_pos_writer(of);
 
-      // get current time
+      // get current time 
       auto t = std::time(nullptr);
       std::ostringstream oss;
       oss << std::put_time(std::localtime(&t), "%FT%T");
@@ -87,25 +87,25 @@ public:
 
       for (auto t : tags)
          writeTag("OriginalTags_" + t.first, t.second);
-      
+
       auto next_block_pos = writeTag("NextBlock", 0);
       FilePositionWriter<uint64_t> next_block_pos_writer(of, next_block_pos);
 
       writeTag("EndHeader", MetaDataTag());
 
-      // Write correct data position
+      // Write correct data position 
       data_pos_writer.writeCurrentPos();
 
-      // Write data
+      // Write data 
       uint64_t data_size = cube->getFrameSize();
-      of.write((char*) cube->getDataPtr(z), data_size);
+      of.write((char*)cube->getDataPtr(z), data_size);
 
-      for(auto pair : images)
+      for (auto pair : images)
       {
          next_block_pos_writer.writeCurrentPos();
 
-         auto im = pair.second; 
-         im = extractSlice(im, z);
+         auto im_stack = pair.second;
+         cv::Mat im = extractSlice(im_stack, z);
 
          size_t data_length = im.size().area() * im.elemSize();
 
@@ -114,14 +114,14 @@ public:
          writeTag("ImageFormat", im.type());
          writeTag("ImageWidth", im.size().width);
          writeTag("ImageHeight", im.size().height);
-         writeTag("ImageDataLength", (uint64_t) data_length);
+         writeTag("ImageDataLength", (uint64_t)data_length);
          auto next_block_pos = writeTag("NextBlock", 0);
          next_block_pos_writer = FilePositionWriter<uint64_t>(of, next_block_pos);
 
          writeTag("EndHeader", MetaDataTag());
 
          of.write(reinterpret_cast<char*>(im.data), data_length);
-      } 
+      }
 
       of.close();
    }
@@ -141,10 +141,10 @@ private:
       return "";
    }
 
-   // returns position of data
+   // returns position of data 
    std::streampos writeTag(const std::string& name, const MetaDataTag& value)
    {
-      uint32_t name_length = (uint32_t) name.length() + 1;
+      uint32_t name_length = (uint32_t)name.length() + 1;
       uint16_t type = value.type | (value.is_vector * 0x80);
 
       name_length = std::min((uint32_t)255, name_length);
@@ -158,8 +158,8 @@ private:
 
       if (value.is_vector)
       {
-         length = (uint32_t) value.vector_data.size() * sizeof(uint64_t);
-         data = (char*) value.vector_data.data();
+         length = (uint32_t)value.vector_data.size() * sizeof(uint64_t);
+         data = (char*)value.vector_data.data();
       }
       else
       {
@@ -187,7 +187,7 @@ private:
             data = value.string_data.c_str();
             break;
          default:
-            return of.tellp(); // unrecognised/invalid tag
+            return of.tellp(); // unrecognised/invalid tag 
          }
       }
 

@@ -19,7 +19,7 @@ FfdReader::FfdReader(const std::string& filename) :
    markers.LineStartMarker = 0x2;
    markers.PixelMarker = 0x0; // no pixel marker
 
-   event_reader = std::unique_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position));
+   event_reader = std::shared_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position));
 
    determineDwellTime();
 }
@@ -83,4 +83,64 @@ void FfdReader::readHeader()
       if (use_compression)
          throw std::runtime_error("Compressed FFD files are no longer supported");
    }
+}
+
+
+std::tuple<FifoEvent, uint64_t> FfdEventReader::getRawEvent()
+{
+   if (version == 1)
+   {
+      ffd_evt_v1 evt = getPacket<ffd_evt_v1>();
+      return getFfdEvent(evt);
+   }
+   else
+   {
+      ffd_evt evt = getPacket<ffd_evt>();
+      return getFfdEvent(evt);
+   }
+
+   assert(fs.good());
+
+}
+
+std::tuple<FifoEvent, uint64_t> FfdEventReader::getFfdEvent(ffd_evt_v1 evt)
+{
+   FifoEvent e;
+   uint64_t macro_time_offset = 0;
+
+   e.micro_time = evt.micro_time;
+   e.macro_time = evt.macro_time;
+   e.channel = evt.channel;
+   e.mark = evt.mark;
+
+   return std::tuple<FifoEvent, uint64_t>(e, macro_time_offset);
+}
+
+std::tuple<FifoEvent, uint64_t> FfdEventReader::getFfdEvent(ffd_evt evt)
+{
+   FifoEvent e;
+   uint64_t macro_time_offset = 0;
+
+   e.macro_time = evt.macro_time;
+   e.channel = evt.micro_time & 0xF;
+
+   if (e.channel == 0xF)
+   {
+      if (evt.micro_time == 0xF)
+      {
+         macro_time_offset = ((e.macro_time == 0) ? 1 : e.macro_time) * 0xFFFF;
+         e.valid = false;
+      }
+      else
+      {
+         e.mark = evt.micro_time >> 4;
+      }
+   }
+   else
+   {
+      e.mark = 0;
+      e.micro_time = evt.micro_time >> 4;
+   }
+
+   return std::tuple<FifoEvent, uint64_t>(e, macro_time_offset);
 }

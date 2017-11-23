@@ -38,10 +38,9 @@ void AbstractEventReader::read()
       fs.read(&block[0], sz);
       n_read = fs.gcount();
 
-      {
+      
       std::unique_lock<std::mutex> lk(m);
       data.push_back(block);
-      }
       cv.notify_one();
    } while (n_read > 0 && !terminate);
 }
@@ -62,25 +61,12 @@ bool AbstractEventReader::hasMoreData()
    return cur_pos < n_packet;
 }
 
-TcspcEvent AbstractEventReader::getEvent() 
+FifoEvent AbstractEventReader::getEvent() 
 {
    // Get event and compute absolute macro time
    auto t = getRawEvent();
-   TcspcEvent event = std::get<0>(t);
+   FifoEvent event = std::get<0>(t);
    sync_count_accum += std::get<1>(t);
    event.macro_time += sync_count_accum;
    return event;
 }
-
-const char* AbstractEventReader::getPacket()
-{
-   uint64_t block = cur_pos / block_size;
-   uint64_t packet = cur_pos % block_size;
-   
-   std::unique_lock<std::mutex> lk(m);
-   cv.wait(lk, [&]() { return block < data.size(); });
-
-   cur_pos++;
-   return &(data[block][packet*packet_size]);
-}
-

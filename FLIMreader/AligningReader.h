@@ -30,6 +30,8 @@ protected:
    cv::Mat getIntensityFrame(int frame);
    virtual cv::Mat getIntensityFrameImmediately(int frame) { return getIntensityFrame(frame); };
 
+   void setIntensityFrame(int frame_idx, const cv::Mat frame);
+
    virtual void loadIntensityFramesImpl() {}
    virtual int getNumIntensityFrames() { return 0; };
    virtual ImageScanParameters getImageScanParameters() { return ImageScanParameters(); }

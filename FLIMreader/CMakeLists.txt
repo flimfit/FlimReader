@@ -18,6 +18,7 @@ set(SOURCE
    AligningReader.cpp
    AbstractEventReader.cpp
    FifoProcessor.cpp
+   FfhReader.cpp
 )
 
 set(HEADERS

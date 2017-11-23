@@ -77,6 +77,21 @@ cv::Mat AligningReader::getIntensityFrame(int frame)
 }
 
 
+void AligningReader::setIntensityFrame(int frame_idx, const cv::Mat frame)
+{
+   cv::Mat frame_cpy;
+   frame.copyTo(frame_cpy);
+
+   {
+      std::lock_guard<std::mutex> lk(frame_mutex);
+      if (frames.size() <= frame_idx)
+         frames.resize(frame_idx+1);
+      frames[frame_idx] = frame_cpy;
+   }
+   frame_cv.notify_all();
+}
+
+
 
 void AligningReader::alignFrames()
 {
