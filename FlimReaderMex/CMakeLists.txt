@@ -16,6 +16,7 @@ set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(dlib REQUIRED)
+find_package(CUDA)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -31,7 +32,7 @@ set(HEADERS
    MexUtils.h
 )
 
-matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader> $<TARGET_OBJECTS:FrameAligner>)
+matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} $<TARGET_OBJECTS:FlimReader>)
 
 target_link_libraries(FlimReaderMex ${FlimReader_LIBRARIES})
 
