@@ -6,6 +6,9 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/info_parser.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/median.hpp>
 
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
@@ -49,23 +52,21 @@ void AbstractFifoReader::readSettings()
 
 void AbstractFifoReader::determineDwellTime()
 {
+   using namespace boost::accumulators;
+
    assert(event_reader != nullptr);
    
    event_reader->setToStart();
-   
 
    uint64_t frame_start = 0;
-   uint64_t sync_count_accum = 0;
    uint64_t sync_start_count = 0;
-   double sync_count_per_line = 0;
-   double sync_count_interline = 0;
    int n_averaged = 0;
    int n_line = 0;
    int n_frame = 0;
 
-   std::vector<uint64_t> sync_counts;
-   if (n_y > 0)
-      sync_counts.reserve(n_y);
+   accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
+   accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
+
 
    bool line_active = false;
    do
@@ -91,9 +92,7 @@ void AbstractFifoReader::determineDwellTime()
          if (p.macro_time >= sync_start_count) // not sure why this is sometimes violated
          {
             uint64_t diff = p.macro_time - sync_start_count;
-            sync_count_per_line += diff;
-
-            sync_counts.push_back(diff);
+            sync_count_per_line_acc(diff);
 
             n_averaged++;
          }
@@ -103,13 +102,16 @@ void AbstractFifoReader::determineDwellTime()
       
       if (p.mark & markers.LineStartMarker)
       {
-         if (n_line > 0)
+         if ((p.macro_time >= sync_start_count) && n_frame == 0)
          {
-            uint64_t diff = p.macro_time - sync_start_count;
-            sync_count_interline += (p.macro_time - sync_start_count);
-         }
+            if (n_line > 0)
+            {
+               uint64_t diff = p.macro_time - sync_start_count;
+               sync_count_interline_acc(diff);
+            }
 
-         n_line++;
+            n_line++;
+         }
          sync_start_count = p.macro_time;
          line_active = true;
       }
@@ -120,11 +122,15 @@ void AbstractFifoReader::determineDwellTime()
 
    } while (event_reader->hasMoreData() && (n_frame < 2));
    
-   sync_count_per_line /= n_averaged;
-   sync_count_interline /= (n_averaged-1);
+   sync.count_per_line = median(sync_count_per_line_acc);
+   sync.counts_interline = median(sync_count_interline_acc);
 
    if (line_averaging > 1)
-       sync_count_per_line *= static_cast<double>(line_averaging) / (line_averaging+1);
+   {
+      double factor = static_cast<double>(line_averaging) / (line_averaging + 1);
+      sync.count_per_line *= factor;
+      sync.counts_interline *= factor;
+   }
 
    if (n_line == 0 || n_frame == 0)
       throw std::runtime_error("Error interpreting sync markers");
@@ -140,8 +146,6 @@ void AbstractFifoReader::determineDwellTime()
       //assert(n_line == (n_y * n_frame));
    }
 
-   sync.count_per_line = sync_count_per_line;
-   sync.counts_interline = sync_count_interline;
    sync.n_x = n_x;
    sync.n_line = n_y;
 
@@ -229,8 +233,11 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
          Photon p;
          while (p = processor2.getNextPhoton())
+         {
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
                cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
+
+         }
 
          idx++;
          frame = idx / n_z;

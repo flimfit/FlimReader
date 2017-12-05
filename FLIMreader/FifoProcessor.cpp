@@ -137,15 +137,16 @@ Photon FifoProcessor2::getNextPhoton()
             ((p.macro_time - sync_start) / sync.count_per_line) * (sync.n_x) :
             cur_px;
 
+         
          if (cur_direction == -1)
             cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
-         
+         /*
          while ((cur_line > 0) && (p.macro_time < real_line_time[cur_line]))
             cur_line--;
 
          while ((cur_line < (sync.n_line - 1)) && (p.macro_time > real_line_time[cur_line + 1]))
             cur_line++;
-
+            */
          return Photon(a, (int)cur_loc, cur_line, p.channel, p.micro_time);
       }
    }

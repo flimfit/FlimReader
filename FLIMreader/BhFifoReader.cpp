@@ -101,7 +101,7 @@ void BhFifoReader::readHeader()
    fs.seekg(start + spc_bin_hdr_ext.syspar_ext_offs);
    READ(fs, sys_par_ext);
 
-   n_x = sys_par_ext.fifo_ncx;
+   n_x = sys_par_ext.norm_ncx - 1; // to exclude final line
    n_y = sys_par_ext.norm_ncx; // maybe?
    n_chan = sys_par_ext.img_x;
    sync.bi_directional = false; //(sys_par_ext.scan_type == 1);

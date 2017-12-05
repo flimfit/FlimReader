@@ -169,7 +169,7 @@ void AligningReader::alignFramesImpl()
       try 
       {
          realignment[i] = frame_aligner->addFrame(i, getIntensityFrame(i));
-         if (clear_frames_after_alignment)
+         if (!realign_params.store_frames)
             frames[i] = cv::Mat(); // clear frame after alignment
       }
       catch (cv::Exception e)
@@ -192,7 +192,7 @@ void AligningReader::alignFramesImpl()
       realign_cv.notify_all();
    });
 
-   if (clear_frames_after_alignment)
+   if (!realign_params.store_frames)
       frames.clear();
    frame_aligner->clearTemp();
 
