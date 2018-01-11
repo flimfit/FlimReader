@@ -1,4 +1,3 @@
-#pragma once
 #include "AbstractEventReader.h"
 
 AbstractEventReader::AbstractEventReader(const std::string& filename, std::streamoff data_position, unsigned int packet_size) :

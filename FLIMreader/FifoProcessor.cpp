@@ -3,6 +3,7 @@
 #include <tuple>
 #include <vector>
 #include <thread>
+#include <cmath>
 
 uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint64_t>& y, int begin, int end, int xi)
 {

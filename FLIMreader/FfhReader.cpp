@@ -1,4 +1,3 @@
-#pragma once
 #include "FfhReader.h"
 
 FfhReader::FfhReader(const std::string& filename) : 
