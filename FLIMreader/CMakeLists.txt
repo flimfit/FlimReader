@@ -2,10 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(FlimReader)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
-find_package(OpenCV 3.1 REQUIRED core imgproc highgui )
-
-include_directories(${Boost_INCLUDE_DIR} ${FrameAligner_INCLUDE_DIRS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+find_package(dlib REQUIRED)
 
 set(SOURCE
    FlimReader.cpp
@@ -43,7 +40,6 @@ set(HEADERS
    AbstractEventReader.h
 )
 
-set(FlimReader_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${FrameAligner_INCLUDE_DIRS} PARENT_SCOPE)
-set(FlimReader_LIBRARIES ${Boost_LIBRARIES} ${OpenCV_LIBS} ${FrameAligner_LIBRARIES} FrameAligner ${EXTRA_LIBRARIES} PARENT_SCOPE)
-add_library(FlimReader OBJECT ${SOURCE} ${HEADERS})
-
+add_library(FlimReader STATIC ${SOURCE} ${HEADERS})
+target_link_libraries(FlimReader ${Boost_LIBRARIES} FrameAligner)
+target_include_directories(FlimReader INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
