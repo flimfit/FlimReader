@@ -35,7 +35,7 @@ void FifoProcessor2::determineLineStartTimes()
       if (m.mark & markers.LineStartMarker)
       {
          line_start_time.push_back(m.macro_time);
-         line_index.push_back(std::round((m.macro_time - frame_start_time) / sync.count_per_line));
+         line_index.push_back((uint64_t) std::round((m.macro_time - frame_start_time) / sync.count_per_line));
       }
 
    int dline = 10;
