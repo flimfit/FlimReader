@@ -56,7 +56,7 @@ void FfdReader::readHeader()
 
    it = tags.find("BidirectionalScan");
    if (it != tags.end())
-      sync.bi_directional = it->second.getValue<bool>();
+      sync.bidirectional = it->second.getValue<bool>();
 
    it = tags.find("NumX");
    if (it != tags.end())

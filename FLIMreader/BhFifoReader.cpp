@@ -104,7 +104,7 @@ void BhFifoReader::readHeader()
    n_x = sys_par_ext.norm_ncx - 1; // to exclude final line
    n_y = sys_par_ext.norm_ncx; // maybe?
    n_chan = sys_par_ext.img_x;
-   sync.bi_directional = false; //(sys_par_ext.scan_type == 1);
+   sync.bidirectional = false; //(sys_par_ext.scan_type == 1);
    
    data_position = 0;
 }

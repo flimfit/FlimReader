@@ -73,7 +73,7 @@ void PicoquantPTUReader::readHeader()
          case tyBool8:
             cout << (tag_head.TagValue != 0);
             if (strcmp(tag_head.Ident, ImgHdr_BiDirect) == 0)
-               sync.bi_directional = tag_head.TagValue != 0;
+               sync.bidirectional = tag_head.TagValue != 0;
             break;
             
          case tyInt8:

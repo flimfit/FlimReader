@@ -198,9 +198,6 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    assert(event_reader != nullptr);
    event_reader->setToStart();
 
-
-   event_reader->setToStart();
-
    int n_invalid = 0;
 
    {
@@ -222,7 +219,6 @@ void AbstractFifoReader::loadIntensityFramesImpl()
       int cur_frame_idx = 0;
       cv::Mat cur_frame = cv::Mat(dims, CV_32F, cv::Scalar(0));
 
-      FifoProcessor processor(markers, sync);
       while (event_reader->hasMoreData())
       {
          if (terminate) break;

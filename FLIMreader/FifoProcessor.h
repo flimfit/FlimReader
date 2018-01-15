@@ -53,15 +53,7 @@ class FifoProcessor2
 public:
    FifoProcessor2(Markers markers, SyncSettings sync);
 
-   void setFrame(std::shared_ptr<FifoFrame> frame_)
-   {
-      frame = frame_;
-      determineLineStartTimes();
-      idx = 0;
-      line_idx = 0;
-      cur_line = -1;
-   }
-
+   void setFrame(std::shared_ptr<FifoFrame> frame_);
    void determineLineStartTimes();
    Photon getNextPhoton();
 
@@ -81,7 +73,6 @@ private:
 
    int cur_px = -1;
    int cur_line = -1;
-   int cur_direction = 1;
    bool line_valid = false;
 };
 

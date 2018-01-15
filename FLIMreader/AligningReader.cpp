@@ -220,6 +220,6 @@ void AligningReader::computeIntensityNormalisation()
             intensity += m16;
          }
       }
-      intensity_normalisation = intensity / realignment.size();
+      intensity_normalisation = intensity / (double) realignment.size();
    }
 }
