@@ -23,6 +23,14 @@ uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint6
 }
 
 
+void FifoProcessor2::setFrame(std::shared_ptr<FifoFrame> frame_)
+{
+   frame = frame_;
+   determineLineStartTimes();
+   idx = 0;
+   line_idx = 0;
+   cur_line = -1;
+}
 
 void FifoProcessor2::determineLineStartTimes()
 {
@@ -37,6 +45,10 @@ void FifoProcessor2::determineLineStartTimes()
          line_start_time.push_back(m.macro_time);
          line_index.push_back((uint64_t) std::round((m.macro_time - frame_start_time) / sync.count_per_line));
       }
+
+   if (line_index.empty())
+      return;
+
 
    int dline = 10;
 
@@ -65,8 +77,6 @@ void FifoProcessor2::determineLineStartTimes()
 void FifoFrame::loadNext()
 {
    using namespace std::chrono_literals;
-
-   std::cout << "Loading next frame\n";
 
    frame_start_event = next_frame_event;
 
@@ -123,9 +133,6 @@ Photon FifoProcessor2::getNextPhoton()
          sync_start = p.macro_time;
          cur_line++;
          cur_px = -1;
-
-         if (sync.bi_directional)
-            cur_direction *= -1;
       }
       if (p.mark & markers.PixelMarker)
          cur_px++;
@@ -139,7 +146,7 @@ Photon FifoProcessor2::getNextPhoton()
             cur_px;
 
          
-         if (cur_direction == -1)
+         if (sync.bidirectional && (cur_line % 2 == 1))
             cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
          /*
          while ((cur_line > 0) && (p.macro_time < real_line_time[cur_line]))
@@ -186,7 +193,7 @@ Photon FifoProcessor::addEvent(FifoEvent p)
          cur_line++;
          cur_px = -1;
 
-         if (sync.bi_directional)
+         if (sync.bidirectional)
             cur_direction *= -1;
       }
       if (p.mark & markers.PixelMarker)
@@ -213,5 +220,5 @@ void FifoProcessor::incrementFrame()
    frame_idx++;
    frame_started = true;
    cur_line = -1;
-   cur_direction = sync.bi_directional ? -1 : 1;
+   cur_direction = sync.bidirectional ? -1 : 1;
 }

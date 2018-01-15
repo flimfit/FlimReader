@@ -39,7 +39,7 @@ public:
    double counts_interline;
    double counts_interframe;
    int n_x;
-   bool bi_directional = false;
+   bool bidirectional = false;
    double phase = 0;
 
    int n_line = -1; // used if we don't have frame markers

@@ -47,7 +47,7 @@ public:
    void clearStopSignal() { terminate = false; }
 
    bool supportsRealignment() { return true; }
-   bool isBidirectional() { return sync.bi_directional; }
+   bool isBidirectional() { return sync.bidirectional; }
    void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
    double getProgress() { return event_reader->getProgress(); }
@@ -57,7 +57,7 @@ public:
 protected:
 
    ImageScanParameters getImageScanParameters() {
-      ImageScanParameters params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bi_directional);
+      ImageScanParameters params(sync.count_per_line, sync.counts_interline, sync.counts_interframe, n_x, n_y, n_z, sync.bidirectional);
       return params;
    }
    
@@ -137,6 +137,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    int n_invalid = 0;
    int last_frame_written = 0;
 
+   auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
+   fifo_frame->loadNext();
+
+
    FifoProcessor processor(markers, sync);
 
    cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
@@ -150,59 +154,64 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
    ma_image.clear();
 
+   int frame_idx = 0;
+
    while (event_reader->hasMoreData() && !terminate)
    {
-      FifoEvent e = event_reader->getEvent();
-      Photon p = processor.addEvent(e);
-      int frame = p.frame;
 
-      if (p.valid && p.channel < n_chan)
+      fifo_frame->loadNext();
+      FifoProcessor2 processor2(markers, sync);
+      processor2.setFrame(fifo_frame);
+
+      int frame = frame_idx / n_z;
+      int z = frame_idx % n_z;
+      frame_idx++;
+
+      Photon p;
+      while (p = processor2.getNextPhoton())
       {
-         if (!useFrame(p.frame))
-            continue;
-
          if (p.frame > last_frame_written)
          {
             computeMeanArrivalImage(histogram);
             last_frame_written = p.frame;
          }
 
+         if (!useFrame(p.frame)) continue;
+         if (!p.valid || p.channel > n_chan) continue;
+
          int mapped_channel = channel_map[p.channel];
+         if (mapped_channel == -1) continue;
 
-         if (mapped_channel == -1)
-            continue;
-
-         p.z = p.frame % n_z;
-         frame /= n_z;
+         p.z = z;
 
          if (frame_aligner != nullptr && frame_aligner->frameValid(frame))
          {
             // Check that we have realigned this frame
-            if (!frame_aligner->frameReady(frame))
+             if (!frame_aligner->frameReady(frame))
             {
                std::unique_lock<std::mutex> lk(realign_mutex);
-               realign_cv.wait(lk, [this,frame] {
+               realign_cv.wait(lk, [this, frame] {
                   return (frame_aligner->frameReady(frame) || terminate);
                });
                lk.unlock();
             }
 
             if (terminate) break;
-           
+
             double correlation = frame_aligner->getFrameCorrelation(frame);
             double coverage = frame_aligner->getFrameCoverage(frame);
             if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
                continue;
-            
+
             frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
          }
 
          p.x /= spatial_binning;
          p.y /= spatial_binning;
 
-         int64_t x = (int64_t) std::round(p.x);
-         int64_t y = (int64_t) std::round(p.y);
-         int64_t z = (int64_t) std::round(p.z);
+         int64_t x = (int64_t)std::round(p.x);
+         int64_t y = (int64_t)std::round(p.y);
+         int64_t z = (int64_t)std::round(p.z);
 
          int bin = p.bin;
          if (t_rep_resunit > 0)
@@ -212,16 +221,16 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          }
          bin = bin >> downsampling;
 
-         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0) 
-                           && (y < n_y_binned) && (y >= 0)
-                           && (z < n_z) && (z >= 0))
+         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0)
+            && (y < n_y_binned) && (y >= 0)
+            && (z < n_z) && (z >= 0))
          {
             size_t idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
-            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;            
+            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;
          }
          else
          {
-            n_invalid++;            
+            n_invalid++;
          }
       }
    }

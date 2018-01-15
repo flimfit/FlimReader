@@ -135,7 +135,7 @@ void PicoquantTTTRReader::readHeader()
          markers.LineStartMarker = 1 << (linestart-1);
          markers.LineEndMarker = 1 << (linestop-1);
          markers.PixelMarker = 0x0; // no pixel marker
-         sync.bi_directional = (pattern == 1);
+         sync.bidirectional = (pattern == 1);
          READ(fs, info.n_x);
          READ(fs, info.n_y);
          break;
