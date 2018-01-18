@@ -59,4 +59,6 @@ protected:
    std::vector<bool> use_channel;
 
    bool async_load_intensity_frames = false;
+
+   int64_t tick_count_start;
 };

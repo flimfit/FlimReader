@@ -138,6 +138,9 @@ void AligningReader::alignFrames()
    frame_aligner->setNumberOfFrames(n_frames);
 
    cv::Mat ref_frame = getIntensityFrameImmediately(reference_index);
+
+   tick_count_start = cv::getTickCount();
+
    frame_aligner->setReference(reference_index, ref_frame);
 
    realignment = std::vector<RealignmentResult>(n_frames);
@@ -198,6 +201,11 @@ void AligningReader::alignFramesImpl()
 
    realignment_complete = true;
    realign_cv.notify_all();
+
+   int64 duration_ticks = cv::getTickCount() - tick_count_start;
+   double duration_s = duration_ticks / cv::getTickFrequency();
+
+   std::cout << "Realignment took: " << duration_s << "s\n";
 
 }
 

@@ -170,10 +170,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       Photon p;
       while (p = processor2.getNextPhoton())
       {
-         if (p.frame > last_frame_written)
+         if (frame > last_frame_written)
          {
             computeMeanArrivalImage(histogram);
-            last_frame_written = p.frame;
+            last_frame_written = frame;
          }
 
          if (!useFrame(p.frame)) continue;
