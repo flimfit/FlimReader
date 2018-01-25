@@ -62,6 +62,10 @@ public:
    virtual void setBidirectionalPhase(double phase) {}
    void setSpatialBinning(int spatial_binning_);
 
+   bool canReadBidirectionalScan() { return true; }
+   void setBidirectionalScan(bool bidirectional_scan = true) {}; // do nothing
+
+
 protected:
 
    std::vector<double> timepoints_;

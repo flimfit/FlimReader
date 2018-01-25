@@ -18,6 +18,9 @@ public:
    void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
    virtual int getNumChannels() = 0;
    
+   virtual bool canReadBidirectionalScan() = 0;
+   virtual void setBidirectionalScan(bool bidirectional_scan = true) = 0;
+
    void setUseAllChannels();
    void setChannelsToUse(const std::vector<bool>& use_channel);
 
