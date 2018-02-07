@@ -21,6 +21,9 @@ public:
    virtual bool canReadBidirectionalScan() = 0;
    virtual void setBidirectionalScan(bool bidirectional_scan = true) = 0;
 
+   virtual bool canReadNumZ() { return true; }
+   virtual void setNumZ(int n_z_) {} // ignore usually
+
    void setUseAllChannels();
    void setChannelsToUse(const std::vector<bool>& use_channel);
 

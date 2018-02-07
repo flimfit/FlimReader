@@ -35,6 +35,7 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
+   bool canReadNumZ() { return false; }
    void setNumZ(int n_z_) { n_z = n_z_; }
 
 
