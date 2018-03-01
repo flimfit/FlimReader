@@ -14,7 +14,6 @@ message("Set Matlab root: ${Matlab_ROOT_DIR}")
 
 set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
-find_package(CUDA QUIET)
 
 set(CMAKE_DEBUG_POSTFIX "")
 

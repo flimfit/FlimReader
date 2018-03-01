@@ -228,7 +228,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
          processor2.setFrame(fifo_frame);
 
          Photon p;
-         while (p = processor2.getNextPhoton())
+         while (( p = processor2.getNextPhoton() ))
          {
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
                cur_frame.at<float>(z, (int)p.y, (int)p.x)++;

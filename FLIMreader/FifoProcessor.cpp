@@ -76,8 +76,6 @@ void FifoProcessor2::determineLineStartTimes()
 
 void FifoFrame::loadNext()
 {
-   using namespace std::chrono_literals;
-
    frame_start_event = next_frame_event;
 
    events.clear();

@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(FLIMreader)
+set(CMAKE_CXX_STANDARD 14)
 
-option(GENERATE_MEX "Generate FLIMreader Mex file" ON)
+option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
 
 if(MSVC)
    set(PLATFORM_FLAGS_ALL "/Oi /fp:fast")
@@ -14,10 +15,11 @@ if(MSVC)
 endif(MSVC)
 
 if(UNIX)
-   set(PLATFORM_FLAGS_ALL "-msse3 -std=c++11 -fcolor-diagnostics")
+   set(PLATFORM_FLAGS_ALL "-msse3")
    set(PLATFORM_FLAGS_RELEASE "-O3 -ffast-math -ftree-vectorize")
    set(PLATFORM_FLAGS_DEBUG "")
 endif(UNIX)
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PLATFORM_FLAGS_ALL}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${PLATFORM_FLAGS_RELEASE}")
@@ -28,6 +30,6 @@ add_subdirectory(frame-aligner/FrameAligner)
 add_subdirectory(FlimReader)
 add_subdirectory(FlimReaderTest)
 
-if(GENERATE_MEX)
+if(GENERATE_FLIMREADER_MEX)
    add_subdirectory(FLIMReaderMex)
 endif()

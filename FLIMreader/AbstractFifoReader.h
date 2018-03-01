@@ -16,8 +16,6 @@
 #include <chrono>
 #include <tuple>
 
-using namespace std::chrono_literals;
-
 #include "FifoProcessor.h"
 #include "WriteMultipageTiff.h"
 #include "AbstractEventReader.h"
@@ -169,7 +167,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       frame_idx++;
 
       Photon p;
-      while (p = processor2.getNextPhoton())
+      while (( p = processor2.getNextPhoton() ))
       {
          if (frame > last_frame_written)
          {
