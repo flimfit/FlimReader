@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 3.0)
 
-include("cmake/HunterGate.cmake")
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.20.13.tar.gz"
-    SHA1 "d92042d6e22522516183b86da10e56fb1af73f7a"
-)
+option(BUILD_OPENCV "Build OpenCV (will produce static libs)" OFF)
+option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
+
+if (BUILD_OPENCV)
+   include("cmake/HunterGate.cmake")
+   HunterGate(
+      URL "https://github.com/ruslo/hunter/archive/v0.20.13.tar.gz"
+      SHA1 "d92042d6e22522516183b86da10e56fb1af73f7a"
+   )
+endif ()
 
 project(FLIMreader)
 set(CMAKE_CXX_STANDARD 14)
-
-option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
-option(BUILD_OPENCV "Build OpenCV (will produce static libs)" OFF)
-
 
 if (BUILD_OPENCV)
     hunter_add_package(OpenCV)
