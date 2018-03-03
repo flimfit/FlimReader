@@ -30,5 +30,5 @@ include_directories()
 matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader)
 
 if(FlimReaderMEX_OUT_DIR)
-   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
+   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FlimReaderMex> "${FlimReaderMEX_OUT_DIR}")
 endif()
