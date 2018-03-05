@@ -1,5 +1,6 @@
 #include "PicoquantTTRReader.h"
 #include "MexUtils.h"
+#include "Cv3dUtils.h"
 
 #include <string>
 #include <memory>
@@ -165,6 +166,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          {
             AssertInputCondition(nlhs >= 1);
             cv::Mat intensity_normalisation = readers[idx]->getIntensityNormalisation();
+            intensity_normalisation = extractSlice(intensity_normalisation, 0); // TODO: only gets first slice at the moment
             auto size = intensity_normalisation.size();
             plhs[0] = mxCreateNumericMatrix(size.width, size.height, mxUINT16_CLASS, mxREAL);
             uchar* out = (uchar*) mxGetData(plhs[0]);
