@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
+include("cmake/ConfigureMSVCRuntime.cmake")
+
 option(BUILD_OPENCV "Build OpenCV (will produce static libs)" OFF)
 option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
 
@@ -13,6 +15,10 @@ endif ()
 
 project(FLIMreader)
 set(CMAKE_CXX_STANDARD 14)
+
+if (MSVC)
+  configure_link_flags()
+endif ()
 
 if (BUILD_OPENCV)
     hunter_add_package(OpenCV)

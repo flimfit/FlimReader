@@ -5,7 +5,7 @@
 #include <thread>
 #include <cmath>
 
-uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint64_t>& y, int begin, int end, int xi)
+uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint64_t>& y, size_t begin, size_t end, int xi)
 {
    double xSum = 0, ySum = 0, xxSum = 0, xySum = 0, slope, intercept;
    int n = end - begin;
@@ -55,8 +55,8 @@ void FifoProcessor2::determineLineStartTimes()
    real_line_time.resize(sync.n_line);
    for (int i = 0; i < sync.n_line; i++)
    {
-      int begin = i - dline;
-      int end = i + dline;
+      size_t begin = i - dline;
+      size_t end = i + dline;
 
       if (begin < 0)
       {
@@ -65,7 +65,7 @@ void FifoProcessor2::determineLineStartTimes()
       }
       else if (end > line_start_time.size())
       {
-         begin -= (end - line_start_time.size());
+         begin -= (int) (end - line_start_time.size());
          end = line_start_time.size();
       }
 
