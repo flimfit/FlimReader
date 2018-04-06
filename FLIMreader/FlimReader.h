@@ -12,6 +12,12 @@
 typedef std::map<std::string, MetaDataTag> TagMap;
 typedef std::map<std::string, cv::Mat> ImageMap;
 
+enum FlimNativeType
+{
+   DataTypeUint16,
+   DataTypeFloat,
+   DataTypeDouble
+};
 
 class FlimReader : public AligningReader
 {
@@ -46,6 +52,8 @@ public:
    int numZ() { return n_z; }
    int dataSizePerChannel();
 
+   FlimNativeType getNativeType() { return native_type; }
+
    virtual bool isBidirectional() { return false; }
    virtual bool supportsRealignment() { return false; }
    int getTemporalResolution() { return temporal_resolution; }
@@ -79,6 +87,8 @@ protected:
    int n_z = 1;
    int n_chan = 0;
    double rep_rate_hz = std::numeric_limits<double>::quiet_NaN(); // when we don't know 
+
+   FlimNativeType native_type = DataTypeUint16;
 
    TagMap tags;
 };

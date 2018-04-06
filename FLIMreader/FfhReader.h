@@ -17,16 +17,14 @@ protected:
    
 private:
 
-   std::string data_type;
-
    template <class T>
    void readData__(T* data, const std::vector<int>& channels_, int n_chan_stride)
    {
-      if (data_type == "uint16_t")
+      if (native_type == DataTypeUint16)
          readData_<uint16_t, T>(data, channels_, n_chan_stride);
-      else if (data_type == "double")
+      else if (native_type == DataTypeDouble)
          readData_<double, T>(data, channels_, n_chan_stride);
-      else if (data_type == "float")
+      else if (native_type == DataTypeFloat)
          readData_<float, T>(data, channels_, n_chan_stride);
       else
          throw std::runtime_error("Error reading FFD file: unknown data type");

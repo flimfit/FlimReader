@@ -57,7 +57,13 @@ void FfhReader::readHeader()
 
    it = tags.find("DataType");
    if (it != tags.end())
-      data_type = it->second.getString();
+   {
+      std::string data_type = it->second.getString();
+      if (data_type == "double") native_type = DataTypeDouble;
+      else if (data_type == "float") native_type = DataTypeFloat;
+      else if (data_type == "uint16_t") native_type = DataTypeUint16;
+      else throw std::runtime_error("Unsupported data type");
+   }
    else
       throw(std::runtime_error("DataType was not specified in data"));
 

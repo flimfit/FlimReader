@@ -97,9 +97,26 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
-            plhs[0] = mxCreateNumericArray(4, dims, mxUINT16_CLASS, mxREAL);
-			   uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
-            readers[idx]->readData(d, channels);
+            FlimNativeType data_type = readers[idx]->getNativeType();
+            
+            if (data_type == DataTypeDouble)
+            {
+               plhs[0] = mxCreateNumericArray(4, dims, mxDOUBLE_CLASS, mxREAL);
+               double* d = reinterpret_cast<double*>(mxGetData(plhs[0]));
+               readers[idx]->readData(d, channels);
+            }
+            else if (data_type == DataTypeFloat)
+            {
+               plhs[0] = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
+               float* d = reinterpret_cast<float*>(mxGetData(plhs[0]));
+               readers[idx]->readData(d, channels);
+            }
+            else if (data_type == DataTypeUint16)
+            {
+               plhs[0] = mxCreateNumericArray(4, dims, mxUINT16_CLASS, mxREAL);
+               uint16_t* d = reinterpret_cast<uint16_t*>(mxGetData(plhs[0]));
+               readers[idx]->readData(d, channels);
+            }
          }
          else if (command == "GetSpatialBinning")
          {
@@ -213,6 +230,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
                }
                mxSetFieldByNumber(plhs[0], 0, i++, v);
             }
+         }
+         else if (command == "GetNativeType")
+         {
+            AssertInputCondition(nlhs >= 1);
+            FlimNativeType data_type = readers[idx]->getNativeType();
+            std::string type_string;
+            if (data_type == DataTypeDouble) type_string = "double";
+            if (data_type == DataTypeFloat) type_string = "single";
+            if (data_type == DataTypeUint16) type_string = "uint16";
+            plhs[0] = mxCreateString(type_string.c_str());
          }
 
          else if (command == "Delete")
