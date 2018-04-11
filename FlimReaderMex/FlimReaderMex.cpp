@@ -184,10 +184,21 @@ void mexFunction(int nlhs, mxArray *plhs[],
             AssertInputCondition(nlhs >= 1);
             cv::Mat intensity_normalisation = readers[idx]->getIntensityNormalisation();
             intensity_normalisation = extractSlice(intensity_normalisation, 0); // TODO: only gets first slice at the moment
-            auto size = intensity_normalisation.size();
-            plhs[0] = mxCreateNumericMatrix(size.width, size.height, mxUINT16_CLASS, mxREAL);
-            uchar* out = (uchar*) mxGetData(plhs[0]);
-            copy_n((uchar*)intensity_normalisation.data, size.area() * sizeof(uint16_t), out);
+
+            // For old-style uncorrected (for #frames) normalisation maps, correct based on maximum
+            cv::Mat fl_norm;
+            if (intensity_normalisation.type() == CV_16U)
+            {
+               double mn, mx;
+               cv::minMaxIdx(intensity_normalisation, &mn, &mx);
+               intensity_normalisation.convertTo(fl_norm, CV_32F, 1.0 / mx, 1e-6);
+            }
+            else
+            {
+               fl_norm = intensity_normalisation;
+            }
+
+            plhs[0] = convertCvMat(fl_norm);
          }
          else if (command == "GetMetadata")
          {
