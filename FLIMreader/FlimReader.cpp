@@ -98,6 +98,6 @@ ImageMap FlimReader::getImageMap()
 {
    ImageMap images;
    if (!intensity_normalisation.empty())
-      images["IntensityNormalisation"] = intensity_normalisation;
+      images["IntensityNormalisation"] = getFloatIntensityNormalisation();
    return images;
 }

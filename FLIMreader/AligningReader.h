@@ -15,6 +15,7 @@ public:
 
    void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }   
    cv::Mat getIntensityNormalisation() { return intensity_normalisation; }
+   cv::Mat getFloatIntensityNormalisation();
    void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
    virtual int getNumChannels() = 0;
    

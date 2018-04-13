@@ -228,6 +228,15 @@ void AligningReader::computeIntensityNormalisation()
             intensity += m16;
          }
       }
-      intensity_normalisation = intensity / (double) realignment.size();
+      intensity.copyTo(intensity);
    }
+}
+
+cv::Mat AligningReader::getFloatIntensityNormalisation()
+{
+   cv::Mat fl_intensity_normalisation;
+   int n_frame_norm = std::max((int)realignment.size(), 1);
+   intensity_normalisation.convertTo(fl_intensity_normalisation, CV_32F, 1.0 / n_frame_norm, 0);
+
+   return fl_intensity_normalisation;
 }
