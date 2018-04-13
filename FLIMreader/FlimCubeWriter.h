@@ -11,6 +11,7 @@
 #include <iomanip> 
 #include <ctime> 
 #include <typeinfo> 
+#include "zlib.h"
 
 #define WRITE(fs, x) (fs).write(reinterpret_cast<char *>(&x), sizeof(x)) 
 
@@ -53,6 +54,8 @@ public:
    FlimCubeWriter(const std::string& filename, std::shared_ptr<FlimCube<T>> cube, int z, const TagMap& tags, const TagMap& reader_tags, const ImageMap& images) :
       filename(filename)
    {
+      // Compresss the output data
+      auto compressed_data = getCompressedData(cube, z);
 
       // Write header 
       uint32_t magic_number = 0xC0BE;
@@ -81,6 +84,8 @@ public:
       writeTag("TimeBins", cube->timepoints);
       writeTag("DataType", getTypeName());
       writeTag("CreationDate", oss.str());
+      writeTag("Compressed", true);
+      writeTag("CompressedSize", compressed_data.size());
 
       for (auto t : reader_tags)
          writeTag(t.first, t.second);
@@ -97,8 +102,7 @@ public:
       data_pos_writer.writeCurrentPos();
 
       // Write data 
-      uint64_t data_size = cube->getFrameSize();
-      of.write((char*)cube->getDataPtr(z), data_size);
+      of.write((char*) compressed_data.data(), compressed_data.size());      
 
       for (auto pair : images)
       {
@@ -127,6 +131,35 @@ public:
    }
 
 private:
+
+   std::vector<unsigned char> getCompressedData(std::shared_ptr<FlimCube<T>> cube, int z)
+   {
+      int data_size = cube->getFrameSize();
+      unsigned char* data_ptr = (unsigned char*)cube->getDataPtr(z);
+
+      int n16kBlocks = (data_size + 16383) / 16384; // round up any fraction of a block
+      size_t max_length = data_size + 6 + (n16kBlocks * 5);
+      std::vector<unsigned char> buffer(max_length);
+
+      z_stream zInfo = { 0 };
+      zInfo.total_in = zInfo.avail_in = data_size;
+      zInfo.total_out = zInfo.avail_out = max_length;
+      zInfo.next_in = data_ptr;
+      zInfo.next_out = buffer.data();
+
+      int nErr, nRet = -1;
+      nErr = deflateInit(&zInfo, Z_DEFAULT_COMPRESSION); 
+      if (nErr) throw std::runtime_error("Error during compression");
+
+      nErr = deflate(&zInfo, Z_FINISH);
+      if (nErr != Z_STREAM_END) throw std::runtime_error("Error during compression");
+      deflateEnd(&zInfo);
+
+      size_t compressed_size = zInfo.total_out;
+      buffer.resize(compressed_size);
+
+      return buffer;
+   }
 
    std::string getTypeName()
    {

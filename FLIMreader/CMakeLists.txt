@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(FlimReader)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(zlib REQUIRED)
 
 set(SOURCE
    FlimReader.cpp
@@ -41,4 +42,4 @@ set(HEADERS
 
 add_library(FlimReader STATIC ${SOURCE} ${HEADERS})
 target_link_libraries(FlimReader ${Boost_LIBRARIES} FrameAligner)
-target_include_directories(FlimReader INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(FlimReader INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ${ZLIB_INCLUDE_DIRS})

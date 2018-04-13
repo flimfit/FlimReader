@@ -2,6 +2,7 @@
 
 #include "FlimReader.h"
 #include <fstream>
+#include "zlib.h"
 
 class HistogramReader : public FlimReader
 {
@@ -30,10 +31,7 @@ protected:
       std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
       fs.seekg(data_position);
 
-      size_t data_size = n_x * n_y * n_chan * n_timepoints;
-      std::vector<U> data_buf(data_size);
-
-      fs.read((char*)data_buf.data(), data_size * sizeof(U));
+      std::vector<U> data_buf = readHistogramFromFile<U>();
 
       int n_xi = n_x / spatial_binning;
       int n_yi = n_y / spatial_binning;
@@ -69,7 +67,54 @@ protected:
       }
    }
 
+   template <class U>
+   std::vector<U> readHistogramFromFile()
+   {
+      std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
+      fs.seekg(data_position);
+
+      size_t data_size = n_x * n_y * n_chan * n_timepoints;
+      std::vector<U> data(data_size);
+
+      if (compressed)
+         readCompressedHistogramFromFile(data, fs);
+      else
+         readUncompressedHistogramFromFile(data, fs);
+
+      return data;
+   }
+
+   template <class U>
+   void readUncompressedHistogramFromFile(std::vector<U>& data, std::ifstream& fs)
+   {
+      fs.read((char*)data.data(), data.size() * sizeof(U));
+   }
+
+   template <class U>
+   void readCompressedHistogramFromFile(std::vector<U>& data, std::ifstream& fs)
+   {
+      std::vector<unsigned char> buffer(compressed_size);
+      fs.read((char*)buffer.data(), compressed_size);
+
+      z_stream zInfo = { 0 };
+      zInfo.total_in = zInfo.avail_in = compressed_size;
+      zInfo.total_out = zInfo.avail_out = data.size() * sizeof(U);
+      zInfo.next_in = buffer.data();
+      zInfo.next_out = (unsigned char*) data.data();
+
+      int nErr;
+      nErr = inflateInit(&zInfo);
+      if (nErr) throw std::runtime_error("Error decompressing file");
+      nErr = inflate(&zInfo, Z_FINISH);     // zlib function
+
+      if (zInfo.total_out != (data.size() * sizeof(U)) || nErr != Z_STREAM_END)
+         throw std::runtime_error("Compressed data is incorrect size");
+      inflateEnd(&zInfo);
+   }
+
    std::streamoff data_position;
    int n_timepoints = 1;
    bool has_multiple_channels = false;
+   bool compressed = false;
+   size_t compressed_size = 0;
 };

@@ -67,6 +67,14 @@ void FfhReader::readHeader()
    else
       throw(std::runtime_error("DataType was not specified in data"));
 
+   it = tags.find("Compressed");
+   if (it != tags.end())
+      compressed = it->second.getValue<bool>();
+   
+   it = tags.find("CompressedSize");
+   if (it != tags.end())
+      compressed_size = it->second.getValue<int64_t>();
+   
    it = tags.find("NextBlock");
    if (it != tags.end())
       next_block_pos = it->second.getValue<uint64_t>();
