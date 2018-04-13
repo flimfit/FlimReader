@@ -85,7 +85,7 @@ public:
       writeTag("DataType", getTypeName());
       writeTag("CreationDate", oss.str());
       writeTag("Compressed", true);
-      writeTag("CompressedSize", compressed_data.size());
+      writeTag("CompressedSize", (uint64_t) compressed_data.size());
 
       for (auto t : reader_tags)
          writeTag(t.first, t.second);
