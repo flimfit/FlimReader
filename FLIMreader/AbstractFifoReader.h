@@ -36,6 +36,10 @@ public:
    bool canReadNumZ() { return false; }
    void setNumZ(int n_z_) { n_z = n_z_; }
 
+   bool canReadBidirectionalScan() const { return true; }
+   void setBidirectionalScan(bool bidirectional_scan = true) {}; // do nothing
+   bool getBidirectionalScan() const { return sync.bidirectional; }
+   void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
    void stopReading() 
    { 
@@ -46,8 +50,6 @@ public:
    void clearStopSignal() { terminate = false; }
 
    bool supportsRealignment() { return true; }
-   bool isBidirectional() { return sync.bidirectional; }
-   void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
    double getProgress() { return event_reader->getProgress(); }
 

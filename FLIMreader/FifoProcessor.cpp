@@ -8,7 +8,7 @@
 uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint64_t>& y, size_t begin, size_t end, int xi)
 {
    double xSum = 0, ySum = 0, xxSum = 0, xySum = 0, slope, intercept;
-   int n = end - begin;
+   size_t n = end - begin;
    for (size_t i = begin; i < end; i++)
    {
       xSum += x[i];

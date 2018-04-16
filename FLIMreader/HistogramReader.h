@@ -97,8 +97,8 @@ protected:
       fs.read((char*)buffer.data(), compressed_size);
 
       z_stream zInfo = { 0 };
-      zInfo.total_in = zInfo.avail_in = compressed_size;
-      zInfo.total_out = zInfo.avail_out = data.size() * sizeof(U);
+      zInfo.total_in = zInfo.avail_in = (uInt) compressed_size;
+      zInfo.total_out = zInfo.avail_out = (uInt) (data.size() * sizeof(U));
       zInfo.next_in = buffer.data();
       zInfo.next_out = (unsigned char*) data.data();
 

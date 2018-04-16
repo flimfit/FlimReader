@@ -32,7 +32,7 @@ public:
 
    virtual ~FlimReader() {};
 
-   virtual int getNumChannels() { return n_chan; };
+   virtual int getNumChannels() const { return n_chan; };
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
@@ -47,9 +47,9 @@ public:
    virtual void setNumZ(int n_z_) { std::cout << "Setting n_z not supported\n"; }
 
    const std::vector<double>& getTimepoints() { return timepoints_; };
-   int numX() { return n_x / spatial_binning; }
-   int numY() { return n_y / spatial_binning; }
-   int numZ() { return n_z; }
+   int getNumX() const { return n_x / spatial_binning; }
+   int getNumY() const { return n_y / spatial_binning; }
+   int getNumZ() const { return n_z; }
    int dataSizePerChannel();
 
    FlimNativeType getNativeType() { return native_type; }
@@ -69,10 +69,6 @@ public:
    virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
    virtual void setBidirectionalPhase(double phase) {}
    void setSpatialBinning(int spatial_binning_);
-
-   bool canReadBidirectionalScan() { return true; }
-   void setBidirectionalScan(bool bidirectional_scan = true) {}; // do nothing
-
 
 protected:
 
@@ -99,6 +95,6 @@ void FlimReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<i
    int n_chan_stride = -1;
    std::vector<int> ch = validateChannels(channels, n_chan_stride);
 
-   cube->init(timepoints_, (int)ch.size(), numX(), numY(), numZ());
+   cube->init(timepoints_, (int)ch.size(), getNumX(), getNumY(), getNumZ());
    readData(cube->getDataPtr(), ch);
 }

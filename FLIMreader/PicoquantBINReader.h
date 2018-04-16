@@ -17,6 +17,10 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_<int, double>(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_<int, uint16_t>(data, channels, n_chan_stride); };
 
+   bool canReadBidirectionalScan() const { return false; }
+   void setBidirectionalScan(bool bidirectional_scan = true) {}; // do nothing
+   bool getBidirectionalScan() const { return false; }
+
 private:
 
    void readHeader()

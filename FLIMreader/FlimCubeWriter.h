@@ -142,8 +142,8 @@ private:
       std::vector<unsigned char> buffer(max_length);
 
       z_stream zInfo = { 0 };
-      zInfo.total_in = zInfo.avail_in = data_size;
-      zInfo.total_out = zInfo.avail_out = max_length;
+      zInfo.total_in = zInfo.avail_in = (uInt) data_size;
+      zInfo.total_out = zInfo.avail_out = (uInt) max_length;
       zInfo.next_in = data_ptr;
       zInfo.next_out = buffer.data();
 

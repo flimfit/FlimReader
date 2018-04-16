@@ -17,13 +17,15 @@ public:
    cv::Mat getIntensityNormalisation() { return intensity_normalisation; }
    cv::Mat getFloatIntensityNormalisation();
    void setReferenceIndex(int reference_index_) { reference_index = reference_index_; }
-   virtual int getNumChannels() = 0;
+   virtual int getNumChannels() const = 0;
    
-   virtual bool canReadBidirectionalScan() = 0;
+   virtual bool canReadBidirectionalScan() const = 0;
    virtual void setBidirectionalScan(bool bidirectional_scan = true) = 0;
+   virtual bool getBidirectionalScan() const = 0;
 
-   virtual bool canReadNumZ() { return true; }
+   virtual bool canReadNumZ() const { return true; }
    virtual void setNumZ(int n_z_) {} // ignore usually
+   virtual int getNumZ() const = 0;
 
    void setUseAllChannels();
    void setChannelsToUse(const std::vector<bool>& use_channel);
