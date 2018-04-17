@@ -13,7 +13,7 @@ AbstractFifoReader(filename)
 {
    readHeader();
    
-   n_chan = info.routing_channels;
+   n_chan = hw_info.router_enabled ? info.routing_channels : 1;
    measurement_mode = info.measurement_mode;
    time_resolution_native_ps = hw_info.resolution * 1e3;
    n_x = info.n_x;
@@ -84,7 +84,9 @@ void PicoquantTTTRReader::readHeader()
    READ(fs, hw_info.sync_divider);
    fs.ignore(4 * 4); // cfd settings
    READ(fs, hw_info.resolution);
-   fs.ignore(26 * 4); // router settings
+   READ(fs, hw_info.router_model_code);
+   READ(fs, hw_info.router_enabled);
+   fs.ignore(24 * 4); // router settings
 
    fs.ignore(12); // reserved
 
@@ -187,6 +189,8 @@ void PicoquantTTTRReader::readHeader()
    tags[s("serial")] = hw_info.serial;
    tags[s("sync_divider")] = hw_info.sync_divider;
    tags[s("resolution")] = hw_info.resolution;
+   tags[s("router_model_code")] = hw_info.router_model_code;
+   tags[s("router_enabled")] = hw_info.router_enabled;
    tags[s("input0_countrate")] = info.input0_countrate;
    tags[s("input1_countrate")] = info.input1_countrate;
    tags[s("stop_after")] = info.stop_after;

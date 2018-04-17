@@ -33,7 +33,7 @@ public:
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
    
-   bool canReadNumZ() { return false; }
+   bool canReadNumZ() const { return false; }
    void setNumZ(int n_z_) { n_z = n_z_; }
 
    bool canReadBidirectionalScan() const { return true; }

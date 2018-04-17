@@ -14,6 +14,8 @@ struct PicoquantHardwareInfo
    int32_t serial;
    int32_t sync_divider;
    float resolution;
+   int32_t router_model_code;
+   int32_t router_enabled;
 };
 
 struct PicoquantTTRInfo
