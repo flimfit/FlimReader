@@ -68,6 +68,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
             for (int i = 0; i < timepoints.size(); i++)
                t[i] = timepoints[i];
          }
+         if (command == "GetNativeTimePoints")
+         {
+            AssertInputCondition(nlhs >= 1);
+            const std::vector<double>& timepoints = readers[idx]->getNativeTimepoints();
+
+            plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
+            double* t = mxGetPr(plhs[0]);
+            for (int i = 0; i < timepoints.size(); i++)
+               t[i] = timepoints[i];
+         }
          else if (command == "GetNumberOfChannels")
          {
             AssertInputCondition(nlhs >= 1);
@@ -80,8 +90,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
             double* d = mxGetPr(plhs[0]);
 
-            d[0] = readers[idx]->numX();
-            d[1] = readers[idx]->numY();
+            d[0] = readers[idx]->getNumX();
+            d[1] = readers[idx]->getNumY();
          }
          else if (command == "GetData" && nlhs > 0)
          {
@@ -92,8 +102,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             mwSize n_t = readers[idx]->getTimepoints().size();
             mwSize n_chan = channels.size();
-            mwSize n_x = readers[idx]->numX();
-            mwSize n_y = readers[idx]->numY();
+            mwSize n_x = readers[idx]->getNumX();
+            mwSize n_y = readers[idx]->getNumY();
 
             mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
@@ -130,17 +140,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
             int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
-         else if (command == "GetNumTemporalBits")
+         else if (command == "GetNumTimepointsNative")
          {
             AssertInputCondition(nlhs >= 1);
-            int n_bits = readers[idx]->getTemporalResolution();
+            size_t n_bits = readers[idx]->getNativeTimepoints().size();
             plhs[0] = mxCreateDoubleScalar(n_bits);
          }
-         else if (command == "SetNumTemporalBits")
+         else if (command == "SetTemporalDownsampling")
          {
             AssertInputCondition(nrhs >= 3);
-            int n_bits = (int)mxGetScalar(prhs[2]);
-            readers[idx]->setTemporalResolution(n_bits);
+            int downsampling = (int)mxGetScalar(prhs[2]);
+            readers[idx]->setTemporalDownsampling(downsampling);
          }
          else if (command == "SupportsRealignment")
          {
@@ -152,7 +162,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          else if (command == "IsBidirectional")
          {
             AssertInputCondition(nlhs >= 1);
-            bool is_bidirectional = readers[idx]->isBidirectional();
+            bool is_bidirectional = readers[idx]->getBidirectionalScan();
             plhs[0] = mxCreateLogicalMatrix(1, 1);
             *(mxGetLogicals(plhs[0])) = is_bidirectional;
          }

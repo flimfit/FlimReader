@@ -53,7 +53,8 @@ public:
 
    double getProgress() { return event_reader->getProgress(); }
 
-   void setTemporalResolution(int temporal_resolution);
+   void initaliseTimepoints(int n_timebins_native, double time_resolution_native_ps);
+   void setTemporalDownsampling(int downsampling);
       
 protected:
 
@@ -78,15 +79,12 @@ protected:
    void determineDwellTime();
       
    int line_averaging = 1;
-   int downsampling;
    
    std::vector<float> time_shifts_ps;
    
    // Required Picoquant information
    int measurement_mode = 0;
-   double time_resolution_native_ps = 0;
    double t_rep_ps = 0;
-   int n_timebins_native = 0;
 
    SyncSettings sync;
 
@@ -95,6 +93,7 @@ protected:
    
 private:
    
+   double time_resolution_native_ps = 0;
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
@@ -132,17 +131,16 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    for (auto& c : channels)
       channel_map[c] = idx++;
    
-   int n_bin = (int)timepoints_.size();
+   int n_bin = (int)timepoints.size();
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
    int n_invalid = 0;
    int last_frame_written = 0;
 
    auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
-   fifo_frame->loadNext();
-
-
-   FifoProcessor processor(markers, sync);
+   
+   if (sync.has_initial_frame_marker)
+      fifo_frame->loadNext();
 
    cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
    cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));
@@ -254,14 +252,14 @@ void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)
    int n_px = n_x * n_y;
    for (int p = 0; p < n_px; p++)
    {
-      const T* data_ptr = histogram + p * (timepoints_.size() * n_chan);
+      const T* data_ptr = histogram + p * (timepoints.size() * n_chan);
       uint16_t I = 0;
       float It = 0;
       for (int c = 0; c < 1; c++)
-         for (int t = 0; t < this->timepoints_.size(); t++)
+         for (int t = 0; t < this->timepoints.size(); t++)
          {
             I += static_cast<uint16_t>(*data_ptr);
-            It += static_cast<float>((*data_ptr) * timepoints_[t]);
+            It += static_cast<float>((*data_ptr) * timepoints[t]);
 
             data_ptr++;
          }

@@ -34,6 +34,7 @@ public:
 
    }
 
+   void initalise();
    void loadNext();
 
    std::vector<FifoEvent> events;
@@ -76,7 +77,7 @@ private:
    bool line_valid = false;
 };
 
-
+/*
 class FifoProcessor
 {
 public:
@@ -102,4 +103,4 @@ protected:
    bool line_valid = false;
    bool frame_started = false;
 };
-
+*/

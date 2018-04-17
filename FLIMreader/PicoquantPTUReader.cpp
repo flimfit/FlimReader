@@ -15,9 +15,7 @@ AbstractFifoReader(filename)
 {
    readHeader();
 
-   n_timebins_native = 1 << 14;
-   n_timebins_native /= temporal_binning;
-
+   int n_timebins_native = 1 << 14;
    int n_timebins_useful = (int) ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
 
@@ -30,8 +28,10 @@ AbstractFifoReader(filename)
       markers.PixelMarker = 0x0; // no pixel marker
    }
 
-   setTemporalResolution(14);
-   assert(measurement_mode == 3);
+   initaliseTimepoints(n_timebins_useful, time_resolution_native_ps);
+   
+   if (measurement_mode != 3)
+      throw std::runtime_error("Measurement Mode 3 required for PTU FLIM data");
 
    event_reader = std::shared_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
       
@@ -53,7 +53,9 @@ void PicoquantPTUReader::readHeader()
 
    n_chan = 1;
    markers.FrameMarker = 0; // No frame marker by default
-
+   markers.PixelMarker = 0;
+   markers.LineEndMarker = 0;
+   markers.LineStartMarker = 0;
    
    fs.read(version, sizeof(version));
 

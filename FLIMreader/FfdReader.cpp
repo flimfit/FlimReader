@@ -12,7 +12,7 @@ FfdReader::FfdReader(const std::string& filename) :
 {
    readHeader();
 
-   setTemporalResolution(12);
+   initaliseTimepoints(n_timepoints_native, time_resolution_native_ps);
 
    markers.FrameMarker = 0x8;
    markers.LineEndMarker = 0x4;
@@ -52,7 +52,7 @@ void FfdReader::readHeader()
 
    it = tags.find("NumTimeBins");
    if (it != tags.end())
-      n_timebins_native = (int) it->second.getValue<int64_t>();
+      n_timepoints_native = (int) it->second.getValue<int64_t>();
 
    it = tags.find("BidirectionalScan");
    if (it != tags.end())

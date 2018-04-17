@@ -51,5 +51,7 @@ protected:
 
    void readHeader();
    std::streamoff data_position = 0;
+   int n_timepoints_native = 0;
+   double time_resolution_native_ps = 0;
    uint32_t version;
 };

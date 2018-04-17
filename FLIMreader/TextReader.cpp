@@ -42,7 +42,7 @@ void TextReader::readHeader()
 
       if (is_data)
       {
-         timepoints_.push_back(stod(header));
+         native_timepoints.push_back(stod(header));
 
          // Read in data line
          int chan = 0;
@@ -81,12 +81,13 @@ void TextReader::readHeader()
 
    }
 
-   size_t n_t = timepoints_.size();
+   initaliseTimepoints();
+
+   size_t n_t = timepoints.size();
    for (size_t i = 0; i < data.size(); i++)
    {
       if (data[i].size() < n_t)
          data[i].resize(n_t, 0);
    }
-
 }
 

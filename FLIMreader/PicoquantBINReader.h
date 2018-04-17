@@ -53,11 +53,12 @@ private:
 
       data_position = header_size;
 
-      timepoints_.resize(n_timepoints);
+      native_timepoints.resize(n_timepoints);
 
       for (int i = 0; i < n_timepoints; i++)
-         timepoints_[i] = i * TimeResol * 1000;
+         native_timepoints[i] = i * TimeResol * 1000;
 
+      initaliseTimepoints();
    }
 
    const int header_size = 20;

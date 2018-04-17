@@ -14,10 +14,10 @@ class Markers
 {
 public:
    uint8_t PhotonMarker = 0x0;
-   uint8_t PixelMarker = 0x1;
-   uint8_t LineStartMarker = 0x2;
-   uint8_t LineEndMarker = 0x4;
-   uint8_t FrameMarker = 0x8;
+   uint8_t PixelMarker = 0x0;
+   uint8_t LineStartMarker = 0x0;
+   uint8_t LineEndMarker = 0x0;
+   uint8_t FrameMarker = 0x0;
    uint8_t Invalid = 0x80;
 };
 
@@ -42,6 +42,7 @@ public:
    bool bidirectional = false;
    double phase = 0;
 
+   bool has_initial_frame_marker = false;
    int n_line = -1; // used if we don't have frame markers
 };
 
