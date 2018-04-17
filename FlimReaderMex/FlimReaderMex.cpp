@@ -80,8 +80,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
             plhs[0] = mxCreateDoubleMatrix(1, 2, mxREAL);
             double* d = mxGetPr(plhs[0]);
 
-            d[0] = readers[idx]->numX();
-            d[1] = readers[idx]->numY();
+            d[0] = readers[idx]->getNumX();
+            d[1] = readers[idx]->getNumY();
          }
          else if (command == "GetData" && nlhs > 0)
          {
@@ -92,8 +92,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
             mwSize n_t = readers[idx]->getTimepoints().size();
             mwSize n_chan = channels.size();
-            mwSize n_x = readers[idx]->numX();
-            mwSize n_y = readers[idx]->numY();
+            mwSize n_x = readers[idx]->getNumX();
+            mwSize n_y = readers[idx]->getNumY();
 
             mwSize dims[4] = { n_t, n_chan, n_x, n_y };
 
