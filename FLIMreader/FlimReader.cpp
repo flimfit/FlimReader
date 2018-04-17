@@ -107,7 +107,7 @@ void FlimReader::setTemporalDownsampling(int downsampling_)
    size_t n_t = native_timepoints.size() >> downsampling_;
 
    if (n_t == 0)
-      throw std::exception("Invalid downsampling value");
+      throw std::runtime_error("Invalid downsampling value");
 
    downsampling = downsampling_;
    timepoints.resize(n_t);

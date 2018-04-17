@@ -183,7 +183,7 @@ void AbstractFifoReader::setTemporalDownsampling(int downsampling_)
    size_t n_t = n_t_native >> downsampling_;
 
    if (n_t == 0)
-      throw std::exception("Invalid downsampling value");
+      throw std::runtime_error("Invalid downsampling value");
 
    if (t_rep_ps != 0)
    {
