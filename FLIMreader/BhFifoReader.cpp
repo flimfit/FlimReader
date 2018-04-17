@@ -17,9 +17,9 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
 
    readHeader();
 
-   n_timebins_native = 4096;
-   time_resolution_native_ps = 50e3 / n_timebins_native / 4; // TODO; try and get TAC scaling from ini file
-   setTemporalResolution((int) log2(n_timebins_native));
+   int n_timebins_native = 4096;
+   double time_resolution_native_ps = 50e3 / n_timebins_native / 4; // TODO; try and get TAC scaling from ini file
+   initaliseTimepoints(n_timebins_native, time_resolution_native_ps);
 
    markers.PixelMarker = 0x1;
    markers.LineStartMarker = 0x2;

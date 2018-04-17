@@ -36,6 +36,9 @@ protected:
       int n_xi = n_x / spatial_binning;
       int n_yi = n_y / spatial_binning;
 
+      size_t n_timepoints_native = native_timepoints.size();
+      size_t n_timepoints = timepoints.size();
+
       size_t n_el = n_xi * n_yi * n_chan_used * n_timepoints;
 
       // Set to zero
@@ -56,11 +59,11 @@ protected:
             {
                xi = x / spatial_binning;
                {
-                  int pi = ((yi*n_xi + xi)*n_chan_stride + ci)*n_timepoints;
-                  int p = ((y*n_x + x)*n_chan + c)*n_timepoints;
+                  size_t pi = ((yi*n_xi + xi)*n_chan_stride + ci)*n_timepoints;
+                  size_t p = ((y*n_x + x)*n_chan + c)*n_timepoints_native;
 
-                  for (int t = 0; t < n_timepoints; t++)
-                     data[pi + t] += (T)data_buf[p++];
+                  for (size_t t = 0; t < n_timepoints_native; t++)
+                     data[pi + (t >> downsampling)] += (T)data_buf[p++];
                }
             }
          }
@@ -73,7 +76,7 @@ protected:
       std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
       fs.seekg(data_position);
 
-      size_t data_size = n_x * n_y * n_chan * n_timepoints;
+      size_t data_size = n_x * n_y * n_chan * native_timepoints.size();
       std::vector<U> data(data_size);
 
       if (compressed)
@@ -113,7 +116,6 @@ protected:
    }
 
    std::streamoff data_position;
-   int n_timepoints = 1;
    bool has_multiple_channels = false;
    bool compressed = false;
    size_t compressed_size = 0;

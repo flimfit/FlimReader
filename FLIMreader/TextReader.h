@@ -41,10 +41,11 @@ void TextReader::readData_(T* data_, const std::vector<int>& channels_, int n_ch
 {
    auto channels = validateChannels(channels_, n_chan_stride);
    
-   size_t n_t = timepoints_.size();
+   size_t n_t_native = native_timepoints.size();
+   size_t n_t = timepoints.size();
    size_t n_chan = channels.size();
 
    for (size_t c = 0; c < n_chan; c++)
-      for (size_t i = 0; i < n_t; i++)
-         data_[i + c*n_t] = static_cast<T>(data[channels[c]][i]);
+      for (size_t i = 0; i < n_t_native; i++)
+         data_[(i >> downsampling) + c*n_t] = static_cast<T>(data[channels[c]][i]);
 }

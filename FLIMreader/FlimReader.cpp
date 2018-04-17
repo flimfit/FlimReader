@@ -68,7 +68,7 @@ std::vector<int> FlimReader::validateChannels(std::vector<int> channels, int& n_
 
 int FlimReader::dataSizePerChannel()
 {
-   int n_bin = (int) timepoints_.size();
+   int n_bin = (int) timepoints.size();
    return n_bin * n_x * n_y / (spatial_binning * spatial_binning);
 }
 
@@ -101,3 +101,17 @@ ImageMap FlimReader::getImageMap()
       images["IntensityNormalisation"] = getFloatIntensityNormalisation();
    return images;
 }
+
+void FlimReader::setTemporalDownsampling(int downsampling_)
+{
+   size_t n_t = native_timepoints.size() >> downsampling_;
+
+   if (n_t == 0)
+      throw std::exception("Invalid downsampling value");
+
+   downsampling = downsampling_;
+   timepoints.resize(n_t);
+
+   for (size_t i = 0; i < n_t; i++)
+      timepoints[i] = native_timepoints[i << downsampling];
+};

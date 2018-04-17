@@ -68,6 +68,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
             for (int i = 0; i < timepoints.size(); i++)
                t[i] = timepoints[i];
          }
+         if (command == "GetNativeTimePoints")
+         {
+            AssertInputCondition(nlhs >= 1);
+            const std::vector<double>& timepoints = readers[idx]->getNativeTimepoints();
+
+            plhs[0] = mxCreateDoubleMatrix(1, timepoints.size(), mxREAL);
+            double* t = mxGetPr(plhs[0]);
+            for (int i = 0; i < timepoints.size(); i++)
+               t[i] = timepoints[i];
+         }
          else if (command == "GetNumberOfChannels")
          {
             AssertInputCondition(nlhs >= 1);
@@ -130,17 +140,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
             int spatial_binning = (int) mxGetScalar(prhs[2]);
             readers[idx]->setSpatialBinning(spatial_binning);
          }
-         else if (command == "GetNumTemporalBits")
+         else if (command == "GetNumTimepointsNative")
          {
             AssertInputCondition(nlhs >= 1);
-            int n_bits = readers[idx]->getTemporalResolution();
+            size_t n_bits = readers[idx]->getNativeTimepoints().size();
             plhs[0] = mxCreateDoubleScalar(n_bits);
          }
-         else if (command == "SetNumTemporalBits")
+         else if (command == "SetTemporalDownsampling")
          {
             AssertInputCondition(nrhs >= 3);
-            int n_bits = (int)mxGetScalar(prhs[2]);
-            readers[idx]->setTemporalResolution(n_bits);
+            int downsampling = (int)mxGetScalar(prhs[2]);
+            readers[idx]->setTemporalDownsampling(downsampling);
          }
          else if (command == "SupportsRealignment")
          {
@@ -152,7 +162,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
          else if (command == "IsBidirectional")
          {
             AssertInputCondition(nlhs >= 1);
-            bool is_bidirectional = readers[idx]->isBidirectional();
+            bool is_bidirectional = readers[idx]->getBidirectionalScan();
             plhs[0] = mxCreateLogicalMatrix(1, 1);
             *(mxGetLogicals(plhs[0])) = is_bidirectional;
          }

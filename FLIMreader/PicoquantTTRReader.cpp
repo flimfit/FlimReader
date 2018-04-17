@@ -15,18 +15,19 @@ AbstractFifoReader(filename)
    
    n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
-   time_resolution_native_ps = hw_info.resolution * 1e3;
    n_x = info.n_x;
    n_y = info.n_y;
    rep_rate_hz = info.input0_countrate;
    t_rep_ps = 1e12f / info.input0_countrate; // rep time in picoseconds
-      
-   int n_bits = 14 - info.range_no;
-   n_timebins_native = 1 << n_bits;
+   
+   double time_resolution_native_ps = hw_info.resolution * 1e3;
 
+   int n_timebins_native = 1 << (14 - info.range_no);
    int n_timebins_useful = (int) ceil(t_rep_ps / time_resolution_native_ps); // how many timebins are actually useful?
-
    n_timebins_native = min(n_timebins_native, n_timebins_useful);
+
+   initaliseTimepoints(n_timebins_useful, time_resolution_native_ps);
+
 
    if (measurement_mode != 3)
       throw std::runtime_error("Picoquant data should be recorded in TTTR Mode 3 for FLIM analysis");
@@ -35,7 +36,6 @@ AbstractFifoReader(filename)
 
    event_reader = std::shared_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
 
-   setTemporalResolution(14);
    determineDwellTime();
 }
 

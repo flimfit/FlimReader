@@ -74,6 +74,10 @@ void FifoProcessor2::determineLineStartTimes()
 }
 
 
+void FifoFrame::initalise()
+{
+}
+
 void FifoFrame::loadNext()
 {
    frame_start_event = next_frame_event;
@@ -125,7 +129,7 @@ Photon FifoProcessor2::getNextPhoton()
       {
          line_valid = false;
       }
-      if (p.mark & markers.LineStartMarker)
+      else if (p.mark & markers.LineStartMarker)
       {
          line_valid = true;
          sync_start = p.macro_time;
@@ -139,9 +143,8 @@ Photon FifoProcessor2::getNextPhoton()
 
       if ((p.mark == markers.PhotonMarker) && line_valid)
       {
-         double cur_loc = (markers.PixelMarker == 0) ?
-            ((p.macro_time - sync_start) / sync.count_per_line) * (sync.n_x) :
-            cur_px;
+         double cur_loc = (markers.PixelMarker) ? cur_px :
+            ((p.macro_time - sync_start) / sync.count_per_line) * (sync.n_x);
 
          
          if (sync.bidirectional && (cur_line % 2 == 1))
@@ -159,7 +162,7 @@ Photon FifoProcessor2::getNextPhoton()
 }
 
 
-
+/*
 FifoProcessor::FifoProcessor(Markers markers, SyncSettings sync) :
    markers(markers), sync(sync)
 {
@@ -220,3 +223,5 @@ void FifoProcessor::incrementFrame()
    cur_line = -1;
    cur_direction = sync.bidirectional ? -1 : 1;
 }
+
+*/

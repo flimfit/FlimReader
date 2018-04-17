@@ -46,7 +46,8 @@ public:
 
    virtual void setNumZ(int n_z_) { std::cout << "Setting n_z not supported\n"; }
 
-   const std::vector<double>& getTimepoints() { return timepoints_; };
+   const std::vector<double>& getTimepoints() { return timepoints; };
+   const std::vector<double>& getNativeTimepoints() { return native_timepoints; };
    int getNumX() const { return n_x / spatial_binning; }
    int getNumY() const { return n_y / spatial_binning; }
    int getNumZ() const { return n_z; }
@@ -54,9 +55,7 @@ public:
 
    FlimNativeType getNativeType() { return native_type; }
 
-   virtual bool isBidirectional() { return false; }
    virtual bool supportsRealignment() { return false; }
-   int getTemporalResolution() { return temporal_resolution; }
    int getSpatialBinning() { return spatial_binning; }
    double getRepRateHz() { return rep_rate_hz; }
 
@@ -66,17 +65,21 @@ public:
 
    ImageMap getImageMap();
 
-   virtual void setTemporalResolution(int temporal_resolution) {}; // do nothing in general case;
-   virtual void setBidirectionalPhase(double phase) {}
+   virtual void setTemporalDownsampling(int downsampling_in_bits); 
+   virtual void setBidirectionalPhase(double phase) { std::cout << "Warning: setting phase not supported by this reader\n"; }
    void setSpatialBinning(int spatial_binning_);
 
 protected:
 
-   std::vector<double> timepoints_;
+   virtual void initaliseTimepoints() { setTemporalDownsampling(0); };
+
+
+   std::vector<double> timepoints;
+   std::vector<double> native_timepoints;
+   int downsampling;
 
    std::string filename;
    std::string extension;
-   int temporal_resolution = 1;
    int spatial_binning = 1;
    int n_x = 0;
    int n_y = 0;
@@ -95,6 +98,6 @@ void FlimReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<i
    int n_chan_stride = -1;
    std::vector<int> ch = validateChannels(channels, n_chan_stride);
 
-   cube->init(timepoints_, (int)ch.size(), getNumX(), getNumY(), getNumZ());
+   cube->init(timepoints, (int)ch.size(), getNumX(), getNumY(), getNumZ());
    readData(cube->getDataPtr(), ch);
 }
