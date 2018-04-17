@@ -75,7 +75,7 @@ void AbstractFifoReader::determineDwellTime()
       if (!p.valid)
          continue;
 
-      if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker) && n_line > 0)
+      if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker))
       {
          if (n_line > 0)
          {
@@ -220,7 +220,9 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    if (frames.empty())
    {
       auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
-      fifo_frame->loadNext();
+
+      if (sync.has_initial_frame_marker)
+         fifo_frame->loadNext();
 
       int idx = 0;
       int frame = 0;
