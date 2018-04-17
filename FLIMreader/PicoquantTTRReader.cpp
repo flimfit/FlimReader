@@ -13,7 +13,7 @@ AbstractFifoReader(filename)
 {
    readHeader();
    
-   n_chan = hw_info.router_enabled ? info.routing_channels : 1;
+   n_chan = info.routing_channels;
    measurement_mode = info.measurement_mode;
    n_x = info.n_x;
    n_y = info.n_y;
