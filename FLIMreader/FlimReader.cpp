@@ -7,6 +7,8 @@
 #include "TextReader.h"
 #include "BhFifoReader.h"
 
+#include <cmath>
+
 FlimReader* FlimReader::createReader(const std::string& filename)
 {
    std::string extension = determineExtension(filename);
@@ -82,6 +84,10 @@ TagMap FlimReader::getReaderTags()
 {
    TagMap reader_tags;
    reader_tags["SpatialBinning"] = spatial_binning;
+
+   if (std::isfinite(rep_rate_hz))
+      reader_tags["SyncRate_Hz"] = rep_rate_hz;
+
    reader_tags["RealignmentType"] = realignmentTypeString(realign_params.type);
    reader_tags["RealignmentFrameBinning"] = realign_params.frame_binning;
    reader_tags["RealignmentSpatialBinning"] = realign_params.spatial_binning;

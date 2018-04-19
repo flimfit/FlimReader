@@ -44,7 +44,10 @@ void FfdReader::readHeader()
 
    it = tags.find("SyncRate_Hz");
    if (it != tags.end())
-      t_rep_ps = 1e12 / it->second.getValue<double>();
+   {
+      rep_rate_hz = it->second.getValue<double>();
+      t_rep_ps = 1e12 / rep_rate_hz;
+   }
 
    it = tags.find("NumChannels");
    if (it != tags.end())

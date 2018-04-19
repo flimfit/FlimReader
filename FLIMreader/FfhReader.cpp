@@ -31,6 +31,10 @@ void FfhReader::readHeader()
 
    TagMap::iterator it;
 
+   it = tags.find("SyncRate_Hz");
+   if (it != tags.end())
+      rep_rate_hz = (int)it->second.getValue<double>();
+
    it = tags.find("NumX");
    if (it != tags.end())
       n_x = (int) it->second.getValue<int64_t>();

@@ -71,7 +71,7 @@ public:
 
 protected:
 
-   virtual void initaliseTimepoints() { setTemporalDownsampling(0); };
+   virtual void initaliseTimepoints() { setTemporalDownsampling(0); }
 
 
    std::vector<double> timepoints;
