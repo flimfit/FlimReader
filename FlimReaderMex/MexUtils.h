@@ -216,7 +216,7 @@ inline mxArray* convertCvMat(const cv::Mat im)
       mexErrMsgIdAndTxt("FLIMfit:invalidInput",
          "Image was not of an acceptable type");
 
-   mxArray* a = mxCreateNumericMatrix(im.rows, im.cols, mtype, mxREAL);
+   mxArray* a = mxCreateNumericMatrix(im.cols, im.rows, mtype, mxREAL);
    char* ptr = reinterpret_cast<char*>(mxGetData(a));
 
    for (int i = 0; i < im.rows; i++)
