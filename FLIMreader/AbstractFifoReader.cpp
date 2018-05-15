@@ -125,7 +125,7 @@ void AbstractFifoReader::determineDwellTime()
       if (markers.FrameMarker == 0x0 && n_line >= n_y)
          break;
 
-   } while (event_reader->hasMoreData() && (n_frame < 2));
+   } while (event_reader->hasMoreData() && (n_frame == 0));
    
    if (markers.FrameMarker == 0x0)
       n_frame = 1;
@@ -245,7 +245,6 @@ void AbstractFifoReader::loadIntensityFramesImpl()
          {
             if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
                cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
-
          }
 
          idx++;
