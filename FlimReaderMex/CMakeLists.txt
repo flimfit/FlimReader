@@ -11,7 +11,6 @@ if(DEFINED ENV{MATLAB_VER})
 endif()
 message("Set Matlab root: ${Matlab_ROOT_DIR}")
 
-
 set(MATLAB_FIND_DEBUG TRUE)
 find_package(Matlab COMPONENTS MEX_COMPILER MX_LIBRARY REQUIRED)
 
@@ -25,10 +24,8 @@ set(HEADERS
    MexUtils.h
 )
 
-include_directories()
-
 matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader)
 
-if(FlimReaderMEX_OUT_DIR)
-   install(DIRECTORY $<TARGET_FILE_DIR:FlimReaderMex>/ DESTINATION ${FlimReaderMEX_OUT_DIR})
+if (FlimReaderMEX_OUT_DIR)
+   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
 endif()
