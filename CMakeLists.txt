@@ -5,7 +5,8 @@ include("cmake/ConfigureMSVCRuntime.cmake")
 option(BUILD_OPENCV "Build OpenCV (will produce static libs)" OFF)
 option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
 
-if (BUILD_OPENCV)
+string(COMPARE EQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ROOT_PROJECT)
+if (BUILD_OPENCV AND ROOT_PROJECT)
    include("cmake/HunterGate.cmake")
    HunterGate(
       URL "https://github.com/ruslo/hunter/archive/v0.20.13.tar.gz"
@@ -23,7 +24,6 @@ endif ()
 if (BUILD_OPENCV)
     hunter_add_package(OpenCV)
     hunter_add_package(Tiff)
-
     # Prefer static libraries so we don't mess with Matlab 
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .tbd .dylib .so)
 endif ()

@@ -27,11 +27,20 @@ set(HEADERS
 matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader)
 
 if (FlimReaderMEX_OUT_DIR)
-   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
-
-   if (WIN32 AND EXISTS "$ENV{MKLROOT}")
-      # install MKL redist's if we used it
-      get_filename_component(INTEL_REDIST "$ENV{MKLROOT}/../redist/intel64_win/compiler/" REALPATH)
-      add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${INTEL_REDIST} ${FlimReaderMEX_OUT_DIR})
-   endif()
+   if (WIN32)
+      # For windows, use deployqt to marshall all dlls etc
+      deployqt(FlimReaderMex INCLUDE_MODULES ${QTLIBS})
+      add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
+         copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${MEX_OUT_DIR})
+      
+      if (EXISTS "$ENV{MKLROOT}")
+         # install MKL redist's if we used it
+         get_filename_component(INTEL_REDIST "$ENV{MKLROOT}/../redist/intel64_win/compiler/" REALPATH)
+         add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${INTEL_REDIST} ${FlimReaderMEX_OUT_DIR})
+      endif()
+   else ()
+      # On mac, just copy the build file
+      add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
+         copy $<TARGET_FILE:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
+   endif ()
 endif()
