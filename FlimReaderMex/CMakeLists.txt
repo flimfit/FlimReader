@@ -29,7 +29,6 @@ matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader)
 if (FlimReaderMEX_OUT_DIR)
    if (WIN32)
       # For windows, use deployqt to marshall all dlls etc
-      deployqt(FlimReaderMex INCLUDE_MODULES ${QTLIBS})
       add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
          copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${MEX_OUT_DIR})
       
