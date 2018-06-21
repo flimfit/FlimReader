@@ -30,7 +30,7 @@ if (FlimReaderMEX_OUT_DIR)
    if (WIN32)
       # For windows, use deployqt to marshall all dlls etc
       add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
-         copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${MEX_OUT_DIR})
+         copy_directory $<TARGET_FILE_DIR:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
       
       if (EXISTS "$ENV{MKLROOT}")
          # install MKL redist's if we used it
@@ -42,4 +42,6 @@ if (FlimReaderMEX_OUT_DIR)
       add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
          copy $<TARGET_FILE:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
    endif ()
+   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
+      copy ${CMAKE_CURRENT_SOURCE_DIR}/FlimReader.m ${FlimReaderMEX_OUT_DIR})
 endif()
