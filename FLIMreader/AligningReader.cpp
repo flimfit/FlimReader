@@ -183,8 +183,7 @@ void AligningReader::alignFramesImpl()
       {
          cv::Mat m16;
          std::lock_guard<std::mutex> lk(realign_mutex);
-         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
-            (realignment[i].coverage >= realign_params.coverage_threshold))
+         if (realignment[i].useFrame(realign_params))
          {
             realignment[i].mask.convertTo(m16, CV_16U);
             intensity_normalisation += m16;
@@ -219,10 +218,9 @@ void AligningReader::computeIntensityNormalisation()
 
       for (int i = 0; i < realignment.size(); i++)
       {
-         if ((realignment[i].correlation >= realign_params.correlation_threshold) &&
-             (realignment[i].coverage >= realign_params.coverage_threshold) &&
-              realignment[i].done &&
-             (!realignment[i].mask.empty()))
+         if (realignment[i].useFrame(realign_params) &&
+             realignment[i].done &&
+            !realignment[i].mask.empty())
          {
             realignment[i].mask.convertTo(m16, CV_16U);
             intensity += m16;
