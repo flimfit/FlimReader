@@ -286,6 +286,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
       else
       {
          plhs[0] = mxCreateString(e.what());
+         for (int i = 1; i < nlhs; i++)
+            plhs[i] = mxCreateDoubleScalar(0); // Dummy variables
       }
    }
 }
