@@ -213,7 +213,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
    {
       std::lock_guard<std::mutex> lk(frame_mutex);
-      if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y)))
+//      if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y))) // TODO
          frames.clear();
    }
 

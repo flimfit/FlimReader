@@ -3,14 +3,18 @@
 #include "AbstractFrameAligner.h"
 #include <thread>
 #include <mutex>
+#include <map>
+#include "Cv3dUtils.h"
+#include "Cache.h"
 
 class AligningReader
 {
 public:
 
+   AligningReader();
    ~AligningReader();
 
-   const std::vector<RealignmentResult>& getRealignmentResults() { return realignment; }
+   const std::map<size_t,RealignmentResult>& getRealignmentResults() { return realignment; }
    const std::unique_ptr<AbstractFrameAligner>& getFrameAligner() { return frame_aligner; }
 
    void setRealignmentParameters(RealignmentParameters realign_params_) { realign_params = realign_params_; }   
@@ -36,7 +40,7 @@ public:
 protected:
 
    void loadIntensityFrames();
-   cv::Mat getIntensityFrame(int frame);
+   CachedObject<cv::Mat> getIntensityFrame(int frame);
    virtual cv::Mat getIntensityFrameImmediately(int frame) { return getIntensityFrame(frame); };
 
    void setIntensityFrame(int frame_idx, const cv::Mat frame);
@@ -56,7 +60,7 @@ protected:
 
    RealignmentParameters realign_params;
    std::unique_ptr<AbstractFrameAligner> frame_aligner;
-   std::vector<RealignmentResult> realignment;
+   std::map<size_t,RealignmentResult> realignment;
    int reference_index = -1;
 
    cv::Mat intensity_normalisation;
@@ -64,7 +68,7 @@ protected:
    std::thread frame_thread;
    std::mutex frame_mutex;
    std::condition_variable frame_cv;
-   std::vector<cv::Mat> frames;
+   std::map<size_t,CachedObject<cv::Mat>> frames;
    std::vector<bool> use_channel;
 
    bool async_load_intensity_frames = false;

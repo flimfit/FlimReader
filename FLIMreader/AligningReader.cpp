@@ -1,6 +1,18 @@
 #include "AligningReader.h"
 #include <future>
 #include "Cv3dUtils.h"
+#include "Cache.h"
+
+#include "Cache_impl.h"
+
+Cache<cv::Mat>* Cache<cv::Mat>::instance = nullptr;
+
+template<>
+size_t Cache<cv::Mat>::getSize(const cv::Mat& obj)
+{
+   return obj.total() * obj.elemSize();
+}
+
 
 template <class F>
 void par_for(int begin, int end, F fn) {
@@ -26,6 +38,11 @@ void par_for(int begin, int end, F fn) {
     futures[cpu].get();
   }
 };
+
+AligningReader::AligningReader()
+{
+   Cache<cv::Mat>::getInstance();
+}
 
 AligningReader::~AligningReader()
 {
@@ -66,27 +83,27 @@ void AligningReader::loadIntensityFrames()
    }
 }
 
-cv::Mat AligningReader::getIntensityFrame(int frame)
+CachedObject<cv::Mat> AligningReader::getIntensityFrame(int frame)
 {
    if (frame >= getNumIntensityFrames())
       throw std::runtime_error("Invalid frame index");
 
    std::unique_lock<std::mutex> lk(frame_mutex);
-   frame_cv.wait(lk, [&] { return ((frame < frames.size()) && (area(frames[frame]) > 0)); });
+   frame_cv.wait(lk, [&] { return frames.count(frame) > 0; });
    return frames[frame];
 }
 
 
 void AligningReader::setIntensityFrame(int frame_idx, const cv::Mat frame)
 {
+   Cache<cv::Mat>* cache = Cache<cv::Mat>::getInstance();
+
    cv::Mat frame_cpy;
    frame.copyTo(frame_cpy);
 
    {
       std::lock_guard<std::mutex> lk(frame_mutex);
-      if (frames.size() <= frame_idx)
-         frames.resize(frame_idx+1);
-      frames[frame_idx] = frame_cpy;
+      frames[frame_idx] = cache->add(frame_cpy);
    }
    frame_cv.notify_all();
 }
@@ -143,7 +160,7 @@ void AligningReader::alignFrames()
 
    frame_aligner->setReference(reference_index, ref_frame);
 
-   realignment = std::vector<RealignmentResult>(n_frames);
+   realignment.clear();
    realignment_complete = false;
 
    intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_16U, cv::Scalar(0));
@@ -172,8 +189,6 @@ void AligningReader::alignFramesImpl()
       try 
       {
          realignment[i] = frame_aligner->addFrame(i, getIntensityFrame(i));
-         if (!realign_params.store_frames)
-            frames[i] = cv::Mat(); // clear frame after alignment
       }
       catch (cv::Exception e)
       {
@@ -185,7 +200,8 @@ void AligningReader::alignFramesImpl()
          std::lock_guard<std::mutex> lk(realign_mutex);
          if (realignment[i].useFrame(realign_params))
          {
-            realignment[i].mask.convertTo(m16, CV_16U);
+            cv::Mat mask = realignment[i].mask;
+            mask.convertTo(m16, CV_16U);
             intensity_normalisation += m16;
 
          }
@@ -194,8 +210,6 @@ void AligningReader::alignFramesImpl()
       realign_cv.notify_all();
    });
 
-   if (!realign_params.store_frames)
-      frames.clear();
    frame_aligner->clearTemp();
 
    realignment_complete = true;
@@ -216,13 +230,14 @@ void AligningReader::computeIntensityNormalisation()
       cv::Mat intensity(intensity_normalisation.dims, intensity_normalisation.size.p, CV_16U, cv::Scalar(1));
       cv::Mat m16;
 
-      for (int i = 0; i < realignment.size(); i++)
+      for (auto& r : realignment)
       {
-         if (realignment[i].useFrame(realign_params) &&
-             realignment[i].done &&
-            !realignment[i].mask.empty())
+         RealignmentResult& result = r.second;
+         cv::Mat mask = result.mask;
+         if (result.useFrame(realign_params) &&
+             result.done && !mask.empty())
          {
-            realignment[i].mask.convertTo(m16, CV_16U);
+            mask.convertTo(m16, CV_16U);
             intensity += m16;
          }
       }
