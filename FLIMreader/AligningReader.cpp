@@ -41,7 +41,7 @@ void par_for(int begin, int end, F fn) {
 
 AligningReader::AligningReader()
 {
-   Cache<cv::Mat>::getInstance();
+   frame_aligner = std::make_unique<NullFrameAligner>();
 }
 
 AligningReader::~AligningReader()
@@ -83,7 +83,7 @@ void AligningReader::loadIntensityFrames()
    }
 }
 
-CachedObject<cv::Mat> AligningReader::getIntensityFrame(int frame)
+CachedMat AligningReader::getIntensityFrame(int frame)
 {
    if (frame >= getNumIntensityFrames())
       throw std::runtime_error("Invalid frame index");
@@ -112,15 +112,14 @@ void AligningReader::setIntensityFrame(int frame_idx, const cv::Mat frame)
 
 void AligningReader::alignFrames()
 {
+   if (frame_aligner->getType() != realign_params.type)
+      frame_aligner = std::unique_ptr<AbstractFrameAligner>(AbstractFrameAligner::createFrameAligner(realign_params));
+
    if (!realign_params.use_realignment())
    {
-      frame_aligner = nullptr;
       std::cout << "No realigmment requested\n";
       return;
    }
-
-   if (frame_aligner == nullptr || frame_aligner->getType() != realign_params.type)
-      frame_aligner = std::unique_ptr<AbstractFrameAligner>(AbstractFrameAligner::createFrameAligner(realign_params));
 
    loadIntensityFrames();
 
@@ -160,10 +159,10 @@ void AligningReader::alignFrames()
 
    frame_aligner->setReference(reference_index, ref_frame);
 
-   realignment.clear();
+//   realignment.clear();
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_16U, cv::Scalar(0));
+   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_32F, cv::Scalar(0));
 
    if (realignment_thread.joinable())
       realignment_thread.join();
@@ -188,24 +187,16 @@ void AligningReader::alignFramesImpl()
 
       try 
       {
-         realignment[i] = frame_aligner->addFrame(i, getIntensityFrame(i));
+         frame_aligner->addFrame(i, getIntensityFrame(i));
       }
       catch (cv::Exception e)
       {
          std::cout << "Error during realignment: " << e.what();
       }
 
-      {
-         cv::Mat m16;
-         std::lock_guard<std::mutex> lk(realign_mutex);
-         if (realignment[i].useFrame(realign_params))
-         {
-            cv::Mat mask = realignment[i].mask;
-            mask.convertTo(m16, CV_16U);
-            intensity_normalisation += m16;
-
-         }
-      }
+         auto& result = frame_aligner->getRealignmentResult(i);
+         if (result.useFrame(realign_params))
+            intensity_normalisation += result.mask->get();
 
       realign_cv.notify_all();
    });
@@ -224,32 +215,25 @@ void AligningReader::alignFramesImpl()
 
 void AligningReader::computeIntensityNormalisation()
 {
-   if (!realignment.empty())
-   {
-      // Get intensity
-      cv::Mat intensity(intensity_normalisation.dims, intensity_normalisation.size.p, CV_16U, cv::Scalar(1));
-      cv::Mat m16;
+   // Get intensity
+   cv::Mat intensity = intensity_normalisation.clone();
+   intensity = 1.0;
 
-      for (auto& r : realignment)
-      {
-         RealignmentResult& result = r.second;
-         cv::Mat mask = result.mask;
-         if (result.useFrame(realign_params) &&
-             result.done && !mask.empty())
-         {
-            mask.convertTo(m16, CV_16U);
-            intensity += m16;
-         }
-      }
-      intensity.copyTo(intensity);
+   for (auto& r : frame_aligner->getRealignmentResults())
+   {
+      const RealignmentResult& result = r.second;
+      cv::Mat mask = result.mask->get();
+      if (result.useFrame(realign_params) && result.done && !mask.empty())
+         intensity += mask;
+      intensity.copyTo(intensity_normalisation);
    }
 }
 
 cv::Mat AligningReader::getFloatIntensityNormalisation()
 {
-   cv::Mat fl_intensity_normalisation;
-   int n_frame_norm = std::max((int)realignment.size(), 1);
-   intensity_normalisation.convertTo(fl_intensity_normalisation, CV_32F, 1.0 / n_frame_norm, 0);
+   auto& results = frame_aligner->getRealignmentResults();
 
+   int n_frame_norm = std::max((int)results.size(), 1);
+   cv::Mat fl_intensity_normalisation = intensity_normalisation / n_frame_norm;
    return fl_intensity_normalisation;
 }

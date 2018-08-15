@@ -31,9 +31,9 @@ FlimReader* FlimReader::createReader(const std::string& filename)
    throw std::runtime_error("Unrecognised file format");
 }
 
-FlimReader::FlimReader(const std::string& filename_)
+FlimReader::FlimReader(const std::string& filename) :
+   AligningReader(), filename(filename)
 {
-   filename = filename_;
    extension = determineExtension(filename);
 }
 
