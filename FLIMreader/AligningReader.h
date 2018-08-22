@@ -39,6 +39,8 @@ public:
 
 protected:
 
+   void waitForFrameReady(int frame);
+
    void loadIntensityFrames();
    CachedMat getIntensityFrame(int frame);
    virtual cv::Mat getIntensityFrameImmediately(int frame) { return getIntensityFrame(frame)->get(); };

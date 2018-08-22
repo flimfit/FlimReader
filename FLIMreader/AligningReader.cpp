@@ -237,3 +237,16 @@ cv::Mat AligningReader::getFloatIntensityNormalisation()
    cv::Mat fl_intensity_normalisation = intensity_normalisation / n_frame_norm;
    return fl_intensity_normalisation;
 }
+
+void AligningReader::waitForFrameReady(int frame)
+{
+   // Check that we have realigned this frame
+   if (!frame_aligner->frameReady(frame))
+   {
+      std::unique_lock<std::mutex> lk(realign_mutex);
+      realign_cv.wait(lk, [this, frame] {
+         return (frame_aligner->frameReady(frame) || terminate);
+      });
+      lk.unlock();
+   }
+}

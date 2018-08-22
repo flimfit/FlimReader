@@ -60,15 +60,6 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    if (sync.has_initial_frame_marker)
       fifo_frame->loadNext();
 
-   cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
-   cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));
-
-   double* p_pos = pos.ptr<double>();
-   double* p_tr_pos = pos.ptr<double>();
-
-   cv::Mat affine;
-   cv::Point2d shift;
-
    ma_image.clear();
 
    int frame_idx = 0;
@@ -84,6 +75,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       int z = frame_idx % n_z;
       frame_idx++;
 
+      bool use_frame;
       Photon p;
       while ((p = processor.getNextPhoton()))
       {
@@ -91,37 +83,20 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          {
             computeMeanArrivalImage(histogram);
             last_frame_written = frame;
+
+            waitForFrameReady(frame);
+            use_frame = frame_aligner->getRealignmentResult(frame).useFrame(realign_params);
          }
 
-         if (!useFrame(p.frame)) continue;
-         if (!p.valid || p.channel > n_chan) continue;
+         if (!(p.valid && use_frame) || p.channel > n_chan) continue;
 
          int mapped_channel = channel_map[p.channel];
          if (mapped_channel == -1) continue;
 
          p.z = z;
 
-         if (frame_aligner != nullptr && frame_aligner->frameValid(frame))
-         {
-            // Check that we have realigned this frame
-            if (!frame_aligner->frameReady(frame))
-            {
-               std::unique_lock<std::mutex> lk(realign_mutex);
-               realign_cv.wait(lk, [this, frame] {
-                  return (frame_aligner->frameReady(frame) || terminate);
-               });
-               lk.unlock();
-            }
-
-            if (terminate) break;
-
-            double correlation = frame_aligner->getFrameCorrelation(frame);
-            double coverage = frame_aligner->getFrameCoverage(frame);
-            if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
-               continue;
-
-            frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
-         }
+         if (terminate) break;
+         frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
 
          p.x /= spatial_binning;
          p.y /= spatial_binning;
@@ -187,6 +162,7 @@ void AbstractFifoReader::readSettings()
       time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
    }
 }
+
 
 void AbstractFifoReader::determineDwellTime()
 {
@@ -298,6 +274,7 @@ void AbstractFifoReader::determineDwellTime()
    setUseAllChannels();   
 }
 
+
 void AbstractFifoReader::initaliseTimepoints(int n_timebins_native, double time_resolution_native_ps_)
 {
    time_resolution_native_ps = time_resolution_native_ps_;
@@ -307,6 +284,7 @@ void AbstractFifoReader::initaliseTimepoints(int n_timebins_native, double time_
 
    FlimReader::initaliseTimepoints();
 }
+
 
 void AbstractFifoReader::setTemporalDownsampling(int downsampling_)
 {      
@@ -340,8 +318,12 @@ void AbstractFifoReader::setTemporalDownsampling(int downsampling_)
       time_shifts_resunit.push_back((int) std::round(shift / time_resolution_native_ps));
 };
 
+
 void AbstractFifoReader::loadIntensityFramesImpl()
 {
+   if (!frames.empty() && (frames[0]->get().size() == cv::Size(n_x, n_y)))
+      return;
+
    int fb = realign_params.frame_binning;
 
    assert(event_reader != nullptr);
@@ -349,65 +331,59 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
    int n_invalid = 0;
 
+   std::unique_lock<std::mutex> lk(frame_mutex);
+   frames.clear();
+   lk.unlock();
+
+   auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
+
+   if (sync.has_initial_frame_marker)
+      fifo_frame->loadNext();
+
+   int idx = 0;
+   int frame = 0;
+   int z = 0;
+
+   std::vector<int> dims = { n_z, n_y, n_x };
+   int cur_frame_idx = 0;
+   cv::Mat cur_frame = cv::Mat(dims, CV_32F, cv::Scalar(0));
+
+   while (event_reader->hasMoreData())
    {
-      std::lock_guard<std::mutex> lk(frame_mutex);
-//      if (!frames.empty() && (frames[0].size() != cv::Size(n_x, n_y))) // TODO
-         frames.clear();
-   }
+      if (terminate) break;
 
-   if (frames.empty())
-   {
-      auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
+      fifo_frame->loadNext();
+      FifoProcessor processor(markers, sync);
+      processor.setFrame(fifo_frame);
 
-      if (sync.has_initial_frame_marker)
-         fifo_frame->loadNext();
-
-      int idx = 0;
-      int frame = 0;
-      int z = 0;
-
-      std::vector<int> dims = { n_z, n_y, n_x };
-      int cur_frame_idx = 0;
-      cv::Mat cur_frame = cv::Mat(dims, CV_32F, cv::Scalar(0));
-
-      while (event_reader->hasMoreData())
+      Photon p;
+      while ((p = processor.getNextPhoton()))
       {
-         if (terminate) break;
-
-         fifo_frame->loadNext();
-         FifoProcessor processor(markers, sync);
-         processor.setFrame(fifo_frame);
-
-         Photon p;
-         while (( p = processor.getNextPhoton() ))
-         {
-            if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
-               cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
-         }
-
-         idx++;
-         frame = idx / n_z;
-         z = idx % n_z;
-
-         if (frame > cur_frame_idx)
-         {
-            setIntensityFrame(cur_frame_idx, cur_frame);
-          
-            cur_frame.setTo(0);
-            cur_frame_idx = frame;
-         }
+         if ((p.x < n_x) && (p.x >= 0) && (p.y < n_y) && (p.y >= 0) && use_channel[p.channel])
+            cur_frame.at<float>(z, (int)p.y, (int)p.x)++;
       }
 
-      // last frame
-      if (z > 0)
+      idx++;
+      frame = idx / n_z;
+      z = idx % n_z;
+
+      if (frame > cur_frame_idx)
+      {
          setIntensityFrame(cur_frame_idx, cur_frame);
+
+         cur_frame.setTo(0);
+         cur_frame_idx = frame;
+      }
    }
+
+   // last frame
+   if (z > 0)
+      setIntensityFrame(cur_frame_idx, cur_frame);
 
 
    fb = last_frame_binning;
 
    if (terminate)
       frames.clear();
-
 }
 
