@@ -49,10 +49,10 @@ protected:
 };
 
 
-class FifoProcessor2
+class FifoProcessor
 {
 public:
-   FifoProcessor2(Markers markers, SyncSettings sync);
+   FifoProcessor(Markers markers, SyncSettings sync);
 
    void setFrame(std::shared_ptr<FifoFrame> frame_);
    void determineLineStartTimes();
@@ -76,31 +76,3 @@ private:
    int cur_line = -1;
    bool line_valid = false;
 };
-
-/*
-class FifoProcessor
-{
-public:
-
-   FifoProcessor(Markers markers, SyncSettings sync);
-   Photon addEvent(FifoEvent p);
-
-protected:
-
-   void incrementFrame();
-
-   Markers markers;
-   SyncSettings sync;
-
-   int frame_idx = -1;
-
-   long long sync_count_accum = 0;
-   long long sync_start = 0;
-
-   int cur_px = -1;
-   int cur_line = -1;
-   int cur_direction = 1;
-   bool line_valid = false;
-   bool frame_started = false;
-};
-*/

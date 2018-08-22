@@ -29,9 +29,9 @@ public:
    AbstractFifoReader(const std::string& filename);
    ~AbstractFifoReader();
    
-   void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
-   void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
-   void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) { readData_(data, channels, n_chan_stride); };
+   void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
+   void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
+   void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    
    bool canReadNumZ() const { return false; }
    void setNumZ(int n_z_) { n_z = n_z_; }
@@ -105,141 +105,6 @@ private:
    bool finished_loading_intensity_frames = false;
 };
 
-
-
-
-
-template<typename T>
-void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channels_, int n_chan_stride)
-{
-   if (terminate)
-      return;
-
-   if (realignment_complete) // we are reprocessing
-      computeIntensityNormalisation();
-   if (realign_params.type == RealignmentType::None)
-      intensity_normalisation = cv::Mat();
-
-   assert(event_reader != nullptr);
-   event_reader->setToStart();
-
-   auto channels = validateChannels(channels_, n_chan_stride);
-
-   // Determine channel mapping
-   std::vector<int> channel_map(n_chan, -1);
-   int idx = 0;
-   for (auto& c : channels)
-      channel_map[c] = idx++;
-   
-   int n_bin = (int)timepoints.size();
-   int n_x_binned = n_x / spatial_binning;
-   int n_y_binned = n_y / spatial_binning;
-   int n_invalid = 0;
-   int last_frame_written = 0;
-
-   auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
-   
-   if (sync.has_initial_frame_marker)
-      fifo_frame->loadNext();
-
-   cv::Mat pos(3, 1, CV_64F, cv::Scalar(0));
-   cv::Mat tr_pos(3, 1, CV_64F, cv::Scalar(0));
-
-   double* p_pos = pos.ptr<double>();
-   double* p_tr_pos = pos.ptr<double>();
-
-   cv::Mat affine;
-   cv::Point2d shift;
-
-   ma_image.clear();
-
-   int frame_idx = 0;
-
-   while (event_reader->hasMoreData() && !terminate)
-   {
-
-      fifo_frame->loadNext();
-      FifoProcessor2 processor2(markers, sync);
-      processor2.setFrame(fifo_frame);
-
-      int frame = frame_idx / n_z;
-      int z = frame_idx % n_z;
-      frame_idx++;
-
-      Photon p;
-      while (( p = processor2.getNextPhoton() ))
-      {
-         if (frame > last_frame_written)
-         {
-            computeMeanArrivalImage(histogram);
-            last_frame_written = frame;
-         }
-
-         if (!useFrame(p.frame)) continue;
-         if (!p.valid || p.channel > n_chan) continue;
-
-         int mapped_channel = channel_map[p.channel];
-         if (mapped_channel == -1) continue;
-
-         p.z = z;
-
-         if (frame_aligner != nullptr && frame_aligner->frameValid(frame))
-         {
-            // Check that we have realigned this frame
-             if (!frame_aligner->frameReady(frame))
-            {
-               std::unique_lock<std::mutex> lk(realign_mutex);
-               realign_cv.wait(lk, [this, frame] {
-                  return (frame_aligner->frameReady(frame) || terminate);
-               });
-               lk.unlock();
-            }
-
-            if (terminate) break;
-
-            double correlation = frame_aligner->getFrameCorrelation(frame);
-            double coverage = frame_aligner->getFrameCoverage(frame);
-            if (correlation < realign_params.correlation_threshold || coverage < realign_params.coverage_threshold)
-               continue;
-
-            frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
-         }
-
-         p.x /= spatial_binning;
-         p.y /= spatial_binning;
-
-         int64_t x = (int64_t)std::round(p.x);
-         int64_t y = (int64_t)std::round(p.y);
-         int64_t z = (int64_t)std::round(p.z);
-
-         int bin = p.bin;
-         if (t_rep_resunit > 0)
-         {
-            bin = (bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
-            bin = bin < 0 ? bin + t_rep_resunit : bin;
-         }
-         bin = bin >> downsampling;
-
-         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0)
-            && (y < n_y_binned) && (y >= 0)
-            && (z < n_z) && (z >= 0))
-         {
-            size_t idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
-            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;
-         }
-         else
-         {
-            n_invalid++;
-         }
-      }
-   }
-
-   if (save_mean_arrival_images)
-   {
-      computeMeanArrivalImage(histogram);
-      writeMultipageTiff("c:/users/cimlab/documents/test/ma-image.tif", ma_image);
-   }
-}
 
 template<typename T>
 void AbstractFifoReader::computeMeanArrivalImage(const T* histogram)

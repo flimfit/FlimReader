@@ -23,7 +23,7 @@ uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint6
 }
 
 
-void FifoProcessor2::setFrame(std::shared_ptr<FifoFrame> frame_)
+void FifoProcessor::setFrame(std::shared_ptr<FifoFrame> frame_)
 {
    frame = frame_;
    determineLineStartTimes();
@@ -32,7 +32,7 @@ void FifoProcessor2::setFrame(std::shared_ptr<FifoFrame> frame_)
    cur_line = -1;
 }
 
-void FifoProcessor2::determineLineStartTimes()
+void FifoProcessor::determineLineStartTimes()
 {
 
    std::vector<uint64_t> line_start_time;
@@ -110,13 +110,13 @@ void FifoFrame::loadNext()
 
 
 
-FifoProcessor2::FifoProcessor2(Markers markers, SyncSettings sync) :
+FifoProcessor::FifoProcessor(Markers markers, SyncSettings sync) :
    markers(markers), sync(sync)
 {
 }
 
 
-Photon FifoProcessor2::getNextPhoton()
+Photon FifoProcessor::getNextPhoton()
 {
    while(true)
    {
