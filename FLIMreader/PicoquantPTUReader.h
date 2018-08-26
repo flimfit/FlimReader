@@ -15,4 +15,5 @@ protected:
    int temporal_binning = 0;
    double time_resolution_native_ps = 0;
    PicoquantRecordType rec_type;
+   int measurement_mode = 0;
 };

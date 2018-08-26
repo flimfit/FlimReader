@@ -16,6 +16,7 @@ set(SOURCE
    AbstractEventReader.cpp
    FifoProcessor.cpp
    FfhReader.cpp
+   FlimCube.cpp
 )
 
 set(HEADERS

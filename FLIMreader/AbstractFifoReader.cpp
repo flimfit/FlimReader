@@ -53,7 +53,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    int n_x_binned = n_x / spatial_binning;
    int n_y_binned = n_y / spatial_binning;
    int n_invalid = 0;
-   int last_frame_written = 0;
+   int last_frame_written = -1;
 
    auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
 
@@ -79,6 +79,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       Photon p;
       while ((p = processor.getNextPhoton()))
       {
+         p.z = z;
+
+         if (terminate) break;
+
          if (frame > last_frame_written)
          {
             computeMeanArrivalImage(histogram);
@@ -93,9 +97,13 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          int mapped_channel = channel_map[p.channel];
          if (mapped_channel == -1) continue;
 
-         p.z = z;
+         if ((p.x >= n_x) || (p.x < 0) || (p.y >= n_y) || (p.y < 0))
+            continue;
 
-         if (terminate) break;
+         T corrected_value = 1;
+         if (!spectral_correction.empty())
+            corrected_value = spectral_correction[mapped_channel].at<float>(p.y, p.x);
+
          frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
 
          p.x /= spatial_binning;
@@ -105,6 +113,9 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          int64_t y = (int64_t)std::round(p.y);
          int64_t z = (int64_t)std::round(p.z);
 
+         if ((x >= n_x_binned) || (x < 0) || (y >= n_y_binned) || (y < 0) || (z >= n_z) || (z < 0))
+            continue;
+
          int bin = p.bin;
          if (t_rep_resunit > 0)
          {
@@ -113,12 +124,10 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          }
          bin = bin >> downsampling;
 
-         if ((bin < n_bin) && (x < n_x_binned) && (x >= 0)
-            && (y < n_y_binned) && (y >= 0)
-            && (z < n_z) && (z >= 0))
+         if (bin < n_bin)
          {
             size_t idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
-            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)]++;
+            histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)] += corrected_value;
          }
          else
          {
@@ -321,10 +330,12 @@ void AbstractFifoReader::setTemporalDownsampling(int downsampling_)
 
 void AbstractFifoReader::loadIntensityFramesImpl()
 {
-   if (!frames.empty() && (frames[0]->get().size() == cv::Size(n_x, n_y)))
+   int fb = realign_params.frame_binning;
+
+   if (!frames.empty() && (fb == last_frame_binning))
       return;
 
-   int fb = realign_params.frame_binning;
+   fb = last_frame_binning;
 
    assert(event_reader != nullptr);
    event_reader->setToStart();
@@ -380,10 +391,13 @@ void AbstractFifoReader::loadIntensityFramesImpl()
    if (z > 0)
       setIntensityFrame(cur_frame_idx, cur_frame);
 
-
-   fb = last_frame_binning;
-
    if (terminate)
       frames.clear();
 }
 
+
+void AbstractFifoReader::stopReading()
+{
+   terminate = true;
+   realign_cv.notify_all();
+}

@@ -121,3 +121,43 @@ void FlimReader::setTemporalDownsampling(int downsampling_)
    for (size_t i = 0; i < n_t; i++)
       timepoints[i] = native_timepoints[i << downsampling];
 };
+
+void FlimReader::readData(std::shared_ptr<FlimCube> cube, const std::vector<int>& channels)
+{
+   int n_chan_stride = -1;
+   std::vector<int> ch = validateChannels(channels, n_chan_stride);
+
+   FlimNativeType type = getPreferredType();
+
+   cube->init(type, timepoints, (int)ch.size(), getNumX(), getNumY(), getNumZ());
+
+   switch (type)
+   {
+   case DataTypeUint16:
+      readData((uint16_t*)cube->getDataPtr(), ch); break;
+   case DataTypeFloat:
+      readData((float*)cube->getDataPtr(), ch); break;
+   case DataTypeDouble:
+      readData((double*)cube->getDataPtr(), ch); break;
+   }
+}
+
+void FlimReader::setSpectralCorrection(const std::vector<cv::Mat>& spectral_correction_)
+{
+   if ((spectral_correction_.size() != n_chan) && spectral_correction_.size() > 0)
+      throw std::runtime_error("Unexpected number of spectral correction channels");
+
+   spectral_correction.clear();
+
+   for (auto& c : spectral_correction_)
+   {
+      if (c.size().width != n_x || c.size().height != n_y)
+         throw std::runtime_error("Unexpected spectral correction image size");
+
+      // Make sure we are a CV32
+      cv::Mat cv32;
+      c.convertTo(cv32, CV_32F);
+      spectral_correction.push_back(cv32);
+   }
+
+}

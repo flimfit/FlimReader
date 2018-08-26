@@ -12,13 +12,6 @@
 typedef std::map<std::string, MetaDataTag> TagMap;
 typedef std::map<std::string, cv::Mat> ImageMap;
 
-enum FlimNativeType
-{
-   DataTypeUint16,
-   DataTypeFloat,
-   DataTypeDouble
-};
-
 class FlimReader : public AligningReader
 {
 public:
@@ -37,14 +30,18 @@ public:
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(uint16_t* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
 
-   template<typename T>
-   void readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels = {});
+   void readData(std::shared_ptr<FlimCube> cube, const std::vector<int>& channels = {});
 
    virtual void stopReading() {};
    virtual void clearStopSignal() {};
    virtual double getProgress() { return 0; }
 
+   virtual FlimNativeType getPreferredType() { return (spectral_correction.empty()) ? native_type : DataTypeFloat; }
+
    virtual void setNumZ(int n_z_) { std::cout << "Setting n_z not supported\n"; }
+
+   void setSpectralCorrection(const std::vector<cv::Mat>& spectral_correction);
+
 
    const std::vector<double>& getTimepoints() { return timepoints; };
    const std::vector<double>& getNativeTimepoints() { return native_timepoints; };
@@ -73,10 +70,11 @@ protected:
 
    virtual void initaliseTimepoints() { setTemporalDownsampling(0); }
 
-
    std::vector<double> timepoints;
    std::vector<double> native_timepoints;
    int downsampling;
+
+   std::vector<cv::Mat> spectral_correction;
 
    std::string filename;
    std::string extension;
@@ -92,12 +90,3 @@ protected:
    TagMap tags;
 };
 
-template<typename T>
-void FlimReader::readData(std::shared_ptr<FlimCube<T>> cube, const std::vector<int>& channels)
-{
-   int n_chan_stride = -1;
-   std::vector<int> ch = validateChannels(channels, n_chan_stride);
-
-   cube->init(timepoints, (int)ch.size(), getNumX(), getNumY(), getNumZ());
-   readData(cube->getDataPtr(), ch);
-}

@@ -46,12 +46,11 @@ protected:
 };
 
 
-template<typename T>
 class FlimCubeWriter
 {
 public:
 
-   FlimCubeWriter(const std::string& filename, std::shared_ptr<FlimCube<T>> cube, int z, const TagMap& tags, const TagMap& reader_tags, const ImageMap& images) :
+   FlimCubeWriter(const std::string& filename, std::shared_ptr<FlimCube> cube, int z, const TagMap& tags, const TagMap& reader_tags, const ImageMap& images) :
       filename(filename)
    {
       // Compresss the output data
@@ -82,7 +81,7 @@ public:
       writeTag("NumY", cube->n_y);
       writeTag("NumChannels", cube->n_chan);
       writeTag("TimeBins", cube->timepoints);
-      writeTag("DataType", getTypeName());
+      writeTag("DataType", getTypeName(cube));
       writeTag("CreationDate", oss.str());
       writeTag("Compressed", true);
       writeTag("CompressedSize", (uint64_t) compressed_data.size());
@@ -132,7 +131,7 @@ public:
 
 private:
 
-   std::vector<unsigned char> getCompressedData(std::shared_ptr<FlimCube<T>> cube, int z)
+   std::vector<unsigned char> getCompressedData(std::shared_ptr<FlimCube> cube, int z)
    {
       int data_size = cube->getFrameSize();
       unsigned char* data_ptr = (unsigned char*)cube->getDataPtr(z);
@@ -161,14 +160,17 @@ private:
       return buffer;
    }
 
-   std::string getTypeName()
+   std::string getTypeName(std::shared_ptr<FlimCube> cube)
    {
-      if (typeid(T) == typeid(uint16_t))
+      switch (cube->data_type)
+      {
+      case DataTypeUint16: 
          return "uint16_t";
-      if (typeid(T) == typeid(double))
-         return "double";
-      if (typeid(T) == typeid(float))
+      case DataTypeFloat:
          return "float";
+      case DataTypeDouble:
+         return "double";
+      }
 
       throw std::runtime_error("Unrecognised type");
       return "";

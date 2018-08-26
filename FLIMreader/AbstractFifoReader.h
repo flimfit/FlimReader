@@ -41,21 +41,16 @@ public:
    bool getBidirectionalScan() const { return sync.bidirectional; }
    void setBidirectionalPhase(double phase) { sync.phase = phase; }
 
-   void stopReading() 
-   { 
-      terminate = true; 
-      realign_cv.notify_all();
-   }
-
+   void stopReading();
    void clearStopSignal() { terminate = false; }
 
    bool supportsRealignment() { return true; }
-
    double getProgress() { return event_reader->getProgress(); }
+
 
    void initaliseTimepoints(int n_timebins_native, double time_resolution_native_ps);
    void setTemporalDownsampling(int downsampling);
-      
+
 protected:
 
    ImageScanParameters getImageScanParameters() {
@@ -79,13 +74,8 @@ protected:
    void determineDwellTime();
       
    int line_averaging = 1;
-   
    std::vector<float> time_shifts_ps;
-   
-   // Required Picoquant information
-   int measurement_mode = 0;
    double t_rep_ps = 0;
-
    SyncSettings sync;
 
    std::shared_ptr<AbstractEventReader> event_reader;
@@ -101,8 +91,6 @@ private:
 
    bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
-   
-   bool finished_loading_intensity_frames = false;
 };
 
 

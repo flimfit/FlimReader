@@ -14,7 +14,6 @@ AbstractFifoReader(filename)
    readHeader();
    
    n_chan = info.routing_channels;
-   measurement_mode = info.measurement_mode;
    n_x = info.n_x;
    n_y = info.n_y;
    rep_rate_hz = info.input0_countrate;
@@ -29,7 +28,7 @@ AbstractFifoReader(filename)
    initaliseTimepoints(n_timebins_useful, time_resolution_native_ps);
 
 
-   if (measurement_mode != 3)
+   if (info.measurement_mode != 3)
       throw std::runtime_error("Picoquant data should be recorded in TTTR Mode 3 for FLIM analysis");
 
    PicoquantRecordType rec_type = (std::string("PicoHarp 300").compare(info.ident) == 0) ? PicoHarp_T3 : HydraHarpV2_T3;
