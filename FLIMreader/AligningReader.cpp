@@ -1,18 +1,8 @@
 #include "AligningReader.h"
 #include <future>
 #include "Cv3dUtils.h"
-#include "Cache.h"
-
+#include "CvCache.h"
 #include "Cache_impl.h"
-
-Cache<cv::Mat>* Cache<cv::Mat>::instance = nullptr;
-
-template<>
-size_t Cache<cv::Mat>::getSize(const cv::Mat& obj)
-{
-   return obj.total() * obj.elemSize();
-}
-
 
 template <class F>
 void par_for(int begin, int end, F fn) {
@@ -194,7 +184,7 @@ void AligningReader::alignFramesImpl()
          std::cout << "Error during realignment: " << e.what();
       }
 
-         auto& result = frame_aligner->getRealignmentResult(i);
+         auto result = frame_aligner->getRealignmentResult(i);
          if (result.useFrame(realign_params))
             intensity_normalisation += result.mask->get();
 

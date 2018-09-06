@@ -5,7 +5,7 @@
 #include <mutex>
 #include <map>
 #include "Cv3dUtils.h"
-#include "Cache.h"
+#include "CvCache.h"
 
 class AligningReader
 {
