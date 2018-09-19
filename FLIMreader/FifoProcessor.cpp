@@ -106,6 +106,8 @@ void FifoFrame::loadNext()
          }
       }
    }
+
+   frame_number++;
 }
 
 
@@ -147,7 +149,8 @@ Photon FifoProcessor::getNextPhoton()
             ((p.macro_time - sync_start) / sync.count_per_line) * (sync.n_x);
 
          
-         if (sync.bidirectional && (cur_line % 2 == 1))
+         if ((sync.bidirectional && (cur_line % 2 == 1)) ||
+             (sync.bidirectional_per_frame && (frame->frame_number % 2 == 1)))
             cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
          /*
          while ((cur_line > 0) && (p.macro_time < real_line_time[cur_line]))

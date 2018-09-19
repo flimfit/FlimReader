@@ -21,6 +21,7 @@
 #define ImgHdr_PixY "ImgHdr_PixY"
 #define HW_InpChannels "HW_InpChannels"
 
+#define ReqHdr_ScanningPattern "$ReqHdr_ScanningPattern" // Leica software
 
 #define Line_Averaging     "Line_Averaging"            // Inserted by PTU splitter
 

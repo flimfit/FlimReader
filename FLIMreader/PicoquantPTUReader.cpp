@@ -80,11 +80,15 @@ void PicoquantPTUReader::readHeader()
             
          case tyInt8:
             cout << tag_head.TagValue;
+            if (strcmp(tag_head.Ident, ImgHdr_BiDirect) == 0)
+               sync.bidirectional = tag_head.TagValue != 0;
+            if (strcmp(tag_head.Ident, ReqHdr_ScanningPattern) == 0)
+               sync.bidirectional_per_frame = (tag_head.TagValue) != 0;
             if (strcmp(tag_head.Ident, TTTRTagTTTRRecType) == 0)
                rec_type = (PicoquantRecordType) tag_head.TagValue;
-            if (strcmp(tag_head.Ident, Measurement_Mode)==0) // measurement mode
+            if (strcmp(tag_head.Ident, Measurement_Mode) == 0)
                measurement_mode = (int) tag_head.TagValue;
-            if (strcmp(tag_head.Ident, HWRouter_Channels)==0)
+            if (strcmp(tag_head.Ident, HWRouter_Channels) == 0)
                n_chan = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, HW_InpChannels) == 0)
                n_chan = ((int)tag_head.TagValue) - 1; // start is included in input count
@@ -144,6 +148,9 @@ void PicoquantPTUReader::readHeader()
               
    } while (strncmp(tag_head.Ident, FileTagEnd, sizeof(FileTagEnd)));
    
+   if (sync.bidirectional_per_frame)
+      sync.bidirectional = false;
+
    data_position = fs.tellg();
 }
 

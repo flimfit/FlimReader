@@ -29,9 +29,8 @@ class FifoFrame
 {
 public:
    FifoFrame(std::shared_ptr<AbstractEventReader> reader, Markers markers) :
-      reader(reader), markers(markers)
+      reader(reader), markers(markers), frame_number(-1)
    {
-
    }
 
    void initalise();
@@ -41,6 +40,7 @@ public:
    std::vector<FifoEvent> marker_events;
    FifoEvent next_frame_event;
    FifoEvent frame_start_event;
+   int frame_number;
 
 protected:
 

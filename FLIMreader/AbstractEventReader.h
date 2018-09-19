@@ -40,6 +40,7 @@ public:
    double counts_interframe;
    int n_x;
    bool bidirectional = false;
+   bool bidirectional_per_frame = false; // Leica software stores bidirectional data in alternative frames
    double phase = 0;
 
    bool has_initial_frame_marker = false;
