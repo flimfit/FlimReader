@@ -102,7 +102,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
          T corrected_value = 1;
          if (!spectral_correction.empty())
-            corrected_value = spectral_correction[mapped_channel].at<float>(p.y, p.x);
+            corrected_value = (T) spectral_correction[mapped_channel].at<float>((int) std::round(p.y), (int) std::round(p.x));
 
          frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
 
@@ -221,7 +221,7 @@ void AbstractFifoReader::determineDwellTime()
          if (p.macro_time >= sync_start_count) // not sure why this is sometimes violated
          {
             uint64_t diff = p.macro_time - sync_start_count;
-            sync_count_per_line_acc(diff);
+            sync_count_per_line_acc((double)diff);
 
             n_averaged++;
          }
@@ -235,7 +235,7 @@ void AbstractFifoReader::determineDwellTime()
             if (n_line > 0)
             {
                uint64_t diff = p.macro_time - sync_start_count;
-               sync_count_interline_acc(diff);
+               sync_count_interline_acc((double)diff);
             }
 
             n_line++;

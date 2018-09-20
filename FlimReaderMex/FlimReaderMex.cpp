@@ -142,7 +142,7 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
       {
          AssertInputCondition(nlhs >= 1);
          size_t n_bits = readers[idx]->getNativeTimepoints().size();
-         plhs[0] = mxCreateDoubleScalar(n_bits);
+         plhs[0] = mxCreateDoubleScalar((double) n_bits);
       }
       else if (command == "SetTemporalDownsampling")
       {
@@ -219,7 +219,7 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
          for (auto p : tags)
             names.push_back(p.first.data());
 
-         plhs[0] = mxCreateStructMatrix(1, 1, n_tags, names.data());
+         plhs[0] = mxCreateStructMatrix(1, 1, (int) n_tags, names.data());
 
          int i = 0;
          for (auto p : tags)
