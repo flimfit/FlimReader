@@ -36,6 +36,10 @@ AligningReader::AligningReader()
 
 AligningReader::~AligningReader()
 {
+   terminate = true;
+   if (realignment_thread.joinable())
+      realignment_thread.join();
+
    if (frame_thread.joinable())
       frame_thread.join();
 }

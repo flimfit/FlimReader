@@ -42,5 +42,5 @@ set(HEADERS
 )
 
 add_library(FlimReader STATIC ${SOURCE} ${HEADERS})
-target_link_libraries(FlimReader ${Boost_LIBRARIES} FrameAligner)
+target_link_libraries(FlimReader ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} FrameAligner)
 target_include_directories(FlimReader INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ${ZLIB_INCLUDE_DIRS})

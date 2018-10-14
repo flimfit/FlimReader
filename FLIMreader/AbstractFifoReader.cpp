@@ -22,9 +22,6 @@ FlimReader(filename)
 
 AbstractFifoReader::~AbstractFifoReader()
 {
-   terminate = true;
-   if (realignment_thread.joinable())
-      realignment_thread.join();
 }
 
 template<typename T>
@@ -92,7 +89,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
             use_frame = frame_aligner->getRealignmentResult(frame).useFrame(realign_params);
          }
 
-         if (!(p.valid && use_frame) || p.channel > n_chan) continue;
+         if (!(p.valid && use_frame) || p.channel >= n_chan) continue;
 
          int mapped_channel = channel_map[p.channel];
          if (mapped_channel == -1) continue;
