@@ -10,29 +10,24 @@
    Input validation
 */
 
-inline void mexErrMsgIdAndTxt2(const char* id, const char* text)
-{
-   throw std::runtime_error(text);
-}
-
 #define AssertInputCondition(x) checkInputCondition(#x, x);
 inline void checkInputCondition(const char* text, bool condition)
 {
    if (!condition)
-      mexErrMsgIdAndTxt2("FLIMfitMex:invalidInput", text);
+      mexErrMsgIdAndTxt("FLIMfitMex:invalidInput", text);
 }
 
 inline void checkSize(const mxArray* array, int needed)
 {
    if (needed != mxGetNumberOfElements(array))
-      mexErrMsgIdAndTxt2("MATLAB:mxmalloc:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
          "Input array is the wrong size");
 }
 
 inline void checkInput(int nrhs, int needed)
 {
    if (nrhs < needed)
-      mexErrMsgIdAndTxt2("MATLAB:mxmalloc:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:mxmalloc:invalidInput",
          "Not enough input arguments");
 }
 
@@ -81,7 +76,7 @@ inline mxArray* getFieldFromStruct(const mxArray* s, const char *field)
    if (field_number == -1)
    {
       std::string err = std::string("Missing field in structure: ").append(field);
-      mexErrMsgIdAndTxt2("FLIMfit:missingField", err.c_str());
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
    }
 
    return mxGetFieldByNumber(s, 0, field_number);
@@ -98,7 +93,7 @@ inline double getValueFromStruct(const mxArray* s, const char *field, double def
    if (!mxIsScalar(v))
    {
       std::string err = std::string("Expected field to be scalar: ").append(field);
-      mexErrMsgIdAndTxt2("FLIMfit:missingField", err.c_str());
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
    }
 
    return mxGetScalar(v);
@@ -111,7 +106,7 @@ inline double getValueFromStruct(const mxArray* s, const char *field)
    if (!mxIsScalar(v))
    {
       std::string err = std::string("Expected field to be scalar: ").append(field);
-      mexErrMsgIdAndTxt2("FLIMfit:missingField", err.c_str());
+      mexErrMsgIdAndTxt("FLIMfit:missingField", err.c_str());
    }
 
    return mxGetScalar(v);
@@ -140,7 +135,7 @@ inline const mxArray* getNamedArgument(int nrhs, const mxArray *prhs[], const ch
    }
 
    std::string err = std::string("Missing argument: ").append(arg);
-   mexErrMsgIdAndTxt2("FLIMfit:missingArgument", err.c_str());
+   mexErrMsgIdAndTxt("FLIMfit:missingArgument", err.c_str());
    return static_cast<const mxArray*>(nullptr);
 }
 
@@ -166,7 +161,7 @@ inline cv::Mat getCvMat(const mxArray* im)
    else if (mxIsUint8(im))
       type = CV_8U;
    else
-      mexErrMsgIdAndTxt2("FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("FLIMfit:invalidInput",
          "Image was not of an acceptable type");
 
    AssertInputCondition(mxIsDouble(im));
@@ -218,7 +213,7 @@ inline mxArray* convertCvMat(const cv::Mat im)
       data_size = 1;
    }
    else
-      mexErrMsgIdAndTxt2("FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("FLIMfit:invalidInput",
          "Image was not of an acceptable type");
 
    mxArray* a = mxCreateNumericMatrix(im.cols, im.rows, mtype, mxREAL);
@@ -311,25 +306,25 @@ template<class T>
 mxArray* validateSharedPointer(const mxArray* a)
 {
    if (!mxIsStruct(a))
-      mexErrMsgIdAndTxt2("MATLAB:FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:FLIMfit:invalidInput",
          "Input should be a structure");
 
    if (mxGetNumberOfFields(a) != 3)
-      mexErrMsgIdAndTxt2("MATLAB:FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:FLIMfit:invalidInput",
          "Structure not recognised");
 
    std::string type = getStringFromMatlab(getFieldFromStruct(a, "type"));
    if (type != typeid(T).name())
-      mexErrMsgIdAndTxt2("MATLAB:FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:FLIMfit:invalidInput",
          "Incorrect type");
 
    if (getValueFromStruct(a, "valid") != 1.0)
-      mexErrMsgIdAndTxt2("MATLAB:FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:FLIMfit:invalidInput",
          "Pointer not valid");
 
    mxArray* ptr = getFieldFromStruct(a, "pointer");
    if (!mxIsUint64(ptr))
-      mexErrMsgIdAndTxt2("MATLAB:FLIMfit:invalidInput",
+      mexErrMsgIdAndTxt("MATLAB:FLIMfit:invalidInput",
          "Pointer not valid");
 
    return ptr;

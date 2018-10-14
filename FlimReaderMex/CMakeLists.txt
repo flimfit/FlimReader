@@ -24,7 +24,7 @@ set(HEADERS
    MexUtils.h
 )
 
-matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader)
+matlab_add_mex(NAME FlimReaderMex SRC ${SOURCE} ${HEADERS} LINK_TO FlimReader OUTPUT_NAME FlimReader)
 
 if (FlimReaderMEX_OUT_DIR)
    if (WIN32)
@@ -42,6 +42,4 @@ if (FlimReaderMEX_OUT_DIR)
       add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
          copy $<TARGET_FILE:FlimReaderMex> ${FlimReaderMEX_OUT_DIR})
    endif ()
-   add_custom_command(TARGET FlimReaderMex POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
-      copy ${CMAKE_CURRENT_SOURCE_DIR}/FlimReader.m ${FlimReaderMEX_OUT_DIR})
 endif()

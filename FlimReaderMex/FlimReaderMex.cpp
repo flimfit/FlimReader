@@ -46,14 +46,14 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
    else if (nrhs >= 2)
    {
       if (!mxIsChar(prhs[1]))
-         mexErrMsgIdAndTxt2("FlimReaderMex:invalidInput",
+         mexErrMsgIdAndTxt("FlimReaderMex:invalidInput",
             "Second argument should be a command string");
 
       int idx = static_cast<int>(mxGetScalar(prhs[0]));
       string command = getStringFromMatlab(prhs[1]);
 
       if (idx >= readers.size() || readers[idx] == nullptr)
-         mexErrMsgIdAndTxt2("FlimReaderMex:invalidReader",
+         mexErrMsgIdAndTxt("FlimReaderMex:invalidReader",
             "Invalid reader index specified");
 
       if (command == "GetTimePoints")
@@ -268,28 +268,23 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
    }
 }
 
+MEXFUNCTION_LINKAGE
 void mexFunction(int nlhs, mxArray *plhs[],
    int nrhs, const mxArray *prhs[])
 {
+   std::string err;
+
    try
    {
-      FlimReaderMex(nlhs - 1, plhs + 1, nrhs, prhs);
-      plhs[0] = mxCreateString("OK");
+      FlimReaderMex(nlhs, plhs, nrhs, prhs);
    }
    catch (std::runtime_error e)
    {
-      if (nlhs == 0)
-      {
-         mexErrMsgIdAndTxt2("FlimReaderMex:exceptionOccurred",
-            e.what());
-      }
-      else
-      {
-         plhs[0] = mxCreateString(e.what());
-         for (int i = 1; i < nlhs; i++)
-            plhs[i] = mxCreateDoubleScalar(0); // Dummy variables
-      }
+      err = e.what();
    }
+
+   if (!err.empty())
+      mexErrMsgIdAndTxt("FlimReaderMex:exceptionOccurred", err.c_str());
 }
 
 
