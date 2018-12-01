@@ -50,7 +50,7 @@ The data files ( extension .sdt ) consist of:
 #define SOFTWARE_REV  15   // current software revision
 
  //  1 - File header
-typedef struct {
+struct bhfile_header {
    short    revision;  // software revision & module identification
                        //   lowest bits 0-3 -   software revision ( >= 12(decimal))
                        //        current value = 15 - support for huge data blocks >128MB <= 2GB
@@ -83,7 +83,7 @@ typedef struct {
      //   data block extension contains info data for histograms data blocks
    unsigned short    reserved2;
    unsigned short    chksum;            // checksum of file header
-   } bhfile_header;
+   };
 
 
 /*
@@ -194,19 +194,19 @@ In order to reach binary part of the setup user should read the whole setup part
 #define MAX_SPC     4    // max no of SPC modules accepted by SPCM application
 
 
-typedef struct {
+struct BHBinHdr {
    unsigned BHLONG     soft_rev;       // software revision
    unsigned BHLONG     para_length;    // currently set to 0 
    unsigned BHLONG     reserved1;
    unsigned short    reserved2;
-   }BHBinHdr;
+};
 
 
 // all offsets in SPCBinHdr and SPCBinHdrExt are given from the beginning of 
 //            BHBinHdr structure  ( just after 4-byte length of binary setup )
 // all parts lengths are given in bytes
 
-typedef struct {
+struct SPCBinHdr {
   unsigned BHLONG     FCS_old_offs;    // offset of FCSParam structure for FCS parameters
   unsigned BHLONG     FCS_old_size;    //  FCSParam structure size
                     //  FCSParam is obsolete - needed only for compatibility
@@ -232,9 +232,9 @@ typedef struct {
   unsigned short    extdev_size;     //  size of external devices setup structures
   unsigned BHLONG     binhdrext_offs;  // offset SPCBinHdrExt - extension of SPCBinHdr
   unsigned short    binhdrext_size;
-  }SPCBinHdr;
+};
 
-typedef struct {     // extension of SPCBinHdr
+struct SPCBinHdrExt {     // extension of SPCBinHdr
   unsigned BHLONG   MCS_img_offs;     // offset of MIMGParam structure for MCS Image parameters
   unsigned BHLONG   MCS_img_size;     //  MIMGParam structure size
   unsigned short  mom_no;           // number of MOMParam structures
@@ -258,7 +258,7 @@ typedef struct {     // extension of SPCBinHdr
   unsigned short  LifeTrPar_size;      //  LifeTrPar structure size
   unsigned short  LifeTrPar_number;    //  number of LifeTrPar structures - max 8 ( 1 per 3D trace)
   unsigned char   extension[176];   //  for future use, keep the size of SPCBinHdrExt = 240B
-  }SPCBinHdrExt;
+};
 
 
 /*
@@ -276,17 +276,15 @@ The structure contains attributes of histogram display windows,
   which can be visible in FIFO mode
 */
 
-typedef struct {
+struct BHPanelAttr {
   int   top;
   int   left;
   int   height;
   int   width;
   int   flags;  // 0x1 - visible
-  }BHPanelAttr;
+};
 
-
-
-typedef union 
+union DparVal
 {
   int             i;
   unsigned int    u;
@@ -298,13 +296,9 @@ typedef union
   float           f;
   double          d;
   char            c;
-} DparVal;
+};
 
-
-
-  
-  
-typedef struct            
+struct Disp2DAttr
 {
   DparVal maxcnt;     //  DI_MAXCNT    
   DparVal lbline;     //  DI_LBLINE  
@@ -325,18 +319,18 @@ typedef struct
   DparVal xhigh;          
   int  xscale;        //  Xscale log = 1
   DparVal yhilim;     // high limit for y scale  
-} Disp2DAttr;
+};
 
 
 
 
-typedef struct  {    // obsolete, needed only for compatibility with software v. 8.1 - 8.2
+struct FCSParam {    // obsolete, needed only for compatibility with software v. 8.1 - 8.2
   int      view_decay;      
   int      view_fcs;   
   float    cortime; // correlation time [ms] 
   BHPanelAttr  pnl_attr; 
   Disp2DAttr   d2para;
-  }FCSParam;
+};
 
 
 // Histogram traces parameters ( FCS, FIDA, FILDA, MCS )
@@ -1012,7 +1006,7 @@ The structures are shown below.
 */
 
 
-typedef struct {
+struct MeasStopInfo {
   unsigned short  status;  // last SPC_test_state return value ( status )
   unsigned short  flags;   // scan clocks bits 2-0( frame, line, pixel), 
               //  bit  3   - user break occured
@@ -1041,11 +1035,11 @@ typedef struct {
   float  max_adc_rate;
   int    reserved1;
   float  reserved2;
-  }MeasStopInfo;           // information collected when measurement is finished
+};           // information collected when measurement is finished
   
 
 
-typedef struct {
+struct MeasFCSInfo {
   unsigned short  chan;               // routing channel number
   unsigned short  fcs_decay_calc;     // defines which histograms were calculated
                                       // bit 0 = 1 - decay curve calculated
@@ -1074,11 +1068,11 @@ typedef struct {
   unsigned short  mod;                // module number
   unsigned short  cross_mod;          // cross FCS module number
   unsigned int    cross_mt_resol;     // macro time clock of cross FCS module in 0.1 ns units
-  }MeasFCSInfo;   // information collected when FIFO measurement is finished
+};   // information collected when FIFO measurement is finished
 
 
   
-typedef struct {
+struct MeasHISTInfo {
   float           fida_time;          // interval time [ms] for FIDA histogram
   float           filda_time;         // interval time [ms] for FILDA histogram
   int             fida_points;        // no of FIDA values  
@@ -1103,20 +1097,20 @@ typedef struct {
   unsigned int    fcs_calc_phot;      //  no of calculated photons for FCS histogram
                                       //    or no of calculated photons in Y channel (WF FLIM mode)
   unsigned int    reserved3;
-  }MeasHISTInfo; // extension of MeasFCSInfo for histograms ( FIDA, FILDA, MCS, FCS, MCS_TA ) 
+}; // extension of MeasFCSInfo for histograms ( FIDA, FILDA, MCS, FCS, MCS_TA ) 
   
 
-typedef struct {  // keep always 64 bytes size for compatibility
+struct MeasHISTInfoExt {  // keep always 64 bytes size for compatibility
                   // subsequent 4 values are valid only in fifo_image mode
   float   first_frame_time;  //   macro time of the 1st frame marker
   float   frame_time;        //   time between first two frame markers
   float   line_time;         //   time between first two line markers ( in the 1st frame)
   float   pixel_time;        //   time between first two pixel markers ( in the 1st frame&line)
   char    info[48];          //   not used yet
-  }MeasHISTInfoExt; // extension of MeasHISTInfo for additional histograms info
+}; // extension of MeasHISTInfo for additional histograms info
 
   
-typedef struct _MeasureInfo {
+struct MeasureInfo {
   char     time[9];        /* time of creation */
   char     date[11];       /* date of creation */
   char     mod_ser_no[16]; /* serial number of the module */
@@ -1217,7 +1211,7 @@ typedef struct _MeasureInfo {
   char     ddg_ser_no[8];    //  serial number of used DDG module,
                               //         = 0 - DDG module was not used 
   char     reserve[18];       // total size of MeasureInfo = 512 bytes
-  }MeasureInfo;
+};
 
 
 
@@ -1242,7 +1236,7 @@ The data block header structure is shown below.
 
 // The data block header structure for bhfile_header.revision < 15
 
-typedef struct {
+struct BHFileBlockHeaderOld {
    short          block_no;   // number of the block in the file
                          // valid only  when in 0 .. 0x7ffe range, otherwise use lblock_no field
                          // obsolete now, lblock_no contains full block no information                         
@@ -1253,10 +1247,10 @@ typedef struct {
                                       //    corresponding to this data block
    unsigned BHLONG  lblock_no;       // BHLONG block_no - see remarks below 
    unsigned BHLONG  block_length;    // block( set ) length ( not compressed ) in bytes
-   }BHFileBlockHeaderOld;
+   };
 
 // The data block header structure for bhfile_header.revision = 15 - current state 
-typedef struct _bhfile_block_header {
+struct BHFileBlockHeader {
    unsigned char  data_offs_ext;        // extension of data_offs field - address bits 32-39
    unsigned char  next_block_offs_ext;  // extension of next_block_offs field - address bits 32-39
    unsigned BHLONG  data_offs;       // offset of the block's data, bits 0-31  
@@ -1265,7 +1259,7 @@ typedef struct _bhfile_block_header {
    short          meas_desc_block_no;
    unsigned BHLONG  lblock_no;       // BHLONG block_no - see remarks below
    unsigned BHLONG  block_length;    // block( set ) length ( not compressed ) in bytes up to 2GB
-   }BHFileBlockHeader;
+  };
 
 
 //    all offsets are given from beginning of the file

@@ -12,6 +12,7 @@ set(SOURCE
    FfdReader.cpp
    BhFifoReader.cpp
    TextReader.cpp
+   SdtReader.cpp
    AligningReader.cpp
    AbstractEventReader.cpp
    FifoProcessor.cpp
@@ -29,6 +30,7 @@ set(HEADERS
    FfdReader.h
    FfhReader.h
    FfdHeader.h
+   SdtReader.h
    HistogramReader.h
    BhFifoReader.h
    TextReader.h
