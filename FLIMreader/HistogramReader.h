@@ -4,6 +4,14 @@
 #include <fstream>
 #include "zlib.h"
 
+struct DataBlock
+{
+   std::streamoff position = 0;
+   std::streamsize size = 0;
+   bool compressed = false;
+};
+
+
 class HistogramReader : public FlimReader
 {
 public:
@@ -28,22 +36,31 @@ protected:
          channel_map[c] = idx++;
       int n_chan_used = idx;
 
-      std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
-      fs.seekg(data_position);
+      std::vector<std::vector<U>> data_buf;
 
-      std::vector<U> data_buf = readHistogramFromFile<U>();
+      if (channels_split)
+      {
+         if (blocks.size() < n_chan)
+            throw std::runtime_error("Incorrect number of blocks");
+
+         for (auto& c : channels)
+            data_buf.emplace_back(readHistogramFromFile<U>(blocks[c]));
+      }
+      else
+      {
+        data_buf.emplace_back(readHistogramFromFile<U>(blocks[0]));
+      }
+        
 
       int n_xi = n_x / spatial_binning;
       int n_yi = n_y / spatial_binning;
 
       size_t n_timepoints_native = native_timepoints.size();
       size_t n_timepoints = timepoints.size();
-
       size_t n_el = n_xi * n_yi * n_chan_used * n_timepoints;
 
       // Set to zero
-      for (int i = 0; i < n_el; i++)
-         data[i] = 0;
+      std::fill_n(data, n_el, 0);
 
       int yi, xi;
       int px = 0;
@@ -60,10 +77,12 @@ protected:
                xi = x / spatial_binning;
                {
                   size_t pi = ((yi*n_xi + xi)*n_chan_stride + ci)*n_timepoints;
-                  size_t p = ((y*n_x + x)*n_chan + c)*n_timepoints_native;
+                  std::vector<U>::iterator buf = channels_split ?
+                     data_buf[ci].begin() + (y*n_x + x)*n_timepoints_native :
+                     data_buf[0].begin() + ((y*n_x + x)*n_chan + c)*n_timepoints_native;
 
                   for (size_t t = 0; t < n_timepoints_native; t++)
-                     data[pi + (t >> downsampling)] += (T)data_buf[p++];
+                     data[pi + (t >> downsampling)] += static_cast<T>(*(buf++));;
                }
             }
          }
@@ -71,16 +90,17 @@ protected:
    }
 
    template <class U>
-   std::vector<U> readHistogramFromFile()
+   std::vector<U> readHistogramFromFile(DataBlock block)
    {
       std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
-      fs.seekg(data_position);
+      fs.seekg(block.position);
 
-      size_t data_size = n_x * n_y * n_chan * native_timepoints.size();
+      size_t data_size = n_x * n_y * native_timepoints.size();
+      data_size *= (channels_split ? 1 : n_chan);
       std::vector<U> data(data_size);
 
-      if (compressed)
-         readCompressedHistogramFromFile(data, fs);
+      if (block.compressed)
+         readCompressedHistogramFromFile(data, fs, block.size);
       else
          readUncompressedHistogramFromFile(data, fs);
 
@@ -94,29 +114,61 @@ protected:
    }
 
    template <class U>
-   void readCompressedHistogramFromFile(std::vector<U>& data, std::ifstream& fs)
+   void readCompressedHistogramFromFile(std::vector<U>& data, std::ifstream& fs, std::streamsize compressed_size)
    {
-      std::vector<unsigned char> buffer(compressed_size);
-      fs.read((char*)buffer.data(), compressed_size);
+      size_t buffer_size = (compressed_size == 0) ? 1024 * 1024 : compressed_size;
+      std::vector<unsigned char> buffer(buffer_size);
+
+      int wbits;
+
+      // If we have a zip file, skip over header
+      fs.read((char*)buffer.data(), 26);
+      if (strncmp((char*)buffer.data(), "PK", 2) == 0)
+      {
+         uint16_t filename_len, extra_len;
+         fs.read((char*)&filename_len, sizeof(filename_len));
+         fs.read((char*)&extra_len, sizeof(extra_len));
+         fs.ignore(filename_len + extra_len);
+         wbits = -MAX_WBITS;
+      }
+      else
+      {
+         fs.seekg(-26, std::ios_base::cur);
+         wbits = MAX_WBITS;
+      }
 
       z_stream zInfo = { 0 };
-      zInfo.total_in = zInfo.avail_in = (uInt) compressed_size;
-      zInfo.total_out = zInfo.avail_out = (uInt) (data.size() * sizeof(U));
+//      fs.read((char*)buffer.data(), buffer.size());
       zInfo.next_in = buffer.data();
-      zInfo.next_out = (unsigned char*) data.data();
+      zInfo.avail_in = 0;  (uInt)fs.gcount();
 
-      int nErr;
-      nErr = inflateInit(&zInfo);
+      int nErr = inflateInit2(&zInfo, wbits);
+     
       if (nErr) throw std::runtime_error("Error decompressing file");
-      nErr = inflate(&zInfo, Z_FINISH);     // zlib function
+
+      do
+      {
+         if (zInfo.avail_in == 0)
+         {
+            fs.read((char*)buffer.data(), buffer.size());
+            zInfo.avail_in = (uInt)fs.gcount();
+
+         }
+
+         zInfo.avail_out = (uInt)(data.size() * sizeof(U)) - zInfo.total_out;
+         zInfo.next_in = buffer.data();
+         zInfo.next_out = (unsigned char*) data.data() + zInfo.total_out;
+         nErr = inflate(&zInfo, Z_SYNC_FLUSH);     // zlib function
+
+      } while (nErr == Z_OK);
 
       if (zInfo.total_out != (data.size() * sizeof(U)) || nErr != Z_STREAM_END)
          throw std::runtime_error("Compressed data is incorrect size");
       inflateEnd(&zInfo);
+
    }
 
-   std::streamoff data_position;
+   std::vector<DataBlock> blocks;
    bool has_multiple_channels = false;
-   bool compressed = false;
-   size_t compressed_size = 0;
+   bool channels_split = false;
 };

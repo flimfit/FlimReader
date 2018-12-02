@@ -115,30 +115,11 @@ void SdtReader::readHeader()
         int end = token.find("]", ndx);
         mode13height = std::stoi(token.substr(ndx, end));
       }
-        
-      
    }
 
-   if (in.tellg() < (header.setup_offs + header.setup_length)) 
+   in.seekg(header.meas_desc_block_offs);
+   for (int i=0; i<header.no_of_meas_desc_blocks; i++)
    {
-      in.ignore(4);
-      unsigned int base_offset;
-      in >> base_offset;
-      in.read((char*) &bin_header, sizeof(bin_header));
-      in.read((char*) &spc_bin_header, sizeof(spc_bin_header));
-
-      if (spc_bin_header.binhdrext_offs)
-      {
-         in.seekg(base_offset + spc_bin_header.binhdrext_offs);
-         in.read((char*) &spc_ext_header, sizeof(spc_ext_header));
-
-         // MCS info read here if needed
-      }
-   }
-
-   if (header.no_of_meas_desc_blocks > 0) 
-   {
-      in.seekg(header.meas_desc_block_offs);
 
       bool hasMeasureInfo = header.meas_desc_block_length >= 211;
       bool hasMeasStopInfo = header.meas_desc_block_length >= 211 + 60;
@@ -146,10 +127,7 @@ void SdtReader::readHeader()
       bool hasExtendedMeasureInfo = header.meas_desc_block_length >= 211 + 60 + 38 + 26;
       bool hasMeasHISTInfo = header.meas_desc_block_length >= 211 + 60 + 38 + 26 + 24;
 
-      int a = sizeof(measure_info);
-
       in.read((char*) &measure_info, sizeof(measure_info));
-
       // extract dimensional parameters from measure info
       if (measure_info.scan_x > 0) n_x = measure_info.scan_x;
       if (measure_info.scan_y > 0) n_y = measure_info.scan_y;
@@ -168,18 +146,22 @@ void SdtReader::readHeader()
       if (measure_info.meas_mode == 13)  {
          n_x = mode13width;
          n_y = mode13height;
-         n_chan = header.no_of_meas_desc_blocks;  
       }
+
+      // This works if all blocks are same size etc or if we are in mode 13
+      // Need to validate one of these is true...
+      n_chan = header.no_of_meas_desc_blocks;
+      channels_split = true;
+
    }
 
    in.seekg(header.data_block_offs);
 
-   std::vector<size_t> block_offsets(header.no_of_data_blocks);
-   std::vector<size_t> block_lengths(header.no_of_data_blocks);
-
    for (int i=0; i<header.no_of_data_blocks; i++) 
    {
       size_t next_block_offs;
+      bool compressed = false;
+      std::streamoff data_offset = 0;
 
       if (header.revision < 15)
       {
@@ -187,10 +169,8 @@ void SdtReader::readHeader()
          in.read((char*) &block_header, sizeof(block_header));
 
          next_block_offs = block_header.next_block_offs;
-         block_offsets[i] = block_header.data_offs;
-         block_lengths[i] = block_header.block_length;
          compressed = block_header.block_type & DATA_ZIPPED;
-
+         data_offset = block_header.data_offs;
       }
       else
       {
@@ -199,18 +179,18 @@ void SdtReader::readHeader()
 
          next_block_offs = block_header.next_block_offs;
          next_block_offs += ((size_t)block_header.next_block_offs_ext) << 32;
-
-         block_offsets[i] = block_header.data_offs;
-         block_offsets[i] += ((size_t)block_header.data_offs_ext) << 32;
-         block_lengths[i] += block_header.block_length;
-
+      
          compressed = block_header.block_type & DATA_ZIPPED;
+         data_offset = block_header.data_offs;
+         data_offset += ((std::streamoff)block_header.data_offs_ext) << 32;
       }
+
+      blocks.push_back({ data_offset, 0, compressed });
 
       in.seekg(next_block_offs);
    }
 
-   double time_resolution_native_ps = 1e9 * measure_info.tac_r / measure_info.tac_g;
+   double time_resolution_native_ps = 1e12 * measure_info.tac_r / (n_timebins * measure_info.tac_g);
    native_timepoints.resize(n_timebins);
    for(int i=0; i<n_timebins; i++)
       native_timepoints[i] = i * time_resolution_native_ps;

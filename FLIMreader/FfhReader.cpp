@@ -21,7 +21,6 @@ void FfhReader::readHeader()
 
    FfdHeader header(fs);
 
-   data_position = header.data_position;
    tags = header.tags;
 
    if (header.type != FfdHeader::histogram)
@@ -71,10 +70,12 @@ void FfhReader::readHeader()
    else
       throw(std::runtime_error("DataType was not specified in data"));
 
+   bool compressed = false;
    it = tags.find("Compressed");
    if (it != tags.end())
       compressed = it->second.getValue<bool>();
-   
+  
+   int64_t compressed_size = 0;
    it = tags.find("CompressedSize");
    if (it != tags.end())
       compressed_size = it->second.getValue<int64_t>();
@@ -125,6 +126,8 @@ void FfhReader::readHeader()
    }
 
    fs.close();
+
+   blocks.push_back({ header.data_position, compressed_size, compressed });
 
    initaliseTimepoints();
 }

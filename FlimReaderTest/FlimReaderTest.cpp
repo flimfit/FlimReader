@@ -28,7 +28,9 @@ void test_load()
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/hetero-FRET ptu/D1.ptu";
    filename = "E:/151116_JB_Lifetime_tests_p2.sptw/151116_mFlex_seFRET/151116_mFlex_seFRET 4.ptu";
    filename = "/Users/sean/repositories/FLIMfit/FLIMfitFrontEnd/test.ffh";
-   filename = "/Users/sean/Documents/Anisotropy Data - Fluo/fluoroscein 12 9 18 time  corrected image 2 ch 3_8 .sdt";
+   filename = "D:/Dropbox (Garvan)/Anisotropy Data - Fluo/irf_glass_ani_m2m1_ph22_single decay_lp10.1_256_25.10.18.sdt";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/bh fifo/irf_glass_ani_m2m1_ph22_single decay_lp10.1_256_25.10.18.sdt";
+
    auto start = chrono::high_resolution_clock::now();
 
    unique_ptr<FlimReader> reader(FlimReader::createReader(filename));
