@@ -51,7 +51,7 @@ private:
       n_timepoints = TCSPCChannels;
       n_chan = NChan;
 
-      blocks.push_back({ header_size, expected_size });
+      blocks.push_back({ header_size, expected_size, false });
 
       native_timepoints.resize(n_timepoints);
 

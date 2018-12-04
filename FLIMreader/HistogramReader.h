@@ -60,7 +60,7 @@ protected:
       size_t n_el = n_xi * n_yi * n_chan_used * n_timepoints;
 
       // Set to zero
-      std::fill_n(data, n_el, 0);
+      std::fill_n(data, n_el, (T) 0);
 
       int yi, xi;
       int px = 0;
