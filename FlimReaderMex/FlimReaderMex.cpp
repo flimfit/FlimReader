@@ -192,21 +192,7 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
          AssertInputCondition(nlhs >= 1);
          cv::Mat intensity_normalisation = readers[idx]->getIntensityNormalisation();
          intensity_normalisation = extractSlice(intensity_normalisation, 0); // TODO: only gets first slice at the moment
-
-         // For old-style uncorrected (for #frames) normalisation maps, correct based on maximum
-         cv::Mat fl_norm;
-         if (intensity_normalisation.type() == CV_16U)
-         {
-            double mn, mx;
-            cv::minMaxIdx(intensity_normalisation, &mn, &mx);
-            intensity_normalisation.convertTo(fl_norm, CV_32F, 1.0 / mx, 1e-6);
-         }
-         else
-         {
-            fl_norm = intensity_normalisation;
-         }
-
-         plhs[0] = convertCvMat(fl_norm);
+         plhs[0] = convertCvMat(intensity_normalisation);
       }
       else if (command == "GetMetadata")
       {

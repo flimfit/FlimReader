@@ -12,6 +12,14 @@ FfhReader::FfhReader(const std::string& filename) :
       auto size = intensity_normalisation.size();
       std::vector<int> dims = { 1, size.height, size.width };
       intensity_normalisation = intensity_normalisation.reshape(0, 3, &dims[0]);
+
+      // For old-style uncorrected (for #frames) normalisation maps, correct based on maximum
+      if (intensity_normalisation.type() == CV_16U)
+      {
+         double mn, mx;
+         cv::minMaxIdx(intensity_normalisation, &mn, &mx);
+         intensity_normalisation.convertTo(intensity_normalisation, CV_32F, 1.0 / mx, 0);
+      }
    }
 }
 
