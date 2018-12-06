@@ -101,14 +101,8 @@ void SdtReader::readHeader()
    in.seekg(header.meas_desc_block_offs);
    for (int i = 0; i < header.no_of_meas_desc_blocks; i++)
    {
-
-      bool hasMeasureInfo = header.meas_desc_block_length >= 211;
-      bool hasMeasStopInfo = header.meas_desc_block_length >= 211 + 60;
-      bool hasMeasFCSInfo = header.meas_desc_block_length >= 211 + 60 + 38;
-      bool hasExtendedMeasureInfo = header.meas_desc_block_length >= 211 + 60 + 38 + 26;
-      bool hasMeasHISTInfo = header.meas_desc_block_length >= 211 + 60 + 38 + 26 + 24;
-
       in.read((char*)&measure_info, sizeof(measure_info));
+
       // extract dimensional parameters from measure info
       if (measure_info.scan_x > 0) n_x = measure_info.scan_x;
       if (measure_info.scan_y > 0) n_y = measure_info.scan_y;
@@ -134,6 +128,8 @@ void SdtReader::readHeader()
       n_chan = header.no_of_meas_desc_blocks;
       channels_split = true;
 
+      rep_rate_hz = measure_info.StopInfo.max_sync_rate;
+      
    }
 
    in.seekg(header.data_block_offs);
