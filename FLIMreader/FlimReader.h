@@ -42,6 +42,7 @@ public:
 
    void setSpectralCorrection(const std::vector<cv::Mat>& spectral_correction);
 
+   std::vector<bool> getRecommendedChannels();
 
    const std::vector<double>& getTimepoints() { return timepoints; };
    const std::vector<double>& getNativeTimepoints() { return native_timepoints; };
@@ -75,6 +76,7 @@ protected:
    int downsampling;
 
    std::vector<cv::Mat> spectral_correction;
+   std::vector<bool> recommended_channels;
 
    std::string filename;
    std::string extension;

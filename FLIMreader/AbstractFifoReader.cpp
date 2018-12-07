@@ -184,6 +184,8 @@ void AbstractFifoReader::determineDwellTime()
    int n_line = 0;
    int n_frame = 0;
 
+   std::vector<size_t> channel_counts(n_chan, 0);
+
    accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
    accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
 
@@ -194,6 +196,9 @@ void AbstractFifoReader::determineDwellTime()
 
       if (!p.valid)
          continue;
+
+      if (!p.mark && p.channel < n_chan)
+         channel_counts[p.channel]++;
 
       if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker))
       {
@@ -276,6 +281,10 @@ void AbstractFifoReader::determineDwellTime()
 
    sync.n_x = n_x;
    sync.n_line = n_y;
+
+   recommended_channels.resize(n_chan);
+   for (int i = 0; i < n_chan; i++)
+      recommended_channels[i] = channel_counts[i] > 0;
 
    setUseAllChannels();   
 }

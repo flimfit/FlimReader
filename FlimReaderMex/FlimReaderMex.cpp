@@ -246,6 +246,14 @@ void FlimReaderMex(int nlhs, mxArray *plhs[],
          if (data_type == DataTypeUint16) type_string = "uint16";
          plhs[0] = mxCreateString(type_string.c_str());
       }
+      else if (command == "GetRecommendedChannels")
+      {
+         AssertInputCondition(nlhs >= 1);
+         auto recommended = readers[idx]->getRecommendedChannels();
+         mwSize dims[2] = { 1, recommended.size() };
+         plhs[0] = mxCreateNumericArray(2, dims, mxLOGICAL_CLASS, mxREAL);
+         std::copy(recommended.begin(), recommended.end(), (bool*) mxGetData(plhs[0]));
+      }
 
       else if (command == "Delete")
       {
