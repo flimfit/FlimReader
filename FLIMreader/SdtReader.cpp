@@ -79,7 +79,7 @@ void SdtReader::readHeader()
       if (boost::starts_with(token, "#SP") || boost::starts_with(token, "#DI") ||
          boost::starts_with(token, "#PR") || boost::starts_with(token, "#MP"))
       {
-         int open = token.find('[');
+         size_t open = token.find('[');
          key = token.substr(open + 1, token.find(",", open));
          value = token.substr(token.rfind(",") + 1, token.length() - 1);
       }
