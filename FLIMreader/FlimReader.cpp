@@ -163,3 +163,11 @@ void FlimReader::setSpectralCorrection(const std::vector<cv::Mat>& spectral_corr
    }
 
 }
+
+std::vector<bool> FlimReader::getRecommendedChannels()
+{
+   if (recommended_channels.size() == n_chan)
+      return recommended_channels;
+   else
+      return std::vector<bool>(n_chan, true);
+}

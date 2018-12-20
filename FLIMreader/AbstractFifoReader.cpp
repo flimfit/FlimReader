@@ -183,8 +183,9 @@ void AbstractFifoReader::determineDwellTime()
    int n_line = 0;
    int n_frame = 0;
 
-   std::vector<uint64_t> sync_count_interline; sync_count_interline.reserve(4096);
+   std::vector<size_t> channel_counts(n_chan, 0);
 
+   std::vector<uint64_t> sync_count_interline; sync_count_interline.reserve(4096);
    accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
    accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
 
@@ -198,6 +199,9 @@ void AbstractFifoReader::determineDwellTime()
 
       if (!p.valid)
          continue;
+
+      if (!p.mark && p.channel < n_chan)
+         channel_counts[p.channel]++;
 
       if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker))
       {
@@ -302,6 +306,10 @@ void AbstractFifoReader::determineDwellTime()
 
    if (!isfinite(sync.counts_interframe))
       throw std::runtime_error("Incorrect interframe counts");
+
+   recommended_channels.resize(n_chan);
+   for (int i = 0; i < n_chan; i++)
+      recommended_channels[i] = channel_counts[i] > 0;
 
    setUseAllChannels();   
 }

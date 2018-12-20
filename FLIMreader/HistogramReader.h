@@ -77,7 +77,7 @@ protected:
                xi = x / spatial_binning;
                {
                   size_t pi = ((yi*n_xi + xi)*n_chan_stride + ci)*n_timepoints;
-                  std::vector<U>::iterator buf = channels_split ?
+                  auto buf = channels_split ?
                      data_buf[ci].begin() + (y*n_x + x)*n_timepoints_native :
                      data_buf[0].begin() + ((y*n_x + x)*n_chan + c)*n_timepoints_native;
 
