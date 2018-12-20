@@ -17,7 +17,6 @@ using namespace std;
 AbstractFifoReader::AbstractFifoReader(const std::string& filename) :
 FlimReader(filename)
 {
-   readSettings();
 }
 
 AbstractFifoReader::~AbstractFifoReader()
@@ -154,33 +153,42 @@ void AbstractFifoReader::readSettings()
 
    std::vector<boost::filesystem::path> metapath;
 
-   metapath.push_back(filepath.parent_path() / "PicoquantLoaderSettings.info");
-   metapath.push_back(filepath.parent_path() / "FifoSettings.info");
+   const auto parent_path = filepath.parent_path();
+
+   metapath.push_back(parent_path / "PicoquantLoaderSettings.info");
+   metapath.push_back(parent_path / "FifoSettings.info");
    
    time_shifts_ps.resize(4, 0.0);
 
    // Try load in shift settings
-   for(auto& path : metapath)
+   for (auto& path : metapath)
+   {
+      std::cout << path.string() << std::endl;
       if (filesystem::exists(path))
       {
          property_tree::ptree tree;
          property_tree::read_info(path.string(), tree);
-      
+
          time_shifts_ps[0] = tree.get<float>("shifts.1", 0);
          time_shifts_ps[1] = tree.get<float>("shifts.2", 0);
          time_shifts_ps[2] = tree.get<float>("shifts.3", 0);
          time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
 
          sync.bidirectional = tree.get<bool>("sync.bidirectional", false);
-         sync.phase = tree.get<double>("sync.phase", 0);
-         sync.n_line = tree.get<double>("sync.n_line", 0);
-         sync.n_x = tree.get<double>("sync.n_x", 0);
+         sync.phase = tree.get<double>("sync.phase", 0.0);
+         sync.n_line = tree.get<int>("sync.n_line", 0);
+         sync.n_x = tree.get<int>("sync.n_x", 0);
       }
+
+   }
 }
 
 
 void AbstractFifoReader::determineDwellTime()
 {
+   readSettings();
+
+
    using namespace boost::accumulators;
 
    assert(event_reader != nullptr);
@@ -286,7 +294,7 @@ void AbstractFifoReader::determineDwellTime()
 
    // Count number of lines, accounting for missing start/end markers
    int n_line_corrected = std::accumulate(sync_count_interline.begin(), sync_count_interline.end(), 1,
-      [&](int n_line, uint64_t interline) { return n_line + std::round(interline / sync.counts_interline); });
+      [&](int n_line, uint64_t interline) { return n_line + (int) std::round(interline / sync.counts_interline); });
 
 
    if (line_averaging > 1)
@@ -320,7 +328,7 @@ void AbstractFifoReader::determineDwellTime()
    for (int i = 0; i < n_chan; i++)
       recommended_channels[i] = channel_counts[i] > 0;
 
-   setUseAllChannels();   
+   setUseAllChannels();
 }
 
 
