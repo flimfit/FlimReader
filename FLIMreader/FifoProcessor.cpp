@@ -120,6 +120,8 @@ FifoProcessor::FifoProcessor(Markers markers, SyncSettings sync) :
 
 Photon FifoProcessor::getNextPhoton()
 {
+   double sync_wraparound = 0.5 * (sync.counts_interline + sync.count_per_line);
+
    while(true)
    {
       if (idx == frame->events.size())
@@ -143,13 +145,27 @@ Photon FifoProcessor::getNextPhoton()
 
       int a = 1;
 
-      if ((p.mark == markers.PhotonMarker) && line_valid)
+      if ((p.mark == markers.PhotonMarker))
       {
-         double cur_loc = (markers.PixelMarker) ? cur_px :
-            ((p.macro_time - sync_start) / sync.count_per_line) * (sync.n_x);
-
+         double cur_loc = cur_px;
+         int this_line = cur_line;
          
-         if ((sync.bidirectional && (cur_line % 2 == 1)) ||
+         if (!markers.PixelMarker)
+         {
+            double diff = p.macro_time - sync_start;
+            
+            // Wrap around extra photons
+            if (diff > sync_wraparound)
+            {
+               diff -= sync.counts_interline;
+               this_line++;
+            }
+
+            cur_loc = diff / sync.count_per_line * sync.n_x;
+         }
+         
+         
+         if ((sync.bidirectional && (this_line % 2 == 1)) ||
              (sync.bidirectional_per_frame && (frame->frame_number % 2 == 1)))
             cur_loc = sync.n_x - 1 - cur_loc - sync.phase;
          /*
@@ -159,7 +175,7 @@ Photon FifoProcessor::getNextPhoton()
          while ((cur_line < (sync.n_line - 1)) && (p.macro_time > real_line_time[cur_line + 1]))
             cur_line++;
             */
-         return Photon(a, (int)cur_loc, cur_line, p.channel, p.micro_time);
+         return Photon(a, (int)cur_loc, this_line, p.channel, p.micro_time);
       }
    }
 }
