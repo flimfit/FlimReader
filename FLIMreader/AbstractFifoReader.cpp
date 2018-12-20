@@ -178,14 +178,18 @@ void AbstractFifoReader::determineDwellTime()
    
    event_reader->setToStart();
 
-   uint64_t frame_start = 0;
+   uint64_t frame_start = std::numeric_limits<uint64_t>::max();
    uint64_t sync_start_count = 0;
-   int n_averaged = 0;
    int n_line = 0;
    int n_frame = 0;
 
+   std::vector<uint64_t> sync_count_interline; sync_count_interline.reserve(4096);
+
    accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
    accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
+
+   int missed_start = 0;
+   int missed_end = 0;
 
    bool line_active = false;
    do
@@ -199,50 +203,64 @@ void AbstractFifoReader::determineDwellTime()
       {
          if (n_line > 0)
          {
-            if (n_frame == 0)
+            if (frame_start == std::numeric_limits<uint64_t>::max())
+            {
                frame_start = p.macro_time;
+            }
             else
+            {
+               if (p.macro_time < frame_start)
+                  throw std::runtime_error("Incorrect interframe counts");
                sync.counts_interframe = (double)(p.macro_time - frame_start);
+            }
             n_frame++; // count full frames (i.e. ignore first start, if it's there)
             line_active = false;
          }
          else
          {
             sync.has_initial_frame_marker = true;
+            frame_start = p.macro_time;
          }
 
       }
 
-      if ((p.mark & markers.LineEndMarker) && line_active)
+      if (p.mark & markers.LineEndMarker)
       {
-         if (p.macro_time >= sync_start_count) // not sure why this is sometimes violated
+         if ((markers.LineStartMarker != markers.LineEndMarker) && !line_active)
+            missed_start++;
+
+         if (line_active && (p.macro_time >= sync_start_count)) // not sure why this is sometimes violated
          {
             uint64_t diff = p.macro_time - sync_start_count;
             sync_count_per_line_acc((double)diff);
-
-            n_averaged++;
          }
 
          line_active = false;
       }
-      else if (p.mark & markers.LineStartMarker)
+      
+      if (p.mark & markers.LineStartMarker)
       {
-         if ((p.macro_time >= sync_start_count) && n_frame == 0)
+         if ((markers.LineStartMarker != markers.LineEndMarker) && line_active)
+            missed_end++;
+
+         if (!line_active && (p.macro_time >= sync_start_count) && n_frame == 0)
          {
             if (n_line > 0)
             {
                uint64_t diff = p.macro_time - sync_start_count;
                sync_count_interline_acc((double)diff);
+               sync_count_interline.push_back(diff);
             }
 
             n_line++;
+            sync_start_count = p.macro_time;
          }
-         sync_start_count = p.macro_time;
+
          line_active = true;
       }
 
       // if we don't have frame markers break after 512 lines (speed considerations)
-      if (markers.FrameMarker == 0x0 && n_line >= n_y)
+      if ((markers.FrameMarker == 0x0) && (n_line >= n_y) && (n_y > 0))
          break;
 
    } while (event_reader->hasMoreData() && (n_frame == 0));
@@ -252,6 +270,11 @@ void AbstractFifoReader::determineDwellTime()
 
    sync.count_per_line = median(sync_count_per_line_acc);
    sync.counts_interline = median(sync_count_interline_acc);
+
+   // Count number of lines, accounting for missing start/end markers
+   int n_line_corrected = std::accumulate(sync_count_interline.begin(), sync_count_interline.end(), 1,
+      [&](int n_line, uint64_t interline) { return n_line + std::round(interline / sync.counts_interline); });
+
 
    if (line_averaging > 1)
    {
@@ -265,7 +288,7 @@ void AbstractFifoReader::determineDwellTime()
 
    if (n_y == 0)
    {
-     n_y = n_line / line_averaging / n_frame;
+     n_y = n_line_corrected / line_averaging / n_frame;
 	  if (n_x == 0)
          n_x = n_y;
    }
@@ -276,6 +299,9 @@ void AbstractFifoReader::determineDwellTime()
 
    sync.n_x = n_x;
    sync.n_line = n_y;
+
+   if (!isfinite(sync.counts_interframe))
+      throw std::runtime_error("Incorrect interframe counts");
 
    setUseAllChannels();   
 }
