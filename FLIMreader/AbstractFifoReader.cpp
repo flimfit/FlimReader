@@ -151,22 +151,31 @@ void AbstractFifoReader::readSettings()
    using namespace boost;
    
    filesystem::path filepath(filename);
-   auto metapath = filepath.parent_path();
-   metapath /= "PicoquantLoaderSettings.info";
+
+   std::vector<boost::filesystem::path> metapath;
+
+   metapath.push_back(filepath.parent_path() / "PicoquantLoaderSettings.info");
+   metapath.push_back(filepath.parent_path() / "FifoSettings.info");
    
    time_shifts_ps.resize(4, 0.0);
 
    // Try load in shift settings
-   if (filesystem::exists(metapath))
-   {
-      property_tree::ptree tree;
-      property_tree::read_info(metapath.string(), tree);
+   for(auto& path : metapath)
+      if (filesystem::exists(path))
+      {
+         property_tree::ptree tree;
+         property_tree::read_info(path.string(), tree);
       
-      time_shifts_ps[0] = tree.get<float>("shifts.1", 0);
-      time_shifts_ps[1] = tree.get<float>("shifts.2", 0);
-      time_shifts_ps[2] = tree.get<float>("shifts.3", 0);
-      time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
-   }
+         time_shifts_ps[0] = tree.get<float>("shifts.1", 0);
+         time_shifts_ps[1] = tree.get<float>("shifts.2", 0);
+         time_shifts_ps[2] = tree.get<float>("shifts.3", 0);
+         time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
+
+         sync.bidirectional = tree.get<bool>("sync.bidirectional", false);
+         sync.phase = tree.get<double>("sync.phase", 0);
+         sync.n_line = tree.get<double>("sync.n_line", 0);
+         sync.n_x = tree.get<double>("sync.n_x", 0);
+      }
 }
 
 
