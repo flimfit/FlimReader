@@ -11,9 +11,7 @@ FfdReader::FfdReader(const std::string& filename) :
    AbstractFifoReader(filename)
 {
    readHeader();
-
-   initaliseTimepoints(n_timepoints_native, time_resolution_native_ps);
-
+   
    markers.FrameMarker = 0x8;
    markers.LineEndMarker = 0x4;
    markers.LineStartMarker = 0x2;
@@ -22,6 +20,7 @@ FfdReader::FfdReader(const std::string& filename) :
    event_reader = std::shared_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position));
 
    determineDwellTime();
+   initaliseTimepoints(n_timepoints_native, time_resolution_native_ps);
 }
 
 void FfdReader::readHeader()
