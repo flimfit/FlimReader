@@ -158,21 +158,18 @@ void AbstractFifoReader::readSettings()
    metapath.push_back(parent_path / "PicoquantLoaderSettings.info");
    metapath.push_back(parent_path / "FifoSettings.info");
    
-   time_shifts_ps.resize(4, 0.0);
+   time_shifts_ps.resize(n_chan, 0.0);
 
    // Try load in shift settings
    for (auto& path : metapath)
    {
-      std::cout << path.string() << std::endl;
       if (filesystem::exists(path))
       {
          property_tree::ptree tree;
          property_tree::read_info(path.string(), tree);
 
-         time_shifts_ps[0] = tree.get<float>("shifts.1", 0);
-         time_shifts_ps[1] = tree.get<float>("shifts.2", 0);
-         time_shifts_ps[2] = tree.get<float>("shifts.3", 0);
-         time_shifts_ps[3] = tree.get<float>("shifts.4", 0);
+         for (int c = 0; c < n_chan; c++)
+            time_shifts_ps[c] = tree.get<float>("shifts." + std::to_string(c), 0);
 
          sync.bidirectional = tree.get<bool>("sync.bidirectional", false);
          sync.phase = tree.get<double>("sync.phase", 0.0);
