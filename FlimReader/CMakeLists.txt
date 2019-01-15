@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(FlimReader)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
-find_package(zlib REQUIRED)
+find_package(ZLIB REQUIRED)
 
 set(SOURCE
    FlimReader.cpp

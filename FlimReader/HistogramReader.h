@@ -50,7 +50,7 @@ protected:
       {
         data_buf.emplace_back(readHistogramFromFile<U>(blocks[0]));
       }
-        
+
 
       int n_xi = n_x / spatial_binning;
       int n_yi = n_y / spatial_binning;
@@ -143,7 +143,7 @@ protected:
       zInfo.avail_in = 0;  (uInt)fs.gcount();
 
       int nErr = inflateInit2(&zInfo, wbits);
-     
+
       if (nErr) throw std::runtime_error("Error decompressing file");
 
       do
