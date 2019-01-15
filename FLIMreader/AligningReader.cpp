@@ -118,22 +118,6 @@ void AligningReader::alignFrames()
    loadIntensityFrames();
 
    int n_frames = getNumIntensityFrames();
-
-   if (reference_index == -1)
-   {
-      switch(realign_params.default_reference_frame)
-      {
-         case DefaultReferenceFrame::FirstFrame: 
-            reference_index = 0;
-            break;
-         case DefaultReferenceFrame::MiddleFrame:
-            reference_index = n_frames / 2;
-            break;
-         case DefaultReferenceFrame::LastFrame:
-            reference_index = n_frames - 1;
-            break;
-      }
-   }
    
    if ((n_frames == 0) || terminate)
    {
@@ -143,20 +127,40 @@ void AligningReader::alignFrames()
 
    ImageScanParameters image_params = getImageScanParameters();
    
+
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
    frame_aligner->setNumberOfFrames(n_frames);
 
-   cv::Mat ref_frame = getIntensityFrameImmediately(reference_index);
+   if (reference_frame.empty())
+   {
+      if (reference_index == -1)
+      {
+         switch (realign_params.default_reference_frame)
+         {
+         case DefaultReferenceFrame::FirstFrame:
+            reference_index = 0;
+            break;
+         case DefaultReferenceFrame::MiddleFrame:
+            reference_index = n_frames / 2;
+            break;
+         case DefaultReferenceFrame::LastFrame:
+            reference_index = n_frames - 1;
+            break;
+         }
+      }
+      reference_frame = getIntensityFrameImmediately(reference_index);
+   }
+
 
    tick_count_start = cv::getTickCount();
 
-   frame_aligner->setReference(reference_index, ref_frame);
+   frame_aligner->setReference(reference_index, reference_frame);
 
 //   realignment.clear();
    realignment_complete = false;
 
-   intensity_normalisation = cv::Mat(ref_frame.dims, ref_frame.size.p, CV_32F, cv::Scalar(0));
+   intensity_normalisation = cv::Mat(reference_frame.dims, reference_frame.size.p, CV_32F, cv::Scalar(0));
 
    if (realignment_thread.joinable())
       realignment_thread.join();

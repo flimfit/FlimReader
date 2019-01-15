@@ -37,6 +37,9 @@ public:
    void alignFrames();   
    void waitForAlignmentComplete();
 
+   void setReferenceFrame(cv::Mat reference_frame_) { reference_frame = reference_frame_; }
+   cv::Mat getReferenceFrame() { return reference_frame; }
+
 protected:
 
    void waitForFrameReady(int frame);
@@ -53,6 +56,8 @@ protected:
 
    void computeIntensityNormalisation();
    void alignFramesImpl();
+
+   cv::Mat reference_frame;
 
    bool terminate = false;
 
