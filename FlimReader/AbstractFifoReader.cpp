@@ -307,7 +307,7 @@ void AbstractFifoReader::determineDwellTime()
    if (n_y == 0)
    {
      n_y = n_line_corrected / line_averaging / n_frame;
-	  if (n_x == 0)
+     if (n_x == 0)
          n_x = n_y;
    }
    else if (markers.FrameMarker != 0x0)
@@ -326,11 +326,11 @@ void AbstractFifoReader::determineDwellTime()
    for (int i = 0; i < recommended_channels.size(); i++)
    {
       recommended_channels[i] = channel_counts[i] > 0;
-	  if (recommended_channels[i])
-		  highest_chan = i;
+     if (recommended_channels[i])
+        highest_chan = i;
    }
 
-   n_chan = std::max(n_chan, highest_chan);
+   n_chan = std::max(n_chan, highest_chan + 1);
    recommended_channels.resize(n_chan);
 
    setUseAllChannels();
