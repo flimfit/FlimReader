@@ -56,5 +56,5 @@ add_subdirectory(FlimReader)
 add_subdirectory(FlimReaderTest)
 
 if(GENERATE_FLIMREADER_MEX)
-   #add_subdirectory(FLIMReaderMex)
+   add_subdirectory(FLIMReaderMex)
 endif()
