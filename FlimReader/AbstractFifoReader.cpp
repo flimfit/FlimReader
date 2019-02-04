@@ -332,6 +332,7 @@ void AbstractFifoReader::determineDwellTime()
 
    n_chan = std::max(n_chan, highest_chan + 1);
    recommended_channels.resize(n_chan);
+   time_shifts_ps.resize(n_chan, 0);
 
    setUseAllChannels();
 }
