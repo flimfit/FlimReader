@@ -76,6 +76,7 @@ void SdtReader::readHeader()
    {
       boost::trim(token);
 
+      key = ""; value = "";
       if (boost::starts_with(token, "#SP") || boost::starts_with(token, "#DI") ||
          boost::starts_with(token, "#PR") || boost::starts_with(token, "#MP"))
       {
@@ -108,6 +109,7 @@ void SdtReader::readHeader()
       if (measure_info.scan_y > 0) n_y = measure_info.scan_y;
       if (measure_info.adc_re > 0) n_timebins = measure_info.adc_re;
       if (measure_info.scan_rx > 0) n_chan = measure_info.scan_rx;
+      if (measure_info.image_rx > 0) n_chan = measure_info.image_rx;
 
       // measurement mode 0 and 1 are both single-point data
       if (measure_info.meas_mode == 0 || measure_info.meas_mode == 1)
@@ -123,14 +125,16 @@ void SdtReader::readHeader()
          n_y = mode13height;
       }
 
-      // This works if all blocks are same size etc or if we are in mode 13
-      // Need to validate one of these is true...
+      rep_rate_hz = measure_info.StopInfo.max_sync_rate;      
+   }
+
+   if (measure_info.meas_mode == 13)
+   {
       n_chan = header.no_of_meas_desc_blocks;
       channels_split = true;
-
-      rep_rate_hz = measure_info.StopInfo.max_sync_rate;
-      
    }
+
+
 
    in.seekg(header.data_block_offs);
 
