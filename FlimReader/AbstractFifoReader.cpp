@@ -147,9 +147,8 @@ void AbstractFifoReader::readData(uint16_t* data, const std::vector<int>& channe
 
 void AbstractFifoReader::readSettings()
 {
-   using namespace boost;
-   
-   filesystem::path filepath(filename);
+
+   boost::filesystem::path filepath(filename);
 
    std::vector<boost::filesystem::path> metapath;
 
@@ -163,10 +162,10 @@ void AbstractFifoReader::readSettings()
    // Try load in shift settings
    for (auto& path : metapath)
    {
-      if (filesystem::exists(path))
+      if (boost::filesystem::exists(path))
       {
-         property_tree::ptree tree;
-         property_tree::read_info(path.string(), tree);
+         boost::property_tree::ptree tree;
+         boost::property_tree::read_info(path.string(), tree);
 
          for (int c = 0; c < n_chan; c++)
             time_shifts_ps[c] = tree.get<float>("shifts." + std::to_string(c), 0);
