@@ -1,36 +1,25 @@
-macro(configure_link_flags)
-  set(MSVC_C_CXX_FLAGS
-    CMAKE_C_FLAGS_DEBUG
-    CMAKE_C_FLAGS_MINSIZEREL
-    CMAKE_C_FLAGS_RELEASE
-    CMAKE_C_FLAGS_RELWITHDEBINFO
-    CMAKE_CXX_FLAGS_DEBUG
-    CMAKE_CXX_FLAGS_MINSIZEREL
-    CMAKE_CXX_FLAGS_RELEASE
-    CMAKE_CXX_FLAGS_RELWITHDEBINFO
-  )
-  if(${VCPKG_TARGET_TRIPLET} MATCHES "static")
-    message(STATUS
-      "VCPKG: static link"
+macro(configure_msvc_runtime)
+  if(MSVC)
+    set(MSVC_C_CXX_FLAGS
+      CMAKE_C_FLAGS_DEBUG
+      CMAKE_C_FLAGS_MINSIZEREL
+      CMAKE_C_FLAGS_RELEASE
+      CMAKE_C_FLAGS_RELWITHDEBINFO
+      CMAKE_CXX_FLAGS_DEBUG
+      CMAKE_CXX_FLAGS_MINSIZEREL
+      CMAKE_CXX_FLAGS_RELEASE
+      CMAKE_CXX_FLAGS_RELWITHDEBINFO
     )
+    if("${MSVC_CRT_LINKAGE}" STREQUAL "static")
+      set(_add_flag "/MT")
+      set(_remove_flag "/MD")
+    else()
+      set(_add_flag "/MD")
+      set(_remove_flag "/MT")
+    endif()
     foreach(flag ${MSVC_C_CXX_FLAGS})
-      if(${flag} MATCHES "/MD")
-        string(REGEX REPLACE "/MD" "/MT" ${flag} "${${flag}}")
-      endif()
+      string(REGEX REPLACE ${_remove_flag} ${_add_flag} ${flag} "${${flag}}")
     endforeach()
-    set(VCPKG_CRT_LINKAGE "static")
-    set(VCPKG_LIBRARY_LINKAGE "static")
-  else()
-    message(STATUS
-      "VCPKG: dynamic link"
-    )
-    foreach(flag ${MSVC_C_CXX_FLAGS})
-      if(${flag} MATCHES "/MT")
-        string(REGEX REPLACE "/MT" "/MD" ${flag} "${${flag}}")
-      endif()
-    endforeach()
-    set(VCPKG_CRT_LINKAGE "dynamic")
-    set(VCPKG_LIBRARY_LINKAGE "dynamic")
   endif()
 endmacro()
 
@@ -52,8 +41,3 @@ macro(print_link_flags)
   endforeach()
   message(STATUS "")
 endmacro()
-
-if(MSVC)
-  configure_link_flags()
-  #print_link_flags()
-endif()
