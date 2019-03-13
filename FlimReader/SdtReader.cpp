@@ -87,7 +87,7 @@ void SdtReader::readHeader()
       else if (boost::starts_with(token, "#TR") || boost::starts_with(token, "#WI")) {
          key = token.substr(0, token.find('['));
          boost::trim(key);
-         value = token.substr(token.find('[') + 1, token.find(']'));
+         value = token.substr(token.find('[') + 1, token.find(']') - 1);
       }
 
       if (!(key.empty() || value.empty())) tags[key] = value;

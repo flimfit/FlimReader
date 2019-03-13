@@ -7,6 +7,7 @@
 #include "TextReader.h"
 #include "BhFifoReader.h"
 #include "SdtReader.h"
+#include "IcsReader.h"
 
 #include <cmath>
 
@@ -30,6 +31,8 @@ FlimReader* FlimReader::createReader(const std::string& filename)
       return new BhFifoReader(filename);
    else if (extension == "sdt")
       return new SdtReader(filename);
+   else if (extension == "ics")
+      return new IcsReader(filename);
    throw std::runtime_error("Unrecognised file format");
 }
 
