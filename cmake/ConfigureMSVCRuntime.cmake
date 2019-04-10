@@ -1,4 +1,4 @@
-macro(configure_msvc_runtime)
+macro(configure_msvc_runtime link_type)
   if(MSVC)
     set(MSVC_C_CXX_FLAGS
       CMAKE_C_FLAGS_DEBUG
@@ -10,12 +10,12 @@ macro(configure_msvc_runtime)
       CMAKE_CXX_FLAGS_RELEASE
       CMAKE_CXX_FLAGS_RELWITHDEBINFO
     )
-    if("${MSVC_CRT_LINKAGE}" STREQUAL "static")
+    if("${link_type}" STREQUAL "static")
       set(_add_flag "/MT")
       set(_remove_flag "/MD")
     else()
-      set(_add_flag "/MD")
-      set(_remove_flag "/MT")
+    set(_add_flag "/MD")
+    set(_remove_flag "/MT")
     endif()
     foreach(flag ${MSVC_C_CXX_FLAGS})
       string(REGEX REPLACE ${_remove_flag} ${_add_flag} ${flag} "${${flag}}")

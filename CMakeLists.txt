@@ -16,7 +16,7 @@ project(FlimReader)
 set(CMAKE_CXX_STANDARD 14)
 
 include("cmake/ConfigureMSVCRuntime.cmake")
-configure_msvc_runtime()
+configure_msvc_runtime("static")
 
 set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
 set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release) 
