@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 option(BUILD_OPENCV "Build OpenCV (will produce static libs)" OFF)
-option(GENERATE_FLIMREADER_MEX "Generate FLIMreader Mex file" ON)
+option(GENERATE_FLIMREADER_MEX "Generate FlimReader Mex file" ON)
 
 string(COMPARE EQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ROOT_PROJECT)
 if (BUILD_OPENCV AND ROOT_PROJECT)
@@ -12,11 +12,14 @@ if (BUILD_OPENCV AND ROOT_PROJECT)
    )
 endif ()
 
-project(FLIMreader)
+project(FlimReader)
 set(CMAKE_CXX_STANDARD 14)
 
 include("cmake/ConfigureMSVCRuntime.cmake")
 configure_msvc_runtime()
+
+set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
+set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release) 
 
 if (BUILD_OPENCV)
     hunter_add_package(OpenCV)
@@ -24,8 +27,6 @@ if (BUILD_OPENCV)
     # Prefer static libraries so we don't mess with Matlab 
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .tbd .dylib .so)
 endif ()
-
-
 
 if(MSVC)
    set(PLATFORM_FLAGS_ALL "/Oi /fp:fast")
@@ -53,5 +54,5 @@ add_subdirectory(FlimReader)
 add_subdirectory(FlimReaderTest)
 
 if(GENERATE_FLIMREADER_MEX)
-   add_subdirectory(FLIMReaderMex)
+   add_subdirectory(FlimReaderMex)
 endif()
