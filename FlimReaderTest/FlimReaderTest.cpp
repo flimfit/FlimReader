@@ -30,7 +30,10 @@ void test_load()
    filename = "/Users/sean/repositories/FLIMfit/FLIMfitFrontEnd/test.ffh";
    filename = "D:/Dropbox (Garvan)/Anisotropy Data - Fluo/irf_glass_ani_m2m1_ph22_single decay_lp10.1_256_25.10.18.sdt";
    filename = "C:/Users/CIMLab/Documents/flim-data-zoo/bh fifo/irf_glass_ani_m2m1_ph22_single decay_lp10.1_256_25.10.18.sdt";
-
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Leica FALCON Sequence/Seq1.5-5_sp1000_ave1_biDir2_rot90_seq7.ptu";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/Stephen Botchway/irf kdp 13_2_19 d.sdt";
+   filename = "C:/Users/CIMLab/Documents/flim-data-zoo/hetero-FRET ptu/D+A7.ics";
+      
    auto start = chrono::high_resolution_clock::now();
 
    unique_ptr<FlimReader> reader(FlimReader::createReader(filename));
@@ -39,7 +42,9 @@ void test_load()
    
    
    int sz = reader->dataSizePerChannel();
-   std::vector<uint16_t> d(sz);
+   int n_chan = reader->getNumChannels();
+
+   std::vector<uint16_t> d(sz * n_chan);
 
    RealignmentParameters params;
    params.frame_binning = 1;
@@ -49,7 +54,12 @@ void test_load()
    
    //reader->setRealignmentParameters(params);
 
-   reader->readData(d.data(), { 0 });
+   std::vector<int> channels_to_read(n_chan);
+   for (int i = 0; i < n_chan; i++)
+      channels_to_read[i] = i;
+
+
+   reader->readData(d.data(), channels_to_read);
 
    auto end = chrono::high_resolution_clock::now();
 
