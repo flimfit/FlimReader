@@ -17,7 +17,7 @@ FfdReader::FfdReader(const std::string& filename) :
    markers.LineStartMarker = 0x2;
    markers.PixelMarker = 0x0; // no pixel marker
 
-   event_reader = std::shared_ptr<AbstractEventReader>(new FfdEventReader(filename, version, data_position));
+   event_reader = std::make_shared<FfdEventReader>(filename, version, data_position);
 
    determineDwellTime();
    initaliseTimepoints(n_timepoints_native, time_resolution_native_ps);

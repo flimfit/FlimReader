@@ -42,6 +42,9 @@ FlimReader::FlimReader(const std::string& filename) :
    extension = determineExtension(filename);
 }
 
+FlimReader::FlimReader()
+{}
+
 std::string FlimReader::determineExtension(const std::string& filename)
 {
    size_t last_dot, pos = 0;

@@ -16,6 +16,7 @@ set(SOURCE
    SdtReader.cpp
    AligningReader.cpp
    AbstractEventReader.cpp
+   FileEventReader.cpp
    FifoProcessor.cpp
    FfhReader.cpp
    FlimCube.cpp
@@ -43,6 +44,7 @@ set(HEADERS
    FlimCubeWriter.h
    AligningReader.h
    AbstractEventReader.h
+   FileEventReader.h
    IcsReader.h
 )
 

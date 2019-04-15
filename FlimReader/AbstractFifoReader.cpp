@@ -14,6 +14,11 @@
 
 using namespace std;
 
+AbstractFifoReader::AbstractFifoReader() 
+{
+}
+
+
 AbstractFifoReader::AbstractFifoReader(const std::string& filename) :
 FlimReader(filename)
 {

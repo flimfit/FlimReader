@@ -19,6 +19,7 @@ public:
    static FlimReader* createReader(const std::string& filename);
 
    FlimReader(const std::string& filename_);
+   FlimReader();
 
    static std::string determineExtension(const std::string& filename);
    std::vector<int> validateChannels(const std::vector<int> channels, int& n_chan_stride);

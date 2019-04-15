@@ -1,5 +1,6 @@
 #pragma once
 #include "AbstractFifoReader.h"
+#include "FileEventReader.h"
 
 enum PicoquantRecordType
 {
@@ -15,7 +16,7 @@ enum PicoquantRecordType
    TimeHarp260P_T3 = 0x00010306
 };
 
-class PicoquantEventReader : public AbstractEventReader
+class PicoquantEventReader : public FileEventReader
 {
 public:
 

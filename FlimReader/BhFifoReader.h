@@ -1,5 +1,6 @@
 #pragma once
 #include "AbstractFifoReader.h"
+#include "FileEventReader.h"
 
 class BhFifoReader : public AbstractFifoReader
 {
@@ -21,12 +22,12 @@ public:
 };
 
 
-class BhEventReader : public AbstractEventReader
+class BhEventReader : public FileEventReader
 {
 public:
 
    BhEventReader(const std::string& filename, std::streamoff data_position)
-      : AbstractEventReader(filename, data_position, sizeof(uint32_t))
+      : FileEventReader(filename, data_position, sizeof(uint32_t))
    {}
 
    std::tuple<FifoEvent, uint64_t> getRawEvent();

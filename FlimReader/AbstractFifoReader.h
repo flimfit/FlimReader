@@ -27,6 +27,8 @@ class AbstractFifoReader : public FlimReader
 public:
    
    AbstractFifoReader(const std::string& filename);
+   AbstractFifoReader();
+   
    ~AbstractFifoReader();
    
    void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);

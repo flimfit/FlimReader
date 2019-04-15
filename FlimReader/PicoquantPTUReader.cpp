@@ -33,7 +33,7 @@ AbstractFifoReader(filename)
    if (measurement_mode != 3)
       throw std::runtime_error("Measurement Mode 3 required for PTU FLIM data");
 
-   event_reader = std::shared_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
+   event_reader = std::make_shared<PicoquantEventReader>(filename, data_position, rec_type);
       
    determineDwellTime();
 }
@@ -158,7 +158,7 @@ void PicoquantPTUReader::readHeader()
 
 
 PicoquantEventReader::PicoquantEventReader(const std::string& filename, std::streamoff data_position, PicoquantRecordType rec_type)
-   : AbstractEventReader(filename, data_position, sizeof(uint32_t)), rec_type(rec_type)
+   : FileEventReader(filename, data_position, sizeof(uint32_t)), rec_type(rec_type)
 {}
 
 std::tuple<FifoEvent, uint64_t>  PicoquantEventReader::getRawEvent()

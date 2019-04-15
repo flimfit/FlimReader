@@ -26,7 +26,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
    markers.LineEndMarker = 0x2;
    markers.FrameMarker = 0x4;
 
-   event_reader = std::shared_ptr<AbstractEventReader>(new BhEventReader(filename, data_position));
+   event_reader = std::make_shared<BhEventReader>(filename, data_position);
 
    determineDwellTime();
 }

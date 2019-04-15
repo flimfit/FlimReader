@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractFifoReader.h"
+#include "FileEventReader.h"
 
 struct ffd_evt_v1
 {
@@ -18,12 +19,12 @@ struct ffd_evt
 };
 
 
-class FfdEventReader : public AbstractEventReader
+class FfdEventReader : public FileEventReader
 {
 public:
 
    FfdEventReader(const std::string& filename, int version, std::streamoff data_position)
-      : AbstractEventReader(filename, data_position, (version == 1) ? sizeof(ffd_evt_v1) : sizeof(ffd_evt) ),
+      : FileEventReader(filename, data_position, (version == 1) ? sizeof(ffd_evt_v1) : sizeof(ffd_evt) ),
         version(version)
    {
    }

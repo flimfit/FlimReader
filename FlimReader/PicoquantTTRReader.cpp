@@ -33,7 +33,7 @@ AbstractFifoReader(filename)
 
    PicoquantRecordType rec_type = (std::string("PicoHarp 300").compare(info.ident) == 0) ? PicoHarp_T3 : HydraHarpV2_T3;
 
-   event_reader = std::shared_ptr<AbstractEventReader>(new PicoquantEventReader(filename, data_position, rec_type));
+   event_reader = std::make_shared<PicoquantEventReader>(filename, data_position, rec_type);
 
    determineDwellTime();
 }
