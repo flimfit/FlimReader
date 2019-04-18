@@ -18,6 +18,13 @@ FifoEvent AbstractEventReader::getEvent()
 
 void AbstractEventReader::setToStart()
 {
+   read_from_start = true;
    cur_pos = 0;
    sync_count_accum = 0;
+}
+
+void AbstractEventReader::clear()
+{
+   data.clear();
+   setToStart();
 }

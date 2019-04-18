@@ -35,7 +35,7 @@ AbstractFifoReader(filename)
 
    event_reader = std::make_shared<PicoquantEventReader>(filename, data_position, rec_type);
       
-   determineDwellTime();
+   determineDimensions();
 }
 
 void PicoquantPTUReader::readHeader()
@@ -93,7 +93,7 @@ void PicoquantPTUReader::readHeader()
             if (strcmp(tag_head.Ident, HW_InpChannels) == 0)
                n_chan = ((int)tag_head.TagValue) - 1; // start is included in input count
             if (strcmp(tag_head.Ident, Line_Averaging)==0)
-               line_averaging = (int) tag_head.TagValue;
+               sync.line_averaging = (int) tag_head.TagValue;
             if (strcmp(tag_head.Ident, TTResult_SyncRate) == 0)
             {
                rep_rate_hz = (double) tag_head.TagValue;

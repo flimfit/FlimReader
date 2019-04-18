@@ -19,7 +19,7 @@
 #include "FifoProcessor.h"
 #include "WriteMultipageTiff.h"
 #include "AbstractEventReader.h"
-
+#include "CountRateEstimator.h"
 
 
 class AbstractFifoReader : public FlimReader
@@ -30,6 +30,8 @@ public:
    AbstractFifoReader();
    
    ~AbstractFifoReader();
+
+   void determineDimensions();
    
    void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
@@ -49,9 +51,11 @@ public:
    bool supportsRealignment() { return true; }
    double getProgress() { return event_reader->getProgress(); }
 
-
    void initaliseTimepoints(int n_timebins_native, double time_resolution_native_ps);
    void setTemporalDownsampling(int downsampling);
+
+   const std::vector<double>& getCountRates() { return count_rates; }
+   const std::vector<int>& getCurrentDecay(int chan) { return decay[chan]; }
 
 protected:
 
@@ -65,6 +69,8 @@ protected:
 
    void readSettings();
 
+   void setNumChannels(int n_chan);
+
    template<typename T>
    void computeMeanArrivalImage(const T* histogram);
 
@@ -72,20 +78,21 @@ protected:
    void readData_(T* data, const std::vector<int>& channels = {}, int n_chan_stride = -1);
    
    bool useFrame(int frame) { return true; }
-
-   void determineDwellTime();
       
-   int line_averaging = 1;
    std::vector<float> time_shifts_ps;
    double t_rep_ps = 0;
    SyncSettings sync;
 
    std::shared_ptr<AbstractEventReader> event_reader;
    Markers markers;
+   double macro_time_resolution_ps = 0;
+
+   bool has_sync_settings = false;
    
 private:
    
    double time_resolution_native_ps = 0;
+
    int t_rep_resunit;
    std::vector<int> time_shifts_resunit;
 
@@ -93,6 +100,12 @@ private:
 
    bool save_mean_arrival_images = false;
    std::vector<cv::Mat> ma_image;
+
+   std::vector<CountRateEstimator> rate_estimator;
+   std::vector<double> count_rates;
+   std::vector<std::vector<int>> decay;
+   std::vector<std::vector<int>> next_decay;
+
 };
 
 

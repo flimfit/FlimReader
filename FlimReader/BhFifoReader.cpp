@@ -13,8 +13,7 @@ using namespace std;
 BhFifoReader::BhFifoReader(const std::string& filename) :
    AbstractFifoReader(filename)
 {
-   n_chan = 1;
-
+   setNumChannels(1);
    readHeader();
 
    int n_timebins_native = 4096;
@@ -28,7 +27,7 @@ BhFifoReader::BhFifoReader(const std::string& filename) :
 
    event_reader = std::make_shared<BhEventReader>(filename, data_position);
 
-   determineDwellTime();
+   determineDimensions();
 }
 
 #pragma pack(push)
@@ -103,7 +102,7 @@ void BhFifoReader::readHeader()
 
    n_x = sys_par_ext.norm_ncx - 1; // to exclude final line
    n_y = sys_par_ext.norm_ncx; // maybe?
-   n_chan = sys_par_ext.img_x;
+   setNumChannels(sys_par_ext.img_x);
    sync.bidirectional = false; //(sys_par_ext.scan_type == 1);
    
    data_position = 0;

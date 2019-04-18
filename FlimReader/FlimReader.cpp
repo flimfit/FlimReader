@@ -177,3 +177,20 @@ std::vector<bool> FlimReader::getRecommendedChannels()
    else
       return std::vector<bool>(n_chan, true);
 }
+
+const std::vector<double>& FlimReader::getCountRates() 
+{ 
+   if (count_rates_dummy.size() != n_chan)
+      count_rates_dummy.resize(n_chan);
+
+   return count_rates_dummy; 
+}
+
+const std::vector<int>& FlimReader::getCurrentDecay(int chan) 
+{
+   if (decay_dummy.size() != timepoints.size())
+      decay_dummy.resize(timepoints.size());
+
+   return decay_dummy;
+}
+

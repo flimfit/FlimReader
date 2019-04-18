@@ -26,6 +26,7 @@ public:
 
    virtual ~FlimReader() {};
 
+   virtual void determineDimensions() {}; // Should load data dimensions if they weren't at initialisation
    virtual int getNumChannels() const { return n_chan; };
    virtual void readData(float* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
    virtual void readData(double* data, const std::vector<int>& channels = {}, int n_chan_stride = -1) = 0;
@@ -68,6 +69,9 @@ public:
    virtual void setBidirectionalPhase(double phase) { std::cout << "Warning: setting phase not supported by this reader\n"; }
    void setSpatialBinning(int spatial_binning_);
 
+   virtual const std::vector<double>& getCountRates();
+   virtual const std::vector<int>& getCurrentDecay(int chan);
+
 protected:
 
    virtual void initaliseTimepoints() { setTemporalDownsampling(0); }
@@ -91,5 +95,8 @@ protected:
    FlimNativeType native_type = DataTypeUint16;
 
    TagMap tags;
+
+   std::vector<double> count_rates_dummy; // when reader doesn't supply count rates
+   std::vector<int> decay_dummy; // when reader doesn't supply current decay
 };
 

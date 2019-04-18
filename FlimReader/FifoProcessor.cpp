@@ -4,6 +4,12 @@
 #include <vector>
 #include <thread>
 #include <cmath>
+#include <numeric>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+
 
 uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint64_t>& y, size_t begin, size_t end, int xi)
 {
@@ -22,14 +28,13 @@ uint64_t interpolateTime(const std::vector<uint64_t>& x, const std::vector<uint6
    return static_cast<uint64_t>(intercept + slope * xi);
 }
 
-
-void FifoProcessor::setFrame(std::shared_ptr<FifoFrame> frame_)
+FifoProcessor::FifoProcessor(std::shared_ptr<FifoFrame> frame, SyncSettings sync) :
+   frame(frame), sync(sync)
 {
-   frame = frame_;
-   determineLineStartTimes();
-   idx = 0;
-   line_idx = 0;
-   cur_line = -1;
+   markers = frame->getMarkers();
+
+   //determineLineStartTimes();
+   event_it = frame->events.begin();
 }
 
 void FifoProcessor::determineLineStartTimes()
@@ -74,60 +79,13 @@ void FifoProcessor::determineLineStartTimes()
 }
 
 
-void FifoFrame::initalise()
-{
-}
-
-void FifoFrame::loadNext()
-{
-   frame_start_event = next_frame_event;
-
-   events.clear();
-   marker_events.clear();
-
-   events.push_back(frame_start_event);
-   marker_events.push_back(frame_start_event);
-
-   while (reader->hasMoreData())
-   {
-      FifoEvent p = reader->getEvent();
-      if (p.valid)
-      {
-         events.push_back(p);
-
-         if (p.mark & markers.FrameMarker)
-         {
-            next_frame_event = p;
-            break;
-         }
-         else if (p.mark)
-         {
-            marker_events.push_back(p);
-         }
-      }
-   }
-
-   frame_number++;
-}
-
-
-
-FifoProcessor::FifoProcessor(Markers markers, SyncSettings sync) :
-   markers(markers), sync(sync)
-{
-}
-
-
 Photon FifoProcessor::getNextPhoton()
 {
    double sync_wraparound = 0.5 * (sync.counts_interline + sync.count_per_line);
 
-   while(true)
+   while(event_it != frame->events.end())
    {
-      if (idx == frame->events.size())
-         return Photon();
-
-      FifoEvent& p = frame->events[idx++];
+      FifoEvent& p = *(event_it++);
 
       if ((p.mark & markers.LineEndMarker) && line_valid == true)
       {
@@ -142,8 +100,6 @@ Photon FifoProcessor::getNextPhoton()
       }
       if (p.mark & markers.PixelMarker)
          cur_px++;
-
-      int a = 1;
 
       if ((p.mark == markers.PhotonMarker))
       {
@@ -175,11 +131,158 @@ Photon FifoProcessor::getNextPhoton()
          while ((cur_line < (sync.n_line - 1)) && (p.macro_time > real_line_time[cur_line + 1]))
             cur_line++;
             */
-         return Photon(a, (int)cur_loc, this_line, p.channel, p.micro_time);
+         return Photon{ 
+            frame->image_number,
+            frame->frame_number, 
+            cur_loc, 
+            (double) this_line, 
+            0, // z
+            p.channel, 
+            p.micro_time,
+            p.macro_time };
       }
    }
+
+   return Photon();
 }
 
+
+FifoInferredParameters FifoProcessor::determineSyncSettings(SyncSettings sync, int n_chan)
+{
+   using namespace boost::accumulators;
+
+   uint64_t frame_start = std::numeric_limits<uint64_t>::max();
+   uint64_t sync_start_count = 0;
+   int n_line = 0;
+   int n_frame = 0;
+
+   std::vector<size_t> channel_counts(128, 0);
+
+   std::vector<uint64_t> sync_count_interline; sync_count_interline.reserve(4096);
+   accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
+   accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
+
+   int missed_start = 0;
+   int missed_end = 0;
+
+   bool line_active = false;
+
+
+   for (auto& p : frame->events)
+   {
+      if (!p.valid)
+         continue;
+
+      if (!p.mark && p.channel < channel_counts.size())
+         channel_counts[p.channel]++;
+
+      if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker))
+      {
+         if (n_line > 0)
+         {
+            if (frame_start == std::numeric_limits<uint64_t>::max())
+            {
+               frame_start = p.macro_time;
+            }
+            else
+            {
+               if (p.macro_time < frame_start)
+                  throw std::runtime_error("Incorrect interframe counts");
+               sync.counts_interframe = (double)(p.macro_time - frame_start);
+            }
+            n_frame++; // count full frames (i.e. ignore first start, if it's there)
+            line_active = false;
+         }
+         else
+         {
+            frame_start = p.macro_time;
+         }
+
+      }
+
+      if (p.mark & markers.LineEndMarker)
+      {
+         if ((markers.LineStartMarker != markers.LineEndMarker) && !line_active)
+            missed_start++;
+
+         if (line_active && (p.macro_time >= sync_start_count)) // not sure why this is sometimes violated
+         {
+            uint64_t diff = p.macro_time - sync_start_count;
+            sync_count_per_line_acc((double)diff);
+         }
+
+         line_active = false;
+      }
+
+      if (p.mark & markers.LineStartMarker)
+      {
+         if ((markers.LineStartMarker != markers.LineEndMarker) && line_active)
+            missed_end++;
+
+         if (!line_active && (p.macro_time >= sync_start_count) && n_frame == 0)
+         {
+            if (n_line > 0)
+            {
+               uint64_t diff = p.macro_time - sync_start_count;
+               sync_count_interline_acc((double)diff);
+               sync_count_interline.push_back(diff);
+            }
+
+            n_line++;
+            sync_start_count = p.macro_time;
+         }
+
+         line_active = true;
+      }
+   }
+
+   if (markers.FrameMarker == 0x0)
+      n_frame = 1;
+
+   sync.count_per_line = median(sync_count_per_line_acc);
+   sync.counts_interline = median(sync_count_interline_acc);
+
+   // Count number of lines, accounting for missing start/end markers
+   int n_line_corrected = std::accumulate(sync_count_interline.begin(), sync_count_interline.end(), 1,
+      [&](int n_line, uint64_t interline) { return n_line + (int)std::round(interline / sync.counts_interline); });
+
+
+   if (sync.line_averaging > 1)
+   {
+      double factor = static_cast<double>(sync.line_averaging) / (sync.line_averaging + 1);
+      sync.count_per_line *= factor;
+      sync.counts_interline *= factor;
+   }
+
+   if (n_line == 0 || n_frame == 0)
+      throw std::runtime_error("Error interpreting sync markers");
+
+   if (sync.n_line == 0)
+      sync.n_line = n_line_corrected / sync.line_averaging / n_frame;
+   if (sync.n_x == 0)
+      sync.n_x = sync.n_line;
+
+   if (!isfinite(sync.counts_interframe))
+      throw std::runtime_error("Incorrect interframe counts");
+
+   int highest_chan = 0;
+   std::vector<bool> recommended_channels(channel_counts.size());
+   for (int i = 0; i < recommended_channels.size(); i++)
+   {
+      recommended_channels[i] = channel_counts[i] > 0;
+      if (recommended_channels[i])
+         highest_chan = i;
+   }
+
+   n_chan = std::max(n_chan, highest_chan + 1);
+   recommended_channels.resize(n_chan);
+
+   return FifoInferredParameters{
+      sync,
+      n_chan,
+      recommended_channels
+   };
+}
 
 /*
 FifoProcessor::FifoProcessor(Markers markers, SyncSettings sync) :

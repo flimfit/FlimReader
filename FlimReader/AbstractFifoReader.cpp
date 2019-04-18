@@ -6,9 +6,6 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/info_parser.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/median.hpp>
 
 #define READ(fs, x) fs.read(reinterpret_cast<char *>(&x), sizeof(x))
 
@@ -50,27 +47,23 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
    for (auto& c : channels)
       channel_map[c] = idx++;
 
-   int n_bin = (int)timepoints.size();
-   int n_x_binned = n_x / spatial_binning;
-   int n_y_binned = n_y / spatial_binning;
+   size_t n_bin = timepoints.size();
+   int n_x_binned = getNumX(); // with binning
+   int n_y_binned = getNumY();
    int n_invalid = 0;
    int last_frame_written = -1;
 
    auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
-
-   if (sync.has_initial_frame_marker)
-      fifo_frame->loadNext();
+   fifo_frame->loadNext();
 
    ma_image.clear();
 
    int frame_idx = 0;
+   int image_idx = 0;
 
-   while (event_reader->hasMoreData() && !terminate)
+   while (!fifo_frame->isEmpty())
    {
-
-      fifo_frame->loadNext();
-      FifoProcessor processor(markers, sync);
-      processor.setFrame(fifo_frame);
+      FifoProcessor processor(fifo_frame, sync);
 
       int frame = frame_idx / n_z;
       int z = frame_idx % n_z;
@@ -80,6 +73,14 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
       Photon p;
       while ((p = processor.getNextPhoton()))
       {
+         if (p.image > image_idx)
+         {
+            std::fill_n(histogram, n_bin * n_chan * n_x_binned * n_y_binned, 0);
+            image_idx = p.image;
+            for (auto& d : next_decay)
+               std::fill(d.begin(), d.end(), 0);
+         }
+
          p.z = z;
 
          if (terminate) break;
@@ -103,7 +104,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
 
          T corrected_value = 1;
          if (!spectral_correction.empty())
-            corrected_value = (T) spectral_correction[mapped_channel].at<float>((int) std::round(p.y), (int) std::round(p.x));
+            corrected_value = (T)spectral_correction[mapped_channel].at<float>((int)std::round(p.y), (int)std::round(p.x));
 
          frame_aligner->shiftPixel(frame, p.x, p.y, p.z);
 
@@ -117,7 +118,7 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          if ((x >= n_x_binned) || (x < 0) || (y >= n_y_binned) || (y < 0) || (z >= n_z) || (z < 0))
             continue;
 
-         int bin = p.bin;
+         uint32_t bin = p.micro_time;
          if (t_rep_resunit > 0)
          {
             bin = (bin + time_shifts_resunit[p.channel]) % t_rep_resunit;
@@ -129,12 +130,28 @@ void AbstractFifoReader::readData_(T* histogram, const std::vector<int>& channel
          {
             size_t idx = (x + n_x_binned * y + n_x_binned * n_y_binned * z);
             histogram[bin + n_bin * (mapped_channel + n_chan_stride * idx)] += corrected_value;
+            rate_estimator[p.channel].addEvent(p.macro_time, p.micro_time);
+            next_decay[p.channel][bin]++;
          }
          else
          {
             n_invalid++;
          }
       }
+
+      for (int i = 0; i < n_chan; i++)
+      {
+         count_rates[i] = rate_estimator[i].getCountRate();
+         rate_estimator[i].setNewFrame();
+
+         for (int i=0; i<decay.size(); i++)
+         {
+            std::copy(next_decay[i].begin(), next_decay[i].end(), decay[i].begin());
+            //std::fill(next_decay[i].begin(), next_decay[i].end(), 0);
+         }
+      }
+
+      fifo_frame->loadNext();
    }
 
    if (save_mean_arrival_images)
@@ -185,159 +202,45 @@ void AbstractFifoReader::readSettings()
 }
 
 
-void AbstractFifoReader::determineDwellTime()
+void AbstractFifoReader::determineDimensions()
 {
-   readSettings();
-
-
-   using namespace boost::accumulators;
-
-   assert(event_reader != nullptr);
-   
-   event_reader->setToStart();
-
-   uint64_t frame_start = std::numeric_limits<uint64_t>::max();
-   uint64_t sync_start_count = 0;
-   int n_line = 0;
-   int n_frame = 0;
-
-   std::vector<size_t> channel_counts(128, 0);
-
-   std::vector<uint64_t> sync_count_interline; sync_count_interline.reserve(4096);
-   accumulator_set<uint64_t, stats<tag::median > > sync_count_per_line_acc;
-   accumulator_set<uint64_t, stats<tag::median > > sync_count_interline_acc;
-
-   int missed_start = 0;
-   int missed_end = 0;
-
-   bool line_active = false;
-   do
+   if (!has_sync_settings)
    {
-      FifoEvent p = event_reader->getEvent();
+      sync.n_x = n_x;
+      sync.n_line = n_y;
 
-      if (!p.valid)
-         continue;
+      readSettings();
 
-      if (!p.mark && p.channel < channel_counts.size())
-         channel_counts[p.channel]++;
+      event_reader->setToStart();
 
-      if ((markers.FrameMarker > 0) && (p.mark & markers.FrameMarker))
-      {
-         if (n_line > 0)
-         {
-            if (frame_start == std::numeric_limits<uint64_t>::max())
-            {
-               frame_start = p.macro_time;
-            }
-            else
-            {
-               if (p.macro_time < frame_start)
-                  throw std::runtime_error("Incorrect interframe counts");
-               sync.counts_interframe = (double)(p.macro_time - frame_start);
-            }
-            n_frame++; // count full frames (i.e. ignore first start, if it's there)
-            line_active = false;
-         }
-         else
-         {
-            sync.has_initial_frame_marker = true;
-            frame_start = p.macro_time;
-         }
+      auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
 
-      }
+      fifo_frame->loadNext();
+      FifoProcessor processor(fifo_frame, sync);
+      auto params = processor.determineSyncSettings(sync, n_chan);
 
-      if (p.mark & markers.LineEndMarker)
-      {
-         if ((markers.LineStartMarker != markers.LineEndMarker) && !line_active)
-            missed_start++;
+      sync = params.sync;
+      n_x = sync.n_x;
+      n_y = sync.n_line;
 
-         if (line_active && (p.macro_time >= sync_start_count)) // not sure why this is sometimes violated
-         {
-            uint64_t diff = p.macro_time - sync_start_count;
-            sync_count_per_line_acc((double)diff);
-         }
+      setNumChannels(params.n_chan);
+      recommended_channels = params.recommended_channels;
 
-         line_active = false;
-      }
-      
-      if (p.mark & markers.LineStartMarker)
-      {
-         if ((markers.LineStartMarker != markers.LineEndMarker) && line_active)
-            missed_end++;
-
-         if (!line_active && (p.macro_time >= sync_start_count) && n_frame == 0)
-         {
-            if (n_line > 0)
-            {
-               uint64_t diff = p.macro_time - sync_start_count;
-               sync_count_interline_acc((double)diff);
-               sync_count_interline.push_back(diff);
-            }
-
-            n_line++;
-            sync_start_count = p.macro_time;
-         }
-
-         line_active = true;
-      }
-
-      // if we don't have frame markers break after 512 lines (speed considerations)
-      if ((markers.FrameMarker == 0x0) && (n_line >= n_y) && (n_y > 0))
-         break;
-
-   } while (event_reader->hasMoreData() && (n_frame == 0));
-   
-   if (markers.FrameMarker == 0x0)
-      n_frame = 1;
-
-   sync.count_per_line = median(sync_count_per_line_acc);
-   sync.counts_interline = median(sync_count_interline_acc);
-
-   // Count number of lines, accounting for missing start/end markers
-   int n_line_corrected = std::accumulate(sync_count_interline.begin(), sync_count_interline.end(), 1,
-      [&](int n_line, uint64_t interline) { return n_line + (int) std::round(interline / sync.counts_interline); });
-
-
-   if (line_averaging > 1)
-   {
-      double factor = static_cast<double>(line_averaging) / (line_averaging + 1);
-      sync.count_per_line *= factor;
-      sync.counts_interline *= factor;
+      has_sync_settings = true;
    }
+}
 
-   if (n_line == 0 || n_frame == 0)
-      throw std::runtime_error("Error interpreting sync markers");
+void AbstractFifoReader::setNumChannels(int n_chan_)
+{
+   double frame_time_ps = n_y * sync.count_per_line * macro_time_resolution_ps;
 
-   if (n_y == 0)
-   {
-     n_y = n_line_corrected / line_averaging / n_frame;
-     if (n_x == 0)
-         n_x = n_y;
-   }
-   else if (markers.FrameMarker != 0x0)
-   {
-      //assert(n_line == (n_y * n_frame));
-   }
-
-   sync.n_x = n_x;
-   sync.n_line = n_y;
-
-   if (!isfinite(sync.counts_interframe))
-      throw std::runtime_error("Incorrect interframe counts");
-
-   int highest_chan = 0;
-   recommended_channels.resize(channel_counts.size());
-   for (int i = 0; i < recommended_channels.size(); i++)
-   {
-      recommended_channels[i] = channel_counts[i] > 0;
-     if (recommended_channels[i])
-        highest_chan = i;
-   }
-
-   n_chan = std::max(n_chan, highest_chan + 1);
-   recommended_channels.resize(n_chan);
+   n_chan = n_chan_;
    time_shifts_ps.resize(n_chan, 0);
-
+   rate_estimator.assign(n_chan,
+      CountRateEstimator(macro_time_resolution_ps, time_resolution_native_ps, frame_time_ps));
+   count_rates.resize(n_chan);
+   decay.assign(n_chan, std::vector<int>(timepoints.size()));
+   next_decay.assign(n_chan, std::vector<int>(timepoints.size()));
    setUseAllChannels();
 }
 
@@ -406,9 +309,6 @@ void AbstractFifoReader::loadIntensityFramesImpl()
 
    auto fifo_frame = std::make_shared<FifoFrame>(event_reader, markers);
 
-   if (sync.has_initial_frame_marker)
-      fifo_frame->loadNext();
-
    int idx = 0;
    int frame = 0;
    int z = 0;
@@ -422,8 +322,7 @@ void AbstractFifoReader::loadIntensityFramesImpl()
       if (terminate) break;
 
       fifo_frame->loadNext();
-      FifoProcessor processor(markers, sync);
-      processor.setFrame(fifo_frame);
+      FifoProcessor processor(fifo_frame, sync);
 
       Photon p;
       while ((p = processor.getNextPhoton()))

@@ -13,7 +13,7 @@ AbstractFifoReader(filename)
 {
    readHeader();
    
-   n_chan = info.routing_channels;
+   setNumChannels(info.routing_channels);
    n_x = info.n_x;
    n_y = info.n_y;
    rep_rate_hz = info.input0_countrate;
@@ -35,7 +35,7 @@ AbstractFifoReader(filename)
 
    event_reader = std::make_shared<PicoquantEventReader>(filename, data_position, rec_type);
 
-   determineDwellTime();
+   determineDimensions();
 }
 
 void PicoquantTTTRReader::readHeader()

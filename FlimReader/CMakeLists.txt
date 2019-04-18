@@ -21,6 +21,7 @@ set(SOURCE
    FfhReader.cpp
    FlimCube.cpp
    IcsReader.cpp
+   FifoFrame.cpp
 )
 
 set(HEADERS
@@ -46,6 +47,8 @@ set(HEADERS
    AbstractEventReader.h
    FileEventReader.h
    IcsReader.h
+   FifoFrame.h
+   CountRateEstimator.h
 )
 
 add_library(FlimReader STATIC ${SOURCE} ${HEADERS})

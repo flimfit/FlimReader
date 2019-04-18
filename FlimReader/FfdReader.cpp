@@ -11,7 +11,8 @@ FfdReader::FfdReader(const std::string& filename) :
    AbstractFifoReader(filename)
 {
    readHeader();
-   
+   setNumChannels(n_chan);
+
    markers.FrameMarker = 0x8;
    markers.LineEndMarker = 0x4;
    markers.LineStartMarker = 0x2;
@@ -19,8 +20,8 @@ FfdReader::FfdReader(const std::string& filename) :
 
    event_reader = std::make_shared<FfdEventReader>(filename, version, data_position);
 
-   determineDwellTime();
    initaliseTimepoints(n_timepoints_native, time_resolution_native_ps);
+   determineDimensions();
 }
 
 void FfdReader::readHeader()
@@ -37,6 +38,10 @@ void FfdReader::readHeader()
 
    TagMap::iterator it;
    
+   it = tags.find("MacrotimeResolutionUnit_ps");
+   if (it != tags.end())
+      macro_time_resolution_ps = it->second.getValue<double>();
+
    it = tags.find("MicrotimeResolutionUnit_ps");
    if (it != tags.end())
       time_resolution_native_ps = it->second.getValue<double>();

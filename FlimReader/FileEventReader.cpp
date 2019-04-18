@@ -9,7 +9,6 @@ data_position(data_position), AbstractEventReader(packet_size_)
    length = fs.tellg() - data_position;
    n_packet = length / packet_size_;
    uint64_t n_block = n_packet / block_size + 1;
-   data.reserve(n_block);
    
    reader_thread = std::thread(&FileEventReader::read, this);
    setToStart();
