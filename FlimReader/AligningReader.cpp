@@ -37,11 +37,11 @@ AligningReader::AligningReader()
 AligningReader::~AligningReader()
 {
    terminate = true;
-   if (realignment_thread.joinable())
-      realignment_thread.join();
+   if (realignment_future.valid())
+      realignment_future.get();
 
-   if (frame_thread.joinable())
-      frame_thread.join();
+   if (frame_future.valid())
+      frame_future.get();
 }
 
 void AligningReader::setUseAllChannels()
@@ -67,9 +67,9 @@ void AligningReader::loadIntensityFrames()
 
    if (async_load_intensity_frames)
    {
-      if (frame_thread.joinable())
-         frame_thread.join();
-      frame_thread = std::thread(&AligningReader::loadIntensityFramesImpl, this);
+      if (frame_future.valid())
+         frame_future.get();
+      frame_future = std::async(std::launch::async, &AligningReader::loadIntensityFramesImpl, this);
    }
    else
    {
@@ -130,7 +130,6 @@ void AligningReader::alignFrames()
 
    frame_aligner->setRealignmentParams(realign_params);
    frame_aligner->setImageScanParams(image_params);
-   frame_aligner->setNumberOfFrames(n_frames);
 
    if (reference_frame.empty())
    {
@@ -152,7 +151,6 @@ void AligningReader::alignFrames()
       reference_frame = getIntensityFrameImmediately(reference_index);
    }
 
-
    tick_count_start = cv::getTickCount();
 
    frame_aligner->setReference(reference_index, reference_frame);
@@ -162,16 +160,16 @@ void AligningReader::alignFrames()
 
    intensity_normalisation = cv::Mat(reference_frame.dims, reference_frame.size.p, CV_32F, cv::Scalar(0));
 
-   if (realignment_thread.joinable())
-      realignment_thread.join();
+   if (realignment_future.valid())
+      realignment_future.get();
 
-   realignment_thread = std::thread(&AligningReader::alignFramesImpl, this);
+   realignment_future = std::async(std::launch::async, &AligningReader::alignFramesImpl, this);
 }
 
 void AligningReader::waitForAlignmentComplete()
 {
-   if (realignment_thread.joinable())
-      realignment_thread.join();
+   if (realignment_future.valid())
+      realignment_future.get();
 }
 
 
@@ -183,7 +181,7 @@ void AligningReader::alignFramesImpl()
    {
       if (terminate) return;
 
-      try 
+      try
       {
          frame_aligner->addFrame(i, getIntensityFrame(i));
       }
@@ -192,9 +190,9 @@ void AligningReader::alignFramesImpl()
          std::cout << "Error during realignment: " << e.what();
       }
 
-         auto result = frame_aligner->getRealignmentResult(i);
-         if (result.useFrame(realign_params))
-            intensity_normalisation += result.mask->get();
+      auto result = frame_aligner->getRealignmentResult(i);
+      if (result.useFrame(realign_params))
+         intensity_normalisation += result.mask->get();
 
       realign_cv.notify_all();
    });

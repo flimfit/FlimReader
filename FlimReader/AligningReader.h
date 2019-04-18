@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AbstractFrameAligner.h"
-#include <thread>
+#include <future>
 #include <mutex>
 #include <map>
 #include "Cv3dUtils.h"
@@ -40,6 +40,8 @@ public:
    void setReferenceFrame(cv::Mat reference_frame_) { reference_frame = reference_frame_; }
    cv::Mat getReferenceFrame() { return reference_frame; }
 
+   void setRetainData(bool retain_data_) { retain_data = retain_data_;  };
+
 protected:
 
    void waitForFrameReady(int frame);
@@ -61,7 +63,7 @@ protected:
 
    bool terminate = false;
 
-   std::thread realignment_thread;
+   std::future<void> realignment_future;
    std::mutex realign_mutex;
    std::condition_variable realign_cv;
    bool realignment_complete = false;
@@ -72,13 +74,14 @@ protected:
 
    cv::Mat intensity_normalisation;
 
-   std::thread frame_thread;
+   std::future<void> frame_future;
    std::mutex frame_mutex;
    std::condition_variable frame_cv;
    std::map<size_t,CachedMat> frames;
    std::vector<bool> use_channel;
 
    bool async_load_intensity_frames = false;
+   bool retain_data = false; // Keep data in memory where possible
 
    int64_t tick_count_start;
 };

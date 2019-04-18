@@ -242,6 +242,9 @@ FifoInferredParameters FifoProcessor::determineSyncSettings(SyncSettings sync, i
    sync.count_per_line = median(sync_count_per_line_acc);
    sync.counts_interline = median(sync_count_interline_acc);
 
+   if (sync.count_per_line > 0.5 * sync.counts_interline)
+      sync.bidirectional = true;
+
    // Count number of lines, accounting for missing start/end markers
    int n_line_corrected = std::accumulate(sync_count_interline.begin(), sync_count_interline.end(), 1,
       [&](int n_line, uint64_t interline) { return n_line + (int)std::round(interline / sync.counts_interline); });

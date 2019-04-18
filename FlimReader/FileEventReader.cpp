@@ -10,16 +10,20 @@ data_position(data_position), AbstractEventReader(packet_size_)
    n_packet = length / packet_size_;
    uint64_t n_block = n_packet / block_size + 1;
    
-   reader_thread = std::thread(&FileEventReader::read, this);
-   setToStart();
+   startReading();
+   AbstractEventReader::setToStart();
 }
 
+void FileEventReader::startReading()
+{
+   reader_future = std::async(std::launch::async, &FileEventReader::readThread, this);
+}
 
 FileEventReader::~FileEventReader()
 {
    terminate = true;
-   if (reader_thread.joinable())
-      reader_thread.join();
+   if (reader_future.valid())
+      reader_future.get();
 }
 
 
@@ -33,7 +37,7 @@ bool FileEventReader::hasMoreData()
    return cur_pos < n_packet;
 }
 
-void FileEventReader::read()
+void FileEventReader::readThread()
 {
    uint64_t sz = block_size * packet_size;
    
@@ -51,4 +55,15 @@ void FileEventReader::read()
       data.push_back(block);
       cv.notify_one();
    } while (n_read > 0 && !terminate);
+}
+
+void FileEventReader::setToStart()
+{
+   if (!retain_data)
+   {
+      std::unique_lock<std::mutex> lk(m);
+      data.clear();
+      startReading();
+   }
+   AbstractEventReader::setToStart();
 }

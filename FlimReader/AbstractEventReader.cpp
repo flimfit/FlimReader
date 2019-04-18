@@ -28,3 +28,8 @@ void AbstractEventReader::clear()
    data.clear();
    setToStart();
 }
+
+void AbstractEventReader::setRetainData(bool retain_data_)
+{
+   retain_data = retain_data_;
+}

@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <future>
 
 class FileEventReader : public AbstractEventReader
 {
@@ -12,9 +13,12 @@ public:
    double getProgress();
    bool hasMoreData();
 
+   void setToStart();
+
 protected:
 
-   void read();
+   void startReading();
+   void readThread();
 
    std::ifstream fs;
    std::streamoff data_position;
@@ -22,6 +26,6 @@ protected:
    uint64_t length = 0;
    uint64_t n_packet = 0;
 
-   std::thread reader_thread;
+   std::future<void> reader_future;
    bool terminate = false;
 };

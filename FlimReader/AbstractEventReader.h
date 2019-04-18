@@ -56,7 +56,7 @@ public:
    virtual double getProgress() = 0;
    virtual bool hasMoreData() = 0;
 
-   void setToStart();
+   virtual void setToStart();
 
    void stop();
    void clear();
@@ -66,6 +66,8 @@ public:
    template<class T>
    T getPacket();
    
+   void setRetainData(bool retain_data);
+
 protected:
 
    virtual std::tuple<FifoEvent, uint64_t> getRawEvent() = 0;
@@ -84,6 +86,7 @@ protected:
    std::mutex m;
    std::condition_variable cv;
    bool terminate = false;
+   bool retain_data = true;
 };
 
 template<class T>
@@ -105,8 +108,13 @@ T AbstractEventReader::getPacket()
          auto it = data_it;
          return ((++it) != data.end()) || !hasMoreData();
       });
+      auto del_it = data_it;
+      
       data_it++;
       block_it = (*data_it).begin();
+
+      if (!retain_data)
+         data.erase(data.begin(), del_it);
    }
 
    if (data_it == data.end()) 
