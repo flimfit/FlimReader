@@ -101,7 +101,7 @@ Photon FifoProcessor::getNextPhoton()
       if (p.mark & markers.PixelMarker)
          cur_px++;
 
-      if ((p.mark == markers.PhotonMarker))
+      if (p.mark == markers.PhotonMarker)
       {
          double cur_loc = cur_px;
          int this_line = cur_line;

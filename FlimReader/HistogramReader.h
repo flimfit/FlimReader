@@ -138,9 +138,8 @@ protected:
       }
 
       z_stream zInfo = { 0 };
-//      fs.read((char*)buffer.data(), buffer.size());
       zInfo.next_in = buffer.data();
-      zInfo.avail_in = 0;  (uInt)fs.gcount();
+      zInfo.avail_in = 0;
 
       int nErr = inflateInit2(&zInfo, wbits);
 
