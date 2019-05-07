@@ -265,7 +265,7 @@ FifoInferredParameters FifoProcessor::determineSyncSettings(SyncSettings sync, i
    if (sync.n_x == 0)
       sync.n_x = sync.n_line;
 
-   if (!isfinite(sync.counts_interframe))
+   if (!std::isfinite(sync.counts_interframe))
       throw std::runtime_error("Incorrect interframe counts");
 
    int highest_chan = 0;
