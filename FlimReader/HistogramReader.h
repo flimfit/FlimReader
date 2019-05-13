@@ -93,6 +93,7 @@ protected:
    std::vector<U> readHistogramFromFile(DataBlock block)
    {
       std::ifstream fs(filename, std::ifstream::in | std::ifstream::binary);
+      fs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
       fs.seekg(block.position);
 
       size_t data_size = n_x * n_y * native_timepoints.size();
