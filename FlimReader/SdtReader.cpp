@@ -144,7 +144,7 @@ void SdtReader::readHeader()
       bool compressed = false;
       std::streamoff data_offset = 0;
 
-      if (header.revision < 15)
+      if ((header.revision & 0xF) < 15)
       {
          BHFileBlockHeaderOld block_header;
          in.read((char*)&block_header, sizeof(block_header));
